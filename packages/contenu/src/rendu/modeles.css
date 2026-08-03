@@ -1,0 +1,372 @@
+/* Rendu des modèles — feuille partagée par l'administration et la borne.
+ *
+ * Toutes les dimensions sont exprimées pour une toile de 1920 × 1080 px
+ * (échelle « borne », §6.3). La mise à l'échelle est faite par ToileBorne :
+ * il ne faut donc jamais écrire ici de taille relative à la fenêtre. */
+
+.toile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.toile__ecran {
+  transform-origin: center center;
+  flex: none;
+  overflow: hidden;
+  background: var(--b-fond);
+  /* L'échelle est calculée à partir d'une mesure : elle doit s'appliquer
+     immédiatement. Sans cela, la valeur par défaut « transition: all » la fait
+     passer par une animation — et la mise en page apparaît décalée le temps
+     de celle-ci. */
+  transition: none;
+}
+
+:root {
+  /* Palette de la borne : contrastes renforcés pour une lecture à 2 m. */
+  --b-fond: #0e2237;
+  --b-surface: #16324c;
+  --b-surface-haute: #1d4064;
+  --b-texte: #f5f7fa;
+  --b-texte-doux: #c3d0de;
+  --b-accent: #e9b44c;
+  --b-trait: rgba(245, 247, 250, 0.14);
+
+  --b-titre-police: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --b-texte-police: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* ── Typographie de la borne ─────────────────────────────────────────────── */
+
+.mdl {
+  box-sizing: border-box;
+  width: 1920px;
+  height: 1080px;
+  padding: 72px 96px;
+  background: var(--b-fond);
+  color: var(--b-texte);
+  font-family: var(--b-texte-police);
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.mdl *,
+.mdl *::before,
+.mdl *::after {
+  box-sizing: border-box;
+}
+
+.b-h1 {
+  margin: 0;
+  font-family: var(--b-titre-police);
+  font-size: 68px;
+  line-height: 78px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--b-texte);
+}
+
+.b-h1--clair {
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);
+}
+
+.b-h3 {
+  margin: 0 0 12px;
+  font-family: var(--b-titre-police);
+  font-size: 34px;
+  line-height: 42px;
+  font-weight: 600;
+  color: var(--b-accent);
+}
+
+.b-corps {
+  font-size: 26px;
+  line-height: 40px;
+  color: var(--b-texte-doux);
+  max-width: 60ch;
+}
+
+.b-corps--clair {
+  color: var(--b-texte);
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.7);
+}
+
+.b-petit {
+  font-size: 21px;
+  line-height: 32px;
+  color: var(--b-texte-doux);
+}
+
+.b-paragraphe {
+  margin: 0 0 20px;
+}
+.b-paragraphe:last-child {
+  margin-bottom: 0;
+}
+
+.b-liste {
+  margin: 0 0 20px;
+  padding-left: 32px;
+}
+.b-liste li {
+  margin-bottom: 10px;
+}
+.b-liste li::marker {
+  color: var(--b-accent);
+}
+
+.b-legende {
+  margin-top: 14px;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 500;
+  color: var(--b-texte-doux);
+}
+
+/* Texte de substitution quand un emplacement est encore vide (édition). */
+.b-attente {
+  color: rgba(245, 247, 250, 0.35);
+  font-style: italic;
+}
+
+/* ── Blocs média ─────────────────────────────────────────────────────────── */
+
+.b-vide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  border: 3px dashed rgba(245, 247, 250, 0.22);
+  border-radius: 18px;
+  background: rgba(245, 247, 250, 0.04);
+  color: rgba(245, 247, 250, 0.5);
+  font-size: 26px;
+}
+
+.b-vide__icone {
+  font-size: 44px;
+  color: rgba(233, 180, 76, 0.6);
+}
+
+.b-image {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.b-image__zone {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--b-surface);
+}
+
+.b-image__zone--tactile {
+  cursor: pointer;
+  transition: transform 160ms ease;
+}
+.b-image__zone--tactile:active {
+  transform: scale(0.99);
+}
+
+.b-image__fichier {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.b-galerie {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+  height: 100%;
+}
+
+.b-galerie__element {
+  min-width: 0;
+  height: 100%;
+}
+
+.b-galerie__zone {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--b-surface);
+  cursor: pointer;
+}
+
+.b-galerie__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.b-video {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+.b-video__lecteur,
+.b-video__poster {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.b-video__poster--absent {
+  background: linear-gradient(140deg, #16324c, #0b1a2b);
+}
+
+.b-video__marque {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 132px;
+  height: 132px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(14, 34, 55, 0.72);
+  border: 3px solid var(--b-accent);
+  color: var(--b-accent);
+  font-size: 52px;
+  padding-left: 10px;
+}
+
+/* ── Modèle 1 — Une image, un texte ──────────────────────────────────────── */
+
+.mdl-1__entete {
+  flex: none;
+}
+
+.mdl-1__image {
+  flex: 1;
+  min-height: 0;
+}
+
+.mdl-1__texte {
+  flex: none;
+  max-height: 260px;
+  overflow: hidden;
+}
+
+/* ── Modèle 2 — Image et texte côte à côte ───────────────────────────────── */
+
+.mdl-2__entete {
+  flex: none;
+}
+
+.mdl-2__colonnes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 760px 1fr;
+  gap: 56px;
+}
+
+.mdl-2__image,
+.mdl-2__texte {
+  min-height: 0;
+  min-width: 0;
+}
+
+.mdl-2__texte {
+  overflow: hidden;
+}
+
+.mdl-2__galerie {
+  flex: none;
+  height: 200px;
+}
+
+.mdl-2__galerie--vide {
+  height: 150px;
+}
+
+/* ── Modèle 3 — Vidéo en avant ───────────────────────────────────────────── */
+
+.mdl-3 {
+  position: relative;
+  padding: 0;
+  display: block;
+}
+
+.mdl-3__video {
+  position: absolute;
+  inset: 0;
+}
+
+.mdl-3__voile {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(6, 16, 27, 0.92) 0%,
+    rgba(6, 16, 27, 0.55) 38%,
+    rgba(6, 16, 27, 0.1) 68%,
+    rgba(6, 16, 27, 0.35) 100%
+  );
+  pointer-events: none;
+}
+
+.mdl-3__superpose {
+  position: absolute;
+  inset: auto 96px 88px 96px;
+  display: grid;
+  grid-template-columns: 1fr 520px;
+  gap: 64px;
+  align-items: end;
+}
+
+.mdl-3__principal {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.mdl-3__encart {
+  padding: 32px 36px;
+  border-radius: 18px;
+  border: 2px solid rgba(233, 180, 76, 0.45);
+  background: rgba(14, 34, 55, 0.86);
+  backdrop-filter: blur(6px);
+}
+
+.mdl-3__encart--vide {
+  border-style: dashed;
+  border-color: rgba(245, 247, 250, 0.2);
+  background: rgba(14, 34, 55, 0.55);
+}

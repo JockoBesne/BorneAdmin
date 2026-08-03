@@ -1,0 +1,21 @@
+{
+  "name": "@borne/contenu",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Modèle de contenu partagé : déclaration des modèles, schémas de validation et composants de rendu communs à l'administration et à la borne.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./rendu": "./src/rendu/index.ts",
+    "./rendu/modeles.css": "./src/rendu/modeles.css"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true }
+  }
+}

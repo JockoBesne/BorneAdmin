@@ -1,0 +1,27 @@
+{
+  "name": "borne-admin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Administration du contenu de la borne interactive du Musée des Transmissions",
+  "workspaces": [
+    "packages/contenu",
+    "packages/ui",
+    "apps/api",
+    "apps/admin",
+    "apps/borne"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "init": "npm run init -w @borne/api",
+    "build": "npm run build -w @borne/admin && npm run build -w @borne/borne",
+    "demarrer": "npm run demarrer -w @borne/api",
+    "verifier": "tsc -b --pretty"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.11"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+
+# Données d'exécution (jamais versionnées : elles appartiennent au musée)
+donnees/
+*.db
+*.db-wal
+*.db-shm
+.env

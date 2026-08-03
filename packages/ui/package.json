@@ -1,0 +1,14 @@
+{
+  "name": "@borne/ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Design system de l'administration : variables CSS et composants de base.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
