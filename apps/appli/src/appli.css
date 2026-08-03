@@ -1,0 +1,1096 @@
+/* Habillage de la fenêtre — écran tactile, lecture à deux mètres.
+ *
+ * Le rendu des pages lui-même n'est pas ici : il vient de
+ * « @borne/contenu/rendu/modeles.css », partagé avec l'aperçu de
+ * l'administration. C'est ce qui garantit que les deux affichent la même
+ * chose, par construction et non par ressemblance. */
+
+html,
+body,
+#racine {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--b-fond, #0e2237);
+}
+
+body {
+  font-family: var(--b-texte-police);
+  color: var(--b-texte);
+  -webkit-font-smoothing: antialiased;
+  /* Aucune sélection de texte ni menu contextuel sur un écran public. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* ── États sans contenu ──────────────────────────────────────────────────── */
+
+.etat-vide {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 6vw;
+  text-align: center;
+}
+
+.etat-vide__titre {
+  margin: 0;
+  font-family: var(--b-titre-police);
+  font-size: clamp(28px, 3.4vw, 56px);
+  color: var(--b-accent);
+}
+
+.etat-vide__texte {
+  margin: 0;
+  max-width: 40ch;
+  font-size: clamp(16px, 1.5vw, 26px);
+  line-height: 1.5;
+  color: var(--b-texte-doux);
+}
+
+/* ── Page et navigation ──────────────────────────────────────────────────── */
+
+/* Conteneur du mode visiteur : porte les variables de couleur du contenu. */
+.visiteur-hote {
+  height: 100%;
+}
+
+.page-borne {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--b-fond);
+}
+
+.page-borne .toile {
+  flex: 1;
+  min-height: 0;
+}
+
+.nav {
+  flex: none;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 3vw;
+  background: #081726;
+  border-top: 1px solid rgba(245, 247, 250, 0.08);
+}
+
+/* Toutes les cibles tactiles font au moins 48 px de haut. */
+.nav__bouton {
+  min-height: 56px;
+  min-width: 180px;
+  padding: 0 26px;
+  border: 2px solid rgba(233, 180, 76, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--b-accent);
+  font-size: clamp(15px, 1.15vw, 22px);
+  font-weight: 600;
+  transition:
+    background 160ms ease,
+    opacity 160ms ease;
+}
+
+.nav__bouton:hover:not(:disabled),
+.nav__bouton:focus-visible:not(:disabled) {
+  background: rgba(233, 180, 76, 0.14);
+}
+
+.nav__bouton:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.nav__position {
+  font-size: clamp(14px, 1.05vw, 20px);
+  color: var(--b-texte-doux);
+  text-align: center;
+}
+
+/* ── Accès caché à l'administration ──────────────────────────────────────── */
+/* Repris de apps/borne/src/borne.css. */
+
+.acces-admin {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 80;
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Invisible : rien ne signale sa présence aux visiteurs. */
+  background: transparent;
+  touch-action: none;
+}
+
+/* Jauge purement visuelle : elle accompagne l'appui, mais c'est le minuteur
+   de AccesAdmin.tsx qui fait foi. */
+.acces-admin__jauge {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--b-accent);
+  background: rgba(233, 180, 76, 0.16);
+  transform: scale(0);
+  transform-origin: center;
+  transition: transform 5000ms linear;
+}
+
+.acces-admin--appui .acces-admin__jauge {
+  transform: scale(1);
+}
+
+/* ── Pavé numérique ──────────────────────────────────────────────────────── */
+
+.pin {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 11, 19, 0.94);
+}
+
+.pin__boite {
+  width: min(440px, 90vw);
+  padding: 40px 36px;
+  border-radius: 22px;
+  border: 1px solid rgba(245, 247, 250, 0.14);
+  background: var(--b-surface);
+  text-align: center;
+}
+
+.pin__titre {
+  margin: 0;
+  font-family: var(--b-titre-police);
+  font-size: 30px;
+  color: var(--b-texte);
+}
+
+.pin__aide {
+  margin: 8px 0 26px;
+  font-size: 16px;
+  color: var(--b-texte-doux);
+}
+
+.pin__points {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.pin__point {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(245, 247, 250, 0.4);
+}
+
+.pin__point--plein {
+  background: var(--b-accent);
+  border-color: var(--b-accent);
+}
+
+.pin__erreur {
+  margin: 0 0 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ff9b91;
+}
+
+.pin__clavier {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.pin__touche {
+  min-height: 64px;
+  border: 1px solid rgba(245, 247, 250, 0.16);
+  border-radius: 14px;
+  background: rgba(245, 247, 250, 0.06);
+  color: var(--b-texte);
+  font-size: 24px;
+  font-weight: 600;
+  transition: background 120ms ease;
+}
+
+.pin__touche:hover,
+.pin__touche:focus-visible {
+  background: rgba(245, 247, 250, 0.14);
+}
+
+.pin__touche--discret {
+  font-size: 16px;
+  color: var(--b-texte-doux);
+}
+
+/* ── Administration ──────────────────────────────────────────────────────── */
+/* Écran de bureau, pas de borne : on peut viser plus petit et plus dense. */
+
+.admin {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--b-fond);
+}
+
+.admin__barre {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 28px;
+  background: #081726;
+  border-bottom: 1px solid var(--b-trait);
+}
+
+.admin__titre {
+  margin: 0;
+  font-family: var(--b-titre-police);
+  font-size: 24px;
+  color: var(--b-texte);
+}
+
+.admin__fermer {
+  min-height: 44px;
+  padding: 0 22px;
+  border: 2px solid rgba(233, 180, 76, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--b-accent);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.admin__fermer:hover,
+.admin__fermer:focus-visible {
+  background: rgba(233, 180, 76, 0.14);
+}
+
+.admin__corps {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px;
+}
+
+.admin__message {
+  margin: 0;
+  color: var(--b-texte-doux);
+}
+
+.admin__pages {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 900px;
+}
+
+.admin__page {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 20px;
+  border: 1px solid var(--b-trait);
+  border-radius: 12px;
+  background: var(--b-surface);
+}
+
+.admin__rang {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(233, 180, 76, 0.16);
+  color: var(--b-accent);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin__page-titre {
+  flex: 1;
+  min-width: 0;
+  color: var(--b-texte);
+  font-size: 17px;
+}
+
+.admin__page-modele {
+  flex: none;
+  color: var(--b-texte-doux);
+  font-size: 14px;
+}
+
+.admin__retour {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--b-accent);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.admin__page-courante {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--b-texte);
+  font-size: 17px;
+}
+
+.admin__etat {
+  flex: none;
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--b-texte-doux);
+}
+
+.admin__etat--echec {
+  color: #ff9b91;
+}
+
+.admin__entete-liste {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  max-width: 1100px;
+  margin-bottom: 18px;
+}
+
+.admin__pages {
+  max-width: 1100px;
+}
+
+.admin__page-titre--lien {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin__page-titre--lien:hover {
+  color: var(--b-accent);
+}
+
+.admin__page-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Boutons de l'administration ─────────────────────────────────────────── */
+
+.abtn {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid rgba(233, 180, 76, 0.45);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--b-accent);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 120ms ease;
+}
+
+.abtn:hover:not(:disabled),
+.abtn:focus-visible:not(:disabled) {
+  background: rgba(233, 180, 76, 0.14);
+}
+
+.abtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.abtn--principal {
+  border: 0;
+  background: var(--b-accent);
+  color: #0e2237;
+}
+
+.abtn--principal:hover:not(:disabled),
+.abtn--principal:focus-visible:not(:disabled) {
+  background: #f0c56a;
+}
+
+.abtn--discret {
+  border-color: rgba(245, 247, 250, 0.2);
+  color: var(--b-texte-doux);
+}
+
+.abtn--discret:hover:not(:disabled),
+.abtn--discret:focus-visible:not(:disabled) {
+  background: rgba(245, 247, 250, 0.08);
+}
+
+.abtn--danger {
+  border-color: rgba(255, 155, 145, 0.6);
+  color: #ff9b91;
+}
+
+.abtn--danger:hover:not(:disabled),
+.abtn--danger:focus-visible:not(:disabled) {
+  background: rgba(255, 155, 145, 0.12);
+}
+
+.abtn--icone {
+  min-width: 38px;
+  padding: 0;
+}
+
+/* ── Éditeur d'une page ──────────────────────────────────────────────────── */
+
+.edit {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+}
+
+.edit__apercu {
+  min-width: 0;
+  min-height: 0;
+  padding: 18px;
+}
+
+/* Panneau des blocs. */
+
+.pan {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 18px;
+  background: #0b1c2e;
+  border-left: 1px solid var(--b-trait);
+}
+
+.pan__titre {
+  margin: 0;
+  font-family: var(--b-titre-police);
+  font-size: 19px;
+  color: var(--b-texte);
+}
+
+/* Section repliable « Couleurs de la page ». */
+.pan__couleurs {
+  border: 1px solid var(--b-trait);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pan__replier {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 0;
+  background: var(--b-surface);
+  color: var(--b-texte);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.pan__couleurs-corps {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 16px 14px;
+}
+
+.pan__blocs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pan__bloc {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--b-trait);
+  border-radius: 10px;
+  background: var(--b-surface);
+  color: var(--b-texte);
+  font-size: 15px;
+  text-align: left;
+  transition: border-color 120ms ease;
+}
+
+.pan__bloc:hover {
+  border-color: rgba(233, 180, 76, 0.5);
+}
+
+.pan__bloc--actif {
+  border-color: var(--b-accent);
+  background: rgba(233, 180, 76, 0.1);
+}
+
+.pan__bloc-resume {
+  flex: none;
+  font-size: 13px;
+  color: var(--b-texte-doux);
+}
+
+.pan__aide {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--b-texte-doux);
+}
+
+/* Ligne d'un bloc ajouté : le bloc, puis ses commandes ▲ ▼ ✕. */
+.pan__ligne {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Léger retrait : les blocs ajoutés se lisent comme insérés dans le plan de
+   la page, sous le bloc du modèle qu'ils suivent. */
+.pan__ligne--ajoutee {
+  margin-left: 14px;
+}
+
+.pan__ligne--ajoutee .pan__bloc {
+  border-style: dashed;
+}
+
+.pan__ligne .pan__bloc {
+  flex: 1;
+  min-width: 0;
+}
+
+.pan__retrait {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--b-texte);
+}
+
+.abtn--mini {
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0;
+  font-size: 12px;
+}
+
+/* Bouton bascule « allumé » (ex. demi-largeur actif). */
+.abtn--actif {
+  background: rgba(233, 180, 76, 0.22);
+  border-color: var(--b-accent);
+  color: var(--b-accent);
+}
+
+.pan__formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 14px;
+  border: 1px solid var(--b-trait);
+  border-radius: 12px;
+  background: rgba(245, 247, 250, 0.03);
+}
+
+.pan__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pan__problemes {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controle {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.controle--ok {
+  color: #8fd6a5;
+}
+
+.controle--bloquant {
+  color: #ff9b91;
+}
+
+.controle--conseille {
+  color: var(--b-accent);
+}
+
+/* Champs de formulaire. */
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.champ__libelle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--b-texte-doux);
+}
+
+.pan input,
+.pan textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(245, 247, 250, 0.2);
+  border-radius: 10px;
+  background: #0e2237;
+  color: var(--b-texte);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.pan textarea {
+  resize: vertical;
+}
+
+.pan input:focus-visible,
+.pan textarea:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 1px;
+}
+
+.champ__compte {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--b-texte-doux);
+}
+
+.champ__conseil {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--b-texte-doux);
+}
+
+/* Média en place dans le formulaire. */
+
+.media-actuel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.media-actuel__vignette {
+  flex: none;
+  width: 84px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--b-surface);
+}
+
+.media-actuel__vignette--absente {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.media-actuel__nom {
+  min-width: 0;
+  font-size: 14px;
+  color: var(--b-texte);
+}
+
+/* Galerie dans le formulaire. */
+
+.galerie-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.galerie-el {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.galerie-el__vignette {
+  flex: none;
+  width: 64px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--b-surface);
+}
+
+.galerie-el__vignette--absente {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--b-texte-doux);
+}
+
+/* ── Blocs cliquables dans l'aperçu ──────────────────────────────────────── */
+/* Les tailles sont exprimées à l'échelle de la toile (1920 px de large). */
+
+.emp {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border-radius: 10px;
+  outline: 3px dashed transparent;
+  outline-offset: 8px;
+  transition: outline-color 120ms ease;
+}
+
+.emp:hover {
+  outline-color: rgba(233, 180, 76, 0.4);
+}
+
+.emp--actif {
+  outline: 4px solid var(--b-accent);
+}
+
+.emp--probleme {
+  outline-color: #ff9b91;
+}
+
+.emp__etiquette {
+  position: absolute;
+  top: -34px;
+  left: 0;
+  padding: 2px 12px;
+  border-radius: 8px;
+  background: var(--b-accent);
+  color: #0e2237;
+  font-family: var(--b-texte-police);
+  font-size: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.emp:hover .emp__etiquette,
+.emp--actif .emp__etiquette {
+  opacity: 1;
+}
+
+/* ── Fenêtre de choix (modèle, média) ────────────────────────────────────── */
+
+.voile {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 11, 19, 0.94);
+}
+
+.voile__boite {
+  width: min(760px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 32px;
+  border: 1px solid rgba(245, 247, 250, 0.14);
+  border-radius: 22px;
+  background: var(--b-surface);
+}
+
+.voile__titre {
+  margin: 0;
+  font-family: var(--b-titre-police);
+  font-size: 24px;
+  color: var(--b-texte);
+}
+
+.modeles {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+/* « min-width: 0 » sur les cases de la grille : sans cela, la largeur minimale
+   d'une case vaut celle de son contenu — ici la toile de 1920 px — et la
+   colonne « 1fr » ne peut plus la réduire. L'aperçu ne se mettrait pas à
+   l'échelle. */
+.modeles > li {
+  min-width: 0;
+}
+
+.modele-carte {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--b-trait);
+  border-radius: 14px;
+  background: rgba(245, 247, 250, 0.04);
+  text-align: left;
+  transition: border-color 120ms ease;
+}
+
+/* Vignette d'aperçu du modèle : une toile réduite, non défilante et sans
+   interaction — c'est une image de la mise en page, pas un éditeur. */
+.modele-carte__apercu {
+  display: block;
+  width: 100%;
+  height: 150px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--b-fond);
+}
+
+.modele-carte__apercu .toile,
+.apparence__toile .toile {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+.modele-carte:hover,
+.modele-carte:focus-visible {
+  border-color: var(--b-accent);
+}
+
+.modele-carte__nom {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--b-texte);
+}
+
+.modele-carte__description {
+  font-size: 14px;
+  color: var(--b-texte-doux);
+}
+
+.medias-grille {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.media-carte {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--b-trait);
+  border-radius: 12px;
+  background: rgba(245, 247, 250, 0.04);
+  transition: border-color 120ms ease;
+}
+
+.media-carte:hover,
+.media-carte:focus-visible {
+  border-color: var(--b-accent);
+}
+
+.media-carte__image {
+  width: 100%;
+  height: 92px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #0e2237;
+}
+
+.media-carte__image--absente {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+}
+
+.media-carte__nom {
+  font-size: 13px;
+  color: var(--b-texte);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Apparence : couleurs de la borne ────────────────────────────────────── */
+
+.admin__entete-boutons {
+  flex: none;
+  display: flex;
+  gap: 10px;
+}
+
+.voile__boite--large {
+  width: min(1000px, 94vw);
+}
+
+.apparence {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.apparence__reglages {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.apparence__couleur {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.apparence__apercu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.apparence__etiquette {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--b-texte-doux);
+}
+
+.apparence__toile {
+  height: 320px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--b-trait);
+}
+
+/* ── Disque de couleur ───────────────────────────────────────────────────── */
+
+.roue {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 176px;
+}
+
+.roue__disque {
+  position: relative;
+  width: 176px;
+  height: 176px;
+}
+
+.roue__canvas {
+  width: 176px;
+  height: 176px;
+  border-radius: 50%;
+  cursor: crosshair;
+  touch-action: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+/* Curseur de sélection : un petit anneau blanc cerclé de noir, visible sur
+   n'importe quelle couleur. Centré sur son point par la translation. */
+.roue__curseur {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.roue__luminosite {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roue__luminosite input {
+  width: 100%;
+}
+
+.roue__valeur {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.roue__pastille {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 247, 250, 0.3);
+}
+
+.roue__hex {
+  width: 110px;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}

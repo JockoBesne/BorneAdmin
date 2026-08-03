@@ -9,6 +9,11 @@ export const modele1 = definirModele({
   id: 't1',
   nom: 'Une image, un texte',
   description: 'Idéal pour présenter un objet ou introduire un thème.',
+  sections: [
+    { nom: 'titre', emplacements: ['titre'] },
+    { nom: 'image', emplacements: ['image'] },
+    { nom: 'texte', emplacements: ['texte'] },
+  ],
   emplacements: {
     titre: {
       type: 'titre',
@@ -42,6 +47,13 @@ export const modele2 = definirModele({
   id: 't2',
   nom: 'Image et texte côte à côte',
   description: 'Idéal pour décrire un objet en détail avec des photos complémentaires.',
+  sections: [
+    { nom: 'titre', emplacements: ['titre'] },
+    // L'image et le texte forment une paire indissociable : on peut insérer
+    // un bloc avant ou après les colonnes, jamais entre les deux.
+    { nom: 'colonnes', emplacements: ['image', 'texte'] },
+    { nom: 'galerie', emplacements: ['galerie'] },
+  ],
   emplacements: {
     titre: {
       type: 'titre',
@@ -81,6 +93,11 @@ export const modele3 = definirModele({
   id: 't3',
   nom: 'Vidéo en avant',
   description: 'Idéal pour un film ou un témoignage.',
+  sections: [
+    // Une seule section : l'écran vidéo est une composition indivisible, les
+    // blocs ajoutés viennent forcément dessous.
+    { nom: 'ecran', emplacements: ['video', 'titre', 'texte', 'encartTitre', 'encartTexte'] },
+  ],
   emplacements: {
     titre: {
       type: 'titre',

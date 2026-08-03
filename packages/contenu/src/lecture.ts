@@ -1,4 +1,5 @@
 import type {
+  BlocLibre,
   ContenuPage,
   ElementGalerie,
   ValeurImage,
@@ -35,10 +36,48 @@ export function lireGalerie(contenu: ContenuPage, nom: string): ElementGalerie[]
   return []
 }
 
+/** Blocs ajoutés à la suite de la page. Toujours un tableau, jamais undefined. */
+export function lireSuite(contenu: ContenuPage): BlocLibre[] {
+  return contenu.suite ?? []
+}
+
+/**
+ * Section après laquelle un bloc s'affiche réellement. Ancre absente ou
+ * inconnue du modèle : bas de page (la dernière section). Le rendu et
+ * l'éditeur appliquent cette même règle — un bloc est toujours affiché là où
+ * l'éditeur le montre.
+ */
+export function positionBloc(bloc: BlocLibre, sections: readonly string[]): string | undefined {
+  if (bloc.apres !== undefined && sections.includes(bloc.apres)) return bloc.apres
+  return sections[sections.length - 1]
+}
+
+/**
+ * Un bloc ajouté mais laissé vide n'apparaît pas sur la borne : cette règle
+ * est partagée entre le rendu (qui le saute) et les contrôles (qui le
+ * signalent). Une seule définition de « vide », pour que les deux soient
+ * toujours d'accord.
+ */
+export function estBlocLibreVide(bloc: BlocLibre): boolean {
+  switch (bloc.valeur.type) {
+    case 'texte':
+      return bloc.valeur.valeur.trim() === ''
+    case 'image':
+    case 'video':
+      return bloc.valeur.mediaId === null
+    case 'galerie':
+      return bloc.valeur.elements.length === 0
+  }
+}
+
 /** Tous les identifiants de médias référencés par une page (index d'usage, §9.4). */
 export function mediasReferences(contenu: ContenuPage): string[] {
   const ids = new Set<string>()
-  for (const valeur of Object.values(contenu.emplacements)) {
+  const valeurs = [
+    ...Object.values(contenu.emplacements),
+    ...lireSuite(contenu).map((bloc) => bloc.valeur),
+  ]
+  for (const valeur of valeurs) {
     if (!valeur) continue
     if (valeur.type === 'image' || valeur.type === 'video') {
       if (valeur.mediaId) ids.add(valeur.mediaId)

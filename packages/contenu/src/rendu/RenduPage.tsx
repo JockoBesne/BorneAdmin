@@ -21,10 +21,15 @@ export const LARGEUR_BORNE = 1920
 export const HAUTEUR_BORNE = 1080
 
 /**
- * Toile de la borne : un conteneur de 1920 × 1080 pixels ramené à l'échelle de
+ * Toile de la borne : un conteneur large de 1920 pixels ramené à l'échelle de
  * son parent. L'administration et la borne l'utilisent toutes les deux, donc
  * les proportions de l'aperçu sont exactes — une simple mise à l'échelle CSS,
  * sans iframe (§12.4).
+ *
+ * L'échelle ne tient compte que de la largeur : une page fait au moins un écran
+ * de haut, mais peut être plus longue et défiler. Sans cela, tout ce qui dépasse
+ * de 1080 pixels serait coupé — ce qui obligeait à rogner les images pour faire
+ * tenir le texte.
  */
 export function ToileBorne({
   children,
@@ -35,15 +40,27 @@ export function ToileBorne({
 }) {
   const cadre = useRef<HTMLDivElement>(null)
   const [echelle, setEchelle] = useState(1)
+  const [hauteurMini, setHauteurMini] = useState(HAUTEUR_BORNE)
 
   useEffect(() => {
     const element = cadre.current
     if (!element) return
 
     const mesurer = () => {
-      const { width, height } = element.getBoundingClientRect()
-      if (width === 0 || height === 0) return
-      setEchelle(Math.min(width / LARGEUR_BORNE, height / HAUTEUR_BORNE))
+      // « clientWidth » et non la boîte englobante : il exclut la barre de
+      // défilement. Associé à « scrollbar-gutter: stable », la largeur mesurée
+      // ne change pas selon que la barre est là ou non — sinon son apparition
+      // modifierait l'échelle, qui modifierait la hauteur, qui ferait
+      // apparaître ou disparaître la barre, sans fin.
+      const largeur = element.clientWidth
+      if (largeur === 0) return
+      const facteur = largeur / LARGEUR_BORNE
+      setEchelle(facteur)
+      // Hauteur minimale exprimée dans l'échelle de la page : une page courte
+      // remplit exactement la zone visible, sans un pixel de plus. Un plancher
+      // fixe de 1080 la ferait défiler de la hauteur de la barre de navigation
+      // même quand son contenu tient — un tressautement à chaque page.
+      setHauteurMini(element.clientHeight / facteur)
     }
 
     mesurer()
@@ -59,8 +76,15 @@ export function ToileBorne({
         className="toile__ecran"
         style={{
           width: LARGEUR_BORNE,
-          height: HAUTEUR_BORNE,
-          transform: `scale(${echelle})`,
+          minHeight: hauteurMini,
+          // « zoom » plutôt que « transform: scale » : zoom recalcule la mise en
+          // page, donc la hauteur de défilement du parent est juste d'elle-même.
+          // transform ne fait que déformer le rendu final, et il faudrait
+          // recalculer cette hauteur à la main.
+          // ponytail: zoom n'est bien pris en charge que par Chromium ; c'est
+          // sans risque tant que l'application ne tourne que dans Electron. Pour
+          // un rendu navigateur, repasser à transform + hauteur mesurée.
+          zoom: echelle,
         }}
       >
         {children}

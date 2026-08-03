@@ -1,11 +1,48 @@
+import { estBlocLibreVide, lireSuite } from './lecture.js'
 import { modelePar } from './modeles/index.js'
-import type {
-  ContenuPage,
-  DefEmplacement,
-  InfoMedia,
-  Probleme,
-  ValeurEmplacement,
+import {
+  BLOC_LIBRE_GALERIE_MAX,
+  BLOC_LIBRE_TEXTE_MAX_SIGNES,
+  type ContenuPage,
+  type DefEmplacement,
+  type InfoMedia,
+  type Probleme,
+  type TypeBlocLibre,
+  type ValeurEmplacement,
 } from './types.js'
+
+/**
+ * Ce qu'un bloc libre autorise, exprimé comme un emplacement ordinaire : les
+ * contrôles et l'éditeur (libellés, limites de saisie) partagent ainsi la même
+ * définition. Jamais « requis » — un bloc vide ne bloque pas, il est signalé.
+ */
+export const DEFS_BLOCS_LIBRES: Record<TypeBlocLibre, DefEmplacement> = {
+  texte: {
+    type: 'texte',
+    libelle: 'Texte ajouté',
+    requis: false,
+    maxSignes: BLOC_LIBRE_TEXTE_MAX_SIGNES,
+  },
+  image: {
+    type: 'image',
+    libelle: 'Photo ajoutée',
+    requis: false,
+    largeurMin: 1024,
+  },
+  galerie: {
+    type: 'galerie',
+    libelle: 'Galerie ajoutée',
+    requis: false,
+    min: 2,
+    max: BLOC_LIBRE_GALERIE_MAX,
+  },
+  video: {
+    type: 'video',
+    libelle: 'Vidéo ajoutée',
+    requis: false,
+    dureeMaxSecondes: 1800,
+  },
+}
 
 /**
  * Contrôles avant publication (§13.5).
@@ -44,6 +81,20 @@ export function controlerContenu(
       continue
     }
     controlerEmplacement(nom, def, valeur, medias, problemes)
+  }
+
+  for (const bloc of lireSuite(contenu)) {
+    const nom = `suite:${bloc.id}`
+    const def = DEFS_BLOCS_LIBRES[bloc.valeur.type]
+    if (estBlocLibreVide(bloc)) {
+      problemes.push({
+        emplacement: nom,
+        gravite: 'conseille',
+        message: `Un bloc « ${def.libelle} » est vide : il n'apparaîtra pas sur la borne. Remplissez-le, ou retirez-le.`,
+      })
+      continue
+    }
+    controlerEmplacement(nom, def, bloc.valeur, medias, problemes)
   }
 
   return problemes

@@ -7,17 +7,43 @@
 .toile {
   position: relative;
   display: flex;
-  align-items: center;
+  /* Aligné en haut, plus centré : une page peut désormais être plus haute que
+     l'écran, et c'est son début qu'il faut voir en arrivant. */
+  align-items: flex-start;
   justify-content: center;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* Le défilement s'arrête aux bords de la toile et ne se propage pas à la
+     fenêtre : sur un écran tactile, un doigt qui insiste ne doit pas faire
+     bouger l'habillage autour. */
+  overscroll-behavior: contain;
+  /* Réserve la place de la barre des deux côtés : la largeur utile ne change
+     donc pas selon qu'elle est affichée ou non, et la page reste centrée.
+     C'est ce qui empêche l'échelle d'osciller (voir ToileBorne). */
+  scrollbar-gutter: stable both-edges;
   width: 100%;
   height: 100%;
 }
 
+/* Barre de défilement franchement visible : c'est le seul indice qu'il reste
+   du contenu plus bas. Discrète, elle rendrait la fonction introuvable. */
+.toile::-webkit-scrollbar {
+  width: 14px;
+}
+.toile::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--b-accent);
+}
+.toile::-webkit-scrollbar-track {
+  background: var(--b-surface);
+}
+
 .toile__ecran {
-  transform-origin: center center;
   flex: none;
-  overflow: hidden;
+  /* Colonne, pour que la page s'étire jusqu'à la hauteur minimale mesurée par
+     ToileBorne et remplisse la zone visible même quand elle est courte. */
+  display: flex;
+  flex-direction: column;
   background: var(--b-fond);
   /* L'échelle est calculée à partir d'une mesure : elle doit s'appliquer
      immédiatement. Sans cela, la valeur par défaut « transition: all » la fait
@@ -45,7 +71,10 @@
 .mdl {
   box-sizing: border-box;
   width: 1920px;
-  height: 1080px;
+  /* Ni hauteur ni plancher fixes : la page s'étire jusqu'à la hauteur visible
+     mesurée par ToileBorne quand elle est courte, et s'allonge librement quand
+     son contenu le demande — au lieu d'être coupée à 1080 px. */
+  flex: 1;
   padding: 72px 96px;
   background: var(--b-fond);
   color: var(--b-texte);
@@ -162,14 +191,16 @@
   flex-direction: column;
   margin: 0;
   width: 100%;
-  height: 100%;
-  min-height: 0;
 }
 
+/* Le cadre épouse l'image au lieu de l'inverse : plus de bandes de fond de
+   part et d'autre quand la photo est moins large que la place disponible. */
 .b-image__zone {
   display: block;
-  flex: 1;
-  min-height: 0;
+  flex: none;
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
   padding: 0;
   border: 0;
   border-radius: 18px;
@@ -185,16 +216,25 @@
   transform: scale(0.99);
 }
 
+/* L'image garde ses proportions et n'est jamais rognée : on lui donne deux
+   plafonds — la largeur disponible et 620 px de haut — et on la laisse choisir
+   sa taille entre les deux. Aucune dimension n'est imposée, donc rien à couper
+   ni à déformer. */
 .b-image__fichier {
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 620px;
+  width: auto;
+  height: auto;
 }
 
 .b-galerie {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  /* Sans cette ligne, la rangée se dimensionne sur la taille naturelle des
+     photos et déborde de la toile : la hauteur imposée au conteneur ne suffit
+     pas à contraindre une rangée de grille. */
+  grid-auto-rows: minmax(0, 1fr);
   gap: 24px;
   margin: 0;
   padding: 0;
@@ -235,6 +275,17 @@
   overflow: hidden;
 }
 
+/* La vidéo entière est un bouton : grande cible tactile, sans les commandes
+   natives trop fines au doigt. On annule l'habillage par défaut d'un bouton. */
+.b-video__bouton {
+  display: block;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
 .b-video__lecteur,
 .b-video__poster {
   display: block;
@@ -271,15 +322,14 @@
   flex: none;
 }
 
+/* L'image et le texte prennent chacun la hauteur qu'il leur faut : ils ne se
+   la disputent plus, la page s'allonge. */
 .mdl-1__image {
-  flex: 1;
-  min-height: 0;
+  flex: none;
 }
 
 .mdl-1__texte {
   flex: none;
-  max-height: 260px;
-  overflow: hidden;
 }
 
 /* ── Modèle 2 — Image et texte côte à côte ───────────────────────────────── */
@@ -288,9 +338,11 @@
   flex: none;
 }
 
+/* « flex: 1 » sans « min-height: 0 » : les colonnes occupent la place restante
+   quand la page est courte, mais ne se réduisent jamais en deçà de leur
+   contenu — c'est cette réduction qui coupait la dernière ligne du texte. */
 .mdl-2__colonnes {
   flex: 1;
-  min-height: 0;
   display: grid;
   grid-template-columns: 760px 1fr;
   gap: 56px;
@@ -298,29 +350,81 @@
 
 .mdl-2__image,
 .mdl-2__texte {
-  min-height: 0;
   min-width: 0;
-}
-
-.mdl-2__texte {
-  overflow: hidden;
 }
 
 .mdl-2__galerie {
   flex: none;
-  height: 200px;
+  height: 260px;
 }
 
 .mdl-2__galerie--vide {
   height: 150px;
 }
 
+/* ── Blocs ajoutés à la suite d'une page ─────────────────────────────────── */
+
+.suite {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Une rangée de la suite : un bloc pleine largeur, ou deux blocs côte à côte. */
+.suite__rang {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.suite__rang--paire {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Un bloc « demi-largeur » resté seul sur sa rangée : deux colonnes dont une
+   vide, pour qu'il garde bien sa demi-largeur (aligné à gauche). */
+.suite__rang--moitie {
+  grid-template-columns: 1fr 1fr;
+}
+
+.suite__bloc {
+  flex: none;
+  min-width: 0;
+}
+
+/* Une galerie en flux a besoin d'une hauteur : mêmes proportions que la
+   galerie du modèle 2. */
+.suite__galerie {
+  height: 260px;
+}
+
+/* Une vidéo ajoutée prend un cadre 16/9 : sa hauteur découle de sa largeur, et
+   suit donc automatiquement une disposition pleine largeur ou demi-largeur. */
+.suite__video {
+  aspect-ratio: 16 / 9;
+}
+
 /* ── Modèle 3 — Vidéo en avant ───────────────────────────────────────────── */
 
 .mdl-3 {
-  position: relative;
   padding: 0;
-  display: block;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Premier écran : la composition vidéo, qui cantonne les éléments en position
+   absolue. « flex: 1 » : sans blocs ajoutés, elle occupe toute la hauteur
+   visible — le comportement d'origine. */
+.mdl-3__ecran {
+  position: relative;
+  flex: 1 0 auto;
+  min-height: 1080px;
+}
+
+/* Les blocs ajoutés retrouvent les marges ordinaires d'une page. */
+.mdl-3 .suite {
+  padding: 72px 96px;
 }
 
 .mdl-3__video {
@@ -348,6 +452,20 @@
   grid-template-columns: 1fr 520px;
   gap: 64px;
   align-items: end;
+}
+
+/* Pendant la lecture, le voile et le texte s'effacent en fondu pour laisser la
+   vidéo seule ; ils reviennent à la pause ou à la fin. Le texte masqué ne doit
+   plus intercepter les touchers (« pointer-events: none »). */
+.mdl-3__voile,
+.mdl-3__superpose {
+  transition: opacity 400ms ease;
+}
+
+.mdl-3__ecran--lecture .mdl-3__voile,
+.mdl-3__ecran--lecture .mdl-3__superpose {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .mdl-3__principal {

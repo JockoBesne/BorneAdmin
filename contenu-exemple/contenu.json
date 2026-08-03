@@ -1,0 +1,252 @@
+{
+  "version": 1,
+  "genereLe": "2026-08-03T14:35:35.592Z",
+  "reglages": {
+    "titreVeille": "Musée des Transmissions",
+    "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
+    "minutesAvantVeille": 3,
+    "couleurFond": "#821207",
+    "couleurTexte": "#fa2020",
+    "pinAdmin": "1975"
+  },
+  "pages": [
+    {
+      "id": "page-exemple-1",
+      "titre": "Le poste ER 40",
+      "modele": "t1",
+      "ordre": 1,
+      "vignette": null,
+      "couleurFond": "#622f82",
+      "contenu": {
+        "modele": "t1",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "Le poste ER 40, mémoire des liaisons de campagne"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-onde",
+            "legende": "Représentation d'une liaison radio de campagne."
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "Le **poste ER 40** équipait les unités de transmission à partir des années 1950. Conçu pour la liaison en phonie sur de courtes distances, il tenait dans un sac à dos et fonctionnait sur pile sèche.\n\nSa robustesse en a fait un matériel de référence pendant près de vingt ans.\n\n- Portée utile : 5 à 8 kilomètres\n- Masse en ordre de marche : 11 kilogrammes\n- Alimentation : pile sèche de 90 volts\n\nL'exemplaire présenté ici a été remis en état par l'_atelier de restauration du musée_ en 2019."
+          }
+        }
+      }
+    },
+    {
+      "id": "page-exemple-2",
+      "titre": "Du télégraphe à la fibre",
+      "modele": "t2",
+      "ordre": 2,
+      "vignette": null,
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "Du télégraphe Chappe à la fibre optique"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-onde",
+            "legende": "Deux siècles de transmission du signal."
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "En 1794, la première ligne de **télégraphe Chappe** relie Paris à Lille. Le message met une quinzaine de minutes à parcourir deux cent trente kilomètres, de tour en tour, à la vitesse du bras articulé et de la lunette d'approche.\n\nDeux siècles plus tard, la même distance est franchie par un signal lumineux en un millième de seconde.\n\nEntre les deux, chaque génération a résolu le même problème : _porter une information plus loin, plus vite, et sans l'abîmer en chemin_.\n\n- 1794 — télégraphe optique\n- 1844 — télégraphe électrique\n- 1906 — première liaison en phonie\n- 1980 — fibre optique en service"
+          },
+          "galerie": {
+            "type": "galerie",
+            "elements": [
+              {
+                "mediaId": "media-galerie-1",
+                "legende": "Poste radio de campagne"
+              },
+              {
+                "mediaId": "media-galerie-2",
+                "legende": "Standard téléphonique"
+              },
+              {
+                "mediaId": "media-galerie-3",
+                "legende": "Antenne déployable"
+              }
+            ]
+          }
+        },
+        "suite": [
+          {
+            "id": "53fc92d7-f95e-4940-ac31-342bc1a53d2d",
+            "apres": "galerie",
+            "largeur": "moitie",
+            "valeur": {
+              "type": "image",
+              "mediaId": "media-onde",
+              "legende": "Image de test — liaison radio"
+            }
+          },
+          {
+            "id": "521d7554-70d4-4bbe-9187-f77ea7c0f902",
+            "apres": "galerie",
+            "largeur": "moitie",
+            "valeur": {
+              "type": "texte",
+              "valeur": "coucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucoucou"
+            }
+          },
+          {
+            "id": "6ba18253-497d-4a11-a229-eab226be70d8",
+            "apres": "galerie",
+            "largeur": "moitie",
+            "valeur": {
+              "type": "texte",
+              "valeur": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-exemple-3",
+      "titre": "Témoignage d'opérateur",
+      "modele": "t3",
+      "ordre": 3,
+      "vignette": null,
+      "contenu": {
+        "modele": "t3",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "Témoignage : opérateur radio en 1962"
+          },
+          "video": {
+            "type": "video",
+            "mediaId": "media-video",
+            "legende": "Entretien filmé, 6 secondes (extrait de test)."
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "« On travaillait à l'oreille. Une liaison qui grésille, c'est une liaison qu'on perd dans dix minutes — il fallait le sentir avant que ça arrive. »"
+          },
+          "encartTitre": {
+            "type": "titre",
+            "valeur": "Séance de projection"
+          },
+          "encartTexte": {
+            "type": "texte",
+            "valeur": "Le film complet, d'une durée de 22 minutes, est projeté en salle 3 tous les jours à 15 h."
+          }
+        }
+      }
+    }
+  ],
+  "medias": [
+    {
+      "id": "media-onde",
+      "empreinte": "a1b2c3d4e5f6",
+      "type": "image",
+      "legende": "Image de test — liaison radio",
+      "largeur": 1920,
+      "hauteur": 1080,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "onde.jpg",
+          "octets": 82939
+        }
+      ]
+    },
+    {
+      "id": "media-galerie-1",
+      "empreinte": "b1b2c3d4e5f6",
+      "type": "image",
+      "legende": "Poste radio de campagne",
+      "largeur": 1200,
+      "hauteur": 900,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "galerie-1.jpg",
+          "octets": 40609
+        }
+      ]
+    },
+    {
+      "id": "media-galerie-2",
+      "empreinte": "c1b2c3d4e5f6",
+      "type": "image",
+      "legende": "Standard téléphonique",
+      "largeur": 1200,
+      "hauteur": 900,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "galerie-2.jpg",
+          "octets": 45506
+        }
+      ]
+    },
+    {
+      "id": "media-galerie-3",
+      "empreinte": "d1b2c3d4e5f6",
+      "type": "image",
+      "legende": "Antenne déployable",
+      "largeur": 1200,
+      "hauteur": 900,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "galerie-3.jpg",
+          "octets": 45975
+        }
+      ]
+    },
+    {
+      "id": "media-video",
+      "empreinte": "e1b2c3d4e5f6",
+      "type": "video",
+      "legende": "Vidéo de test",
+      "largeur": 1280,
+      "hauteur": 720,
+      "dureeSecondes": 6,
+      "posterChemin": "demo-couverture.jpg",
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "demo.mp4",
+          "octets": 1983128
+        }
+      ]
+    }
+  ]
+}

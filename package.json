@@ -7,16 +7,12 @@
   "workspaces": [
     "packages/contenu",
     "packages/ui",
-    "apps/api",
-    "apps/admin",
-    "apps/borne"
+    "apps/appli"
   ],
   "scripts": {
-    "dev": "node scripts/dev.mjs",
-    "init": "npm run init -w @borne/api",
-    "build": "npm run build -w @borne/admin && npm run build -w @borne/borne",
-    "demarrer": "npm run demarrer -w @borne/api",
-    "verifier": "tsc -b --pretty"
+    "appli": "npm run demarrer -w @borne/appli",
+    "construire": "npm run construire -w @borne/appli",
+    "verifier": "tsc -p apps/appli/tsconfig.json"
   },
   "devDependencies": {
     "typescript": "^5.6.3"

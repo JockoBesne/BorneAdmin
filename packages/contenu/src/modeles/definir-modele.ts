@@ -3,6 +3,7 @@ import type {
   ContenuPage,
   DefEmplacement,
   IdModele,
+  SectionModele,
   ValeurEmplacement,
 } from '../types.js'
 
@@ -17,6 +18,12 @@ export interface Modele {
   /** Phrase montrée au choix du modèle : à quoi il sert, pas comment il est fait. */
   description: string
   emplacements: Record<string, DefEmplacement>
+  /**
+   * Sections de la mise en page, dans l'ordre d'affichage : les points
+   * d'ancrage des blocs libres (un bloc ajouté se place « après » l'une
+   * d'elles), et le plan que suit l'éditeur pour lister la page.
+   */
+  sections: SectionModele[]
   /** Schéma dérivé, utilisé par l'API, l'admin et la borne. */
   schema: z.ZodType<ContenuPage>
   /** Contenu initial d'une page nouvellement créée. */
@@ -84,6 +91,7 @@ export function definirModele(declaration: {
   nom: string
   description: string
   emplacements: Record<string, DefEmplacement>
+  sections: SectionModele[]
 }): Modele {
   const { id, emplacements } = declaration
 

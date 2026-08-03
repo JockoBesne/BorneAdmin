@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { BLOC_LIBRE_GALERIE_MAX, BLOC_LIBRE_TEXTE_MAX_SIGNES } from './types.js'
 
 /**
  * Manifeste de publication : instantané complet et immuable du contenu destiné
@@ -8,6 +9,9 @@ import { z } from 'zod'
  * de sa lecture (borne) : une publication abîmée est refusée avant d'être
  * affichée, jamais après.
  */
+
+/** Code couleur hexadécimal à 6 chiffres, ex. « #0e2237 ». */
+const COULEUR = /^#[0-9a-fA-F]{6}$/
 
 export const schemaFichierMedia = z.object({
   profil: z.enum(['vignette', 'moyen', 'grand', 'origine']),
@@ -28,15 +32,59 @@ export const schemaMediaManifeste = z.object({
   fichiers: z.array(schemaFichierMedia),
 })
 
+const LEGENDE_MAX = 200
+
+/**
+ * Bloc ajouté librement à la suite d'une page. Déclaré ici expressément :
+ * le schéma supprime les champs qu'il ne connaît pas, et sans cette
+ * déclaration la suite serait effacée à chaque enregistrement.
+ */
+export const schemaBlocLibre = z.object({
+  id: z.string(),
+  // Section du modèle après laquelle le bloc s'affiche ; absent = bas de page.
+  apres: z.string().optional(),
+  largeur: z.enum(['pleine', 'moitie']).optional(),
+  valeur: z.discriminatedUnion('type', [
+    z.object({
+      type: z.literal('texte'),
+      valeur: z.string().max(BLOC_LIBRE_TEXTE_MAX_SIGNES),
+    }),
+    z.object({
+      type: z.literal('image'),
+      mediaId: z.string().nullable(),
+      legende: z.string().max(LEGENDE_MAX),
+    }),
+    z.object({
+      type: z.literal('galerie'),
+      elements: z
+        .array(z.object({ mediaId: z.string(), legende: z.string().max(LEGENDE_MAX) }))
+        .max(BLOC_LIBRE_GALERIE_MAX),
+    }),
+    z.object({
+      type: z.literal('video'),
+      mediaId: z.string().nullable(),
+      legende: z.string().max(LEGENDE_MAX),
+    }),
+  ]),
+})
+
 export const schemaPageManifeste = z.object({
   id: z.string(),
   titre: z.string(),
   modele: z.enum(['t1', 't2', 't3']),
   ordre: z.number(),
   vignette: z.string().nullable(),
+  // Couleurs propres à la page (facultatives). Absentes = la page suit le thème
+  // global (`reglages`). Présentes, elles l'emportent.
+  couleurFond: z.string().regex(COULEUR).optional(),
+  couleurTexte: z.string().regex(COULEUR).optional(),
   contenu: z.object({
     modele: z.enum(['t1', 't2', 't3']),
     emplacements: z.record(z.string(), z.unknown()),
+    // Facultative : les contenus écrits avant l'introduction des blocs libres
+    // restent valides sans conversion, et une page sans blocs ajoutés n'écrit
+    // rien de plus dans le fichier.
+    suite: z.array(schemaBlocLibre).optional(),
   }),
 })
 
@@ -44,6 +92,24 @@ export const schemaReglages = z.object({
   titreVeille: z.string(),
   sousTitreVeille: z.string(),
   minutesAvantVeille: z.number().int().min(1).max(60),
+  // Couleurs de la borne, réglables depuis l'administration. Valeurs par
+  // défaut = celles d'origine du thème : un contenu écrit avant reste valide.
+  couleurFond: z.string().regex(COULEUR).default('#0e2237'),
+  couleurTexte: z.string().regex(COULEUR).default('#f5f7fa'),
+  /**
+   * Code d'accès à l'administration, quatre chiffres.
+   *
+   * Une valeur par défaut plutôt qu'un champ requis : les contenus déjà écrits
+   * restent valides sans être retouchés.
+   *
+   * Ce code empêche un visiteur d'entrer par curiosité. Ce n'est pas une
+   * sécurité : il est lisible en clair dans contenu.json, et quiconque a accès
+   * au clavier de la borne peut de toute façon en sortir.
+   */
+  pinAdmin: z
+    .string()
+    .regex(/^\d{4}$/, 'Le code d’accès doit comporter quatre chiffres.')
+    .default('1975'),
 })
 
 export const schemaManifeste = z.object({
@@ -64,4 +130,7 @@ export const REGLAGES_DEFAUT: Reglages = {
   titreVeille: 'Musée des Transmissions',
   sousTitreVeille: "Touchez l'écran pour découvrir l'exposition",
   minutesAvantVeille: 3,
+  pinAdmin: '1975',
+  couleurFond: '#0e2237',
+  couleurTexte: '#f5f7fa',
 }
