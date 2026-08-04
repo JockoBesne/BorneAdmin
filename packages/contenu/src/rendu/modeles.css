@@ -82,6 +82,12 @@
   display: flex;
   flex-direction: column;
   gap: 40px;
+  /* Retour à la ligne du texte (titres et corps compris) : on revient à la
+     ligne entre les mots ; un mot normal n'est jamais coupé. Seul un mot
+     physiquement plus large que son bloc (adresse web, code collé) est coupé au
+     bord, pour que rien ne déborde. « overflow-wrap » est hérité : posé ici sur
+     la page, il couvre tout le contenu (textes, titres, légendes, blocs). */
+  overflow-wrap: break-word;
 }
 
 .mdl *,

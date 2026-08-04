@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { hexVersRvb, rvbVersHex, rvbVersTsv, tsvVersRvb } from './couleurs.js'
 
 const TAILLE = 176
@@ -23,6 +23,20 @@ export function RoueCouleur({
 }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const [teinte, saturation, luminosite] = rvbVersTsv(...hexVersRvb(valeur))
+
+  // Saisie du champ hexadécimal en état local : on affiche ce que l'utilisateur
+  // tape, même incomplet, et on ne répercute la couleur que lorsque le code est
+  // complet et valide. Sans cet état local, le champ contrôlé resterait bloqué
+  // sur l'ancienne valeur tant que la saisie n'est pas un code entier — on ne
+  // pourrait donc pas écrire caractère par caractère.
+  const [texteHex, setTexteHex] = useState(valeur.toUpperCase())
+
+  // La couleur peut aussi changer par la roue ou le curseur : on resynchronise
+  // alors le champ. (Ne se déclenche pas pendant une saisie incomplète, puisque
+  // « valeur » ne change pas tant que le code n'est pas valide.)
+  useEffect(() => {
+    setTexteHex(valeur.toUpperCase())
+  }, [valeur])
 
   // La roue n'est redessinée que quand la luminosité change : teinte et
   // saturation ne bougent que le curseur, superposé en CSS.
@@ -118,12 +132,19 @@ export function RoueCouleur({
         <span className="roue__pastille" style={{ background: valeur }} aria-hidden="true" />
         <input
           className="roue__hex"
-          value={valeur.toUpperCase()}
+          value={texteHex}
           spellCheck={false}
+          maxLength={7}
           onChange={(evenement) => {
-            const saisie = evenement.target.value.trim()
-            if (/^#[0-9a-fA-F]{6}$/.test(saisie)) surChangement(saisie.toLowerCase())
+            const saisie = evenement.target.value
+            setTexteHex(saisie)
+            // Accepté avec ou sans « # » ; on ne répercute qu'un code complet.
+            const complet = saisie.trim().replace(/^#?/, '#')
+            if (/^#[0-9a-fA-F]{6}$/.test(complet)) surChangement(complet.toLowerCase())
           }}
+          // À la sortie du champ, une saisie incomplète revient à la couleur
+          // réelle : le champ ne reste jamais bloqué sur un code invalide.
+          onBlur={() => setTexteHex(valeur.toUpperCase())}
         />
       </div>
     </div>

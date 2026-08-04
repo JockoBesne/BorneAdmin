@@ -135,50 +135,36 @@ tactile :
   page (`video` est un type de bloc libre).
 - **Disposition des blocs ajoutés** : chaque bloc peut être en pleine largeur ou
   en **demi-largeur** ; deux blocs « demi » consécutifs se placent côte à côte.
+- **Saisie du code couleur au clavier** dans le disque (`RoueCouleur`) : on tape
+  le code, avec ou sans « # » ; état local, la couleur ne s'applique qu'au code
+  complet.
+- **Défilement du panneau de l'éditeur** : la grille `.edit` borne la hauteur de
+  ligne et les sections ne se compriment plus (`.pan > * { flex-shrink: 0 }`) —
+  on atteint les deux disques de couleur et le bouton du bas.
+- **Retour à la ligne du texte** (`overflow-wrap: break-word` hérité par `.mdl`,
+  titres compris) : on revient à la ligne entre les mots ; seul un mot plus large
+  que son bloc (adresse web, code collé) est coupé au bord — rien ne déborde.
 
 Restent notamment : le dossier partagé et la publication versionnée (étape 3 de
 `CONTEXTE.md`) et l'empaquetage `.exe` (étape 4).
 
 ## À faire
 
-### Corrections et ajustements demandés (à faire en premier)
-
-**1. Champ de couleur : permettre la saisie au clavier.** Aujourd'hui on ne peut
-pas *écrire* un code couleur dans le champ hexadécimal, seulement coller un code
-complet. Cause : dans `apps/appli/src/RoueCouleur.tsx`, le champ `.roue__hex` est
-contrôlé et n'appelle `surChangement` que si la valeur saisie est un code complet
-valide (`/^#[0-9a-fA-F]{6}$/`) — tant qu'on tape, la valeur reste bloquée sur
-l'ancienne, donc rien ne s'affiche. À faire : garder la saisie en **état local**
-(afficher ce que l'utilisateur tape), et ne répercuter la couleur que quand le
-code est complet et valide. Accepter le code avec ou sans le « # ».
-
-**2. Défilement de la zone « Couleurs de la page ».** Quand les deux disques sont
-ouverts dans l'éditeur, on ne peut pas atteindre le bas (2ᵉ disque, bouton
-« Suivre le thème général »). **Décision : tout le panneau de droite défile.**
-Piste : le panneau `.pan` a bien `overflow-y: auto`, mais la grille `.edit`
-(`apps/appli/src/appli.css`) doit borner la hauteur de la ligne
-(`grid-template-rows: minmax(0, 1fr)` ou `100%`) et `.pan` garder `min-height: 0`,
-sinon le contenu pousse la hauteur au lieu de faire défiler à l'intérieur.
-
-**3. Retour à la ligne du texte qui dépasse la largeur du bloc.** Un texte plus
-large que son bloc (surtout en demi-largeur) doit **revenir à la ligne** au lieu
-de déborder. **Décisions (utilisateur) :** retour à la ligne **entre les mots**,
-**sans couper un mot** en deux ; un mot plus long que le bloc part sur sa propre
-ligne (cas rare, peut alors dépasser légèrement — accepté). S'applique **aussi
-aux titres**. Piste : sur les classes de texte de
-`packages/contenu/src/rendu/modeles.css` (`.b-corps`, `.b-h1`, `.b-h2`, `.b-h3`,
-`.b-petit`, titres compris), s'assurer du retour à la ligne normal
-(`overflow-wrap: normal`, pas de `white-space: nowrap`) et surtout que la largeur
-du bloc est **bien contrainte** (`min-width: 0` sur les cellules `.suite__bloc`
-et les colonnes de grille) — c'est souvent une largeur non bornée, et non le
-texte, qui fait déborder. Ne pas forcer la coupure des mots
-(`overflow-wrap: break-word`), l'utilisateur préfère les mots entiers.
-
 ### Déjà fait
 
-Les quatre points demandés le 2026-08-03 — couleurs par page, texte du modèle
-vidéo caché pendant la lecture, vidéo dans tous les modèles, blocs côte à côte —
-ont été **réalisés** (voir « Avancement » et `DECISIONS.md`).
+Deux séries de demandes du 2026-08-03 ont été **réalisées** (voir « Avancement »
+et `DECISIONS.md`) :
+
+- couleurs par page, texte du modèle vidéo caché pendant la lecture, vidéo dans
+  tous les modèles, blocs côte à côte ;
+- saisie du code couleur au clavier, défilement du panneau de l'éditeur, retour
+  à la ligne du texte trop large.
+
+Note sur le retour à la ligne : la décision a **évolué** en cours de route. Le
+choix final (après avoir constaté qu'un mot très long déborde de plus du double
+du bloc s'il n'est pas coupé) est de **couper au bord uniquement un mot plus
+large que son bloc** (`overflow-wrap: break-word` posé sur `.mdl`) ; les mots
+normaux restent entiers.
 
 Restent les grandes étapes de `CONTEXTE.md` :
 

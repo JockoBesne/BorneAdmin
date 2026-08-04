@@ -477,6 +477,10 @@ button {
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr 400px;
+  /* Borne la hauteur de la ligne à celle de l'éditeur : sans cela la ligne
+     grandit avec le contenu et le panneau de droite ne défile pas — on ne peut
+     alors pas atteindre le 2ᵉ disque de couleur ni le bouton du bas. */
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .edit__apercu {
@@ -496,6 +500,13 @@ button {
   padding: 20px 18px;
   background: #0b1c2e;
   border-left: 1px solid var(--b-trait);
+}
+
+/* Les sections gardent leur hauteur naturelle et débordent le panneau, qui
+   défile — au lieu d'être comprimées (défaut flex) et rognées, ce qui cachait
+   les disques de couleur et le bouton du bas. */
+.pan > * {
+  flex-shrink: 0;
 }
 
 .pan__titre {
