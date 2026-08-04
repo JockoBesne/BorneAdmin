@@ -1,10 +1,13 @@
 {
   "version": 1,
-  "genereLe": "2026-08-03T08:00:00.000Z",
+  "genereLe": "2026-08-04T07:18:31.312Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
-    "minutesAvantVeille": 3
+    "minutesAvantVeille": 3,
+    "couleurFond": "#0e2237",
+    "couleurTexte": "#f5f7fa",
+    "pinAdmin": "1975"
   },
   "pages": [
     {
@@ -57,9 +60,18 @@
           "galerie": {
             "type": "galerie",
             "elements": [
-              { "mediaId": "media-galerie-1", "legende": "Poste radio de campagne" },
-              { "mediaId": "media-galerie-2", "legende": "Standard téléphonique" },
-              { "mediaId": "media-galerie-3", "legende": "Antenne déployable" }
+              {
+                "mediaId": "media-galerie-1",
+                "legende": "Poste radio de campagne"
+              },
+              {
+                "mediaId": "media-galerie-2",
+                "legende": "Standard téléphonique"
+              },
+              {
+                "mediaId": "media-galerie-3",
+                "legende": "Antenne déployable"
+              }
             ]
           }
         }
@@ -109,8 +121,17 @@
       "hauteur": 1080,
       "dureeSecondes": null,
       "posterChemin": null,
-      "pointFocal": { "x": 0.5, "y": 0.5 },
-      "fichiers": [{ "profil": "origine", "chemin": "onde.jpg", "octets": 82939 }]
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "onde.jpg",
+          "octets": 82939
+        }
+      ]
     },
     {
       "id": "media-galerie-1",
@@ -121,8 +142,17 @@
       "hauteur": 900,
       "dureeSecondes": null,
       "posterChemin": null,
-      "pointFocal": { "x": 0.5, "y": 0.5 },
-      "fichiers": [{ "profil": "origine", "chemin": "galerie-1.jpg", "octets": 40609 }]
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "galerie-1.jpg",
+          "octets": 40609
+        }
+      ]
     },
     {
       "id": "media-galerie-2",
@@ -133,8 +163,17 @@
       "hauteur": 900,
       "dureeSecondes": null,
       "posterChemin": null,
-      "pointFocal": { "x": 0.5, "y": 0.5 },
-      "fichiers": [{ "profil": "origine", "chemin": "galerie-2.jpg", "octets": 45506 }]
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "galerie-2.jpg",
+          "octets": 45506
+        }
+      ]
     },
     {
       "id": "media-galerie-3",
@@ -145,8 +184,17 @@
       "hauteur": 900,
       "dureeSecondes": null,
       "posterChemin": null,
-      "pointFocal": { "x": 0.5, "y": 0.5 },
-      "fichiers": [{ "profil": "origine", "chemin": "galerie-3.jpg", "octets": 45975 }]
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "galerie-3.jpg",
+          "octets": 45975
+        }
+      ]
     },
     {
       "id": "media-video",
@@ -157,8 +205,17 @@
       "hauteur": 720,
       "dureeSecondes": 6,
       "posterChemin": "demo-couverture.jpg",
-      "pointFocal": { "x": 0.5, "y": 0.5 },
-      "fichiers": [{ "profil": "origine", "chemin": "demo.mp4", "octets": 1983128 }]
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "demo.mp4",
+          "octets": 1983128
+        }
+      ]
     }
   ]
 }
