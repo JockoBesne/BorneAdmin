@@ -12,12 +12,13 @@
   "scripts": {
     "appli": "npm run demarrer -w @borne/appli",
     "construire": "npm run construire -w @borne/appli",
-    "verifier": "tsc -p apps/appli/tsconfig.json"
+    "verifier": "tsc -p apps/appli/tsconfig.json",
+    "reparer-electron": "node node_modules/electron/install.js"
   },
   "devDependencies": {
     "typescript": "^5.6.3"
   },
   "engines": {
-    "node": ">=20.11"
+    "node": ">=22.12"
   }
 }

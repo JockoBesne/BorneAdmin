@@ -17,6 +17,34 @@ Lancer l'application : `npm run appli` (= `vite build && electron .`).
 - `npm run construire` — construit l'interface seule (vérifier que ça compile).
 - `npm run verifier` — vérifie les types TypeScript (`tsc`), sans rien produire.
 - `npm install` à la racine — installe tout (monorepo npm workspaces).
+- `npm run reparer-electron` — retélécharge le binaire Electron (voir ci-dessous).
+
+## Installation — pannes courantes
+
+**Node ≥ 22.12 est obligatoire** (exigence d'Electron 43). Le dépôt contient un
+`.npmrc` avec `engine-strict=true` : un Node trop ancien fait échouer
+`npm install` avec un message clair plutôt qu'une erreur obscure plus loin.
+Vérifier avec `node -v` ; sinon installer Node 22 LTS (ou plus récent).
+
+**Le binaire Electron (~270 Mo) se télécharge à part**, depuis GitHub, à
+l'installation. C'est l'étape fragile : un réseau d'entreprise/musée qui filtre
+GitHub la fait échouer, et l'application ne se lance pas alors que
+`npm install` semblait passer. Signes : « Electron failed to install correctly »,
+binaire introuvable, ou fenêtre qui ne s'ouvre pas.
+
+Remèdes, dans l'ordre :
+1. `npm run reparer-electron` — relance le seul téléchargement du binaire.
+2. Derrière un proxy : renseigner `HTTPS_PROXY` (et `HTTP_PROXY`).
+3. Réseau qui bloque GitHub : utiliser un miroir, p. ex.
+   `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` avant l'installation.
+4. Poste sans accès : copier le dossier `node_modules/electron/dist/` depuis une
+   machine où l'installation a réussi.
+
+Bon à savoir : depuis Electron 43, si le binaire manque, il est **téléchargé à la
+demande** au premier lancement — la panne est donc moins fréquente qu'avant.
+
+**Ne jamais versionner `node_modules/`** (déjà dans `.gitignore`) : le binaire
+Electron dépend du système d'exploitation.
 
 Les workspaces actifs sont `packages/contenu`, `packages/ui`, `apps/appli`.
 `apps/api`, `apps/admin`, `apps/borne` restent sur le disque comme **réservoir**
