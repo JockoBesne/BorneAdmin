@@ -494,3 +494,422 @@
   border-color: rgba(245, 247, 250, 0.2);
   background: rgba(14, 34, 55, 0.55);
 }
+
+/* ── Ateliers interactifs ──────────────────────────────────────────────────
+ *
+ * Tout le mouvement porte sur « transform » et « opacity » : ce sont les deux
+ * seules propriétés que la carte graphique compose sans refaire la mise en
+ * page. C'est ce qui garde l'animation fluide sur le PC de la salle.
+ *
+ * Les cibles font au moins 96 px de haut sur la toile de 1920 px : à l'écran
+ * réel, c'est un doigt entier, très au-delà du minimum de 48 px. */
+
+.suite__atelier {
+  width: 100%;
+}
+
+.atl {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 44px 48px;
+  border: 2px solid var(--b-trait);
+  border-radius: 24px;
+  background: var(--b-surface);
+}
+
+/* Dans l'éditeur, l'atelier est montré mais inerte. */
+.atl--apercu {
+  pointer-events: none;
+}
+
+.atl__entete {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.atl__etiquette {
+  align-self: flex-start;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: var(--b-accent);
+  color: #14171f;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.atl__question {
+  margin: 0;
+  font-family: var(--b-titre-police);
+  font-size: 44px;
+  line-height: 54px;
+  font-weight: 600;
+  color: var(--b-texte);
+}
+
+/* ── Quiz ── */
+
+.atl__reponses {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.atl__reponse {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  min-height: 96px;
+  padding: 20px 28px;
+  border: 2px solid var(--b-trait);
+  border-radius: 18px;
+  background: var(--b-surface-haute);
+  color: var(--b-texte);
+  font-family: var(--b-texte-police);
+  font-size: 28px;
+  line-height: 38px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 160ms cubic-bezier(0.2, 0, 0.2, 1),
+    background 160ms ease,
+    border-color 160ms ease,
+    opacity 200ms ease;
+}
+
+.atl__reponse:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.atl__reponse--juste {
+  border-color: #58d18b;
+  background: rgba(88, 209, 139, 0.18);
+  /* Une seule pulsation, courte : elle attire l'œil sans faire clignoter. */
+  animation: atl-juste 420ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.atl__reponse--faux {
+  border-color: #ff8b80;
+  background: rgba(255, 139, 128, 0.16);
+  animation: atl-faux 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.atl__reponse--eteinte {
+  opacity: 0.4;
+}
+
+@keyframes atl-juste {
+  40% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes atl-faux {
+  20%,
+  60% {
+    transform: translateX(-8px);
+  }
+  40%,
+  80% {
+    transform: translateX(8px);
+  }
+}
+
+.atl__puce {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(245, 247, 250, 0.1);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.atl__reponse--juste .atl__puce {
+  background: #58d18b;
+  color: #0b2418;
+}
+
+.atl__reponse--faux .atl__puce {
+  background: #ff8b80;
+  color: #3a0f0b;
+}
+
+.atl__reponse-texte {
+  flex: 1;
+}
+
+/* ── Retour (explication, correction) ── */
+
+.atl__retour {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px 32px;
+  border-left: 6px solid var(--b-accent);
+  border-radius: 0 18px 18px 0;
+  background: rgba(233, 180, 76, 0.1);
+  /* Le panneau se déplie : le visiteur voit d'où vient l'information. */
+  animation: atl-deplie 260ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+@keyframes atl-deplie {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.atl__verdict {
+  margin: 0;
+  font-family: var(--b-titre-police);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--b-accent);
+}
+
+.atl__explication {
+  margin: 0;
+  font-size: 26px;
+  line-height: 38px;
+  color: var(--b-texte-doux);
+}
+
+.atl__rejouer,
+.atl__valider {
+  align-self: flex-start;
+  min-height: 72px;
+  padding: 0 40px;
+  border: 2px solid var(--b-accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--b-accent);
+  font-family: var(--b-texte-police);
+  font-size: 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    opacity 160ms ease;
+}
+
+.atl__rejouer:active:not(:disabled),
+.atl__valider:active:not(:disabled) {
+  background: rgba(233, 180, 76, 0.18);
+}
+
+.atl__valider:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ── Frise ── */
+
+.frz__ligne {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 0 0 20px;
+  list-style: none;
+  /* Le trait du temps, sous les cases. */
+  background:
+    linear-gradient(var(--b-trait), var(--b-trait)) left bottom / 100% 4px no-repeat;
+}
+
+.frz__poste {
+  flex: 1;
+  min-width: 0;
+}
+
+.frz__case {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 168px;
+  padding: 18px 14px;
+  border: 3px dashed var(--b-trait);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--b-texte-doux);
+  font-family: var(--b-texte-police);
+  font-size: 22px;
+  line-height: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0, 0.2, 1),
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.frz__case--pleine {
+  border-style: solid;
+  border-color: var(--b-accent);
+  background: var(--b-surface-haute);
+  color: var(--b-texte);
+  /* La carte « tombe » dans la case. */
+  animation: frz-pose 240ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+@keyframes frz-pose {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.96);
+  }
+}
+
+.frz__case--juste {
+  border-color: #58d18b;
+  background: rgba(88, 209, 139, 0.18);
+}
+
+.frz__case--faux {
+  border-color: #ff8b80;
+  background: rgba(255, 139, 128, 0.16);
+}
+
+.frz__rang {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(245, 247, 250, 0.1);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.frz__libelle {
+  font-weight: 600;
+}
+
+.frz__attente {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.frz__annee {
+  font-family: var(--b-titre-police);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--b-accent);
+}
+
+.frz__reserve {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.frz__carte {
+  min-height: 96px;
+  padding: 20px 30px;
+  border: 2px solid var(--b-trait);
+  border-radius: 18px;
+  background: var(--b-surface-haute);
+  color: var(--b-texte);
+  font-family: var(--b-texte-police);
+  font-size: 26px;
+  line-height: 34px;
+  cursor: pointer;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0, 0.2, 1),
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* Carte tenue en main : elle se soulève, et le visiteur voit ce qu'il déplace. */
+.frz__carte--prise {
+  border-color: var(--b-accent);
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+}
+
+.frz__aide {
+  margin: 0;
+  font-size: 22px;
+  color: var(--b-texte-doux);
+}
+
+.frz__corrige {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 24px;
+  line-height: 34px;
+  color: var(--b-texte-doux);
+}
+
+.frz__corrige strong {
+  color: var(--b-accent);
+}
+
+/* Réglage système « animations réduites » : on garde les couleurs et les
+   états, on retire le mouvement. */
+@media (prefers-reduced-motion: reduce) {
+  .atl__reponse,
+  .atl__retour,
+  .frz__case,
+  .frz__carte {
+    animation: none;
+    transition: background 1ms, border-color 1ms, opacity 1ms;
+  }
+  .frz__carte--prise {
+    transform: none;
+  }
+}
+
+/* Réponse cochée, avant validation : franchement marquée, mais sans rien dire
+   de la solution — c'est le bouton « Vérifier » qui tranche. */
+.atl__reponse--choisie {
+  border-color: var(--b-accent);
+  background: rgba(233, 180, 76, 0.16);
+}
+
+.atl__reponse--choisie .atl__puce {
+  background: var(--b-accent);
+  color: #14171f;
+}
+
+/* La case à cocher se lit comme une case, pas comme un bouton radio : le
+   visiteur comprend qu'il peut en cocher plusieurs. */
+.atl--quiz .atl__puce {
+  border-radius: 12px;
+}
+
+/* Explication rattachée à sa réponse : le lien entre les deux est immédiat,
+   là où un paragraphe unique en bas obligerait à faire l'association soi-même. */
+.atl__explication--ligne {
+  margin: 10px 0 0 64px;
+  padding-left: 18px;
+  border-left: 4px solid rgba(233, 180, 76, 0.5);
+  font-size: 24px;
+  line-height: 34px;
+  animation: atl-deplie 260ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atl__explication--ligne {
+    animation: none;
+  }
+}

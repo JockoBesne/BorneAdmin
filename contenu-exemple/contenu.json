@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-04T07:18:31.312Z",
+  "genereLe": "2026-08-04T13:21:03.168Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
@@ -32,7 +32,77 @@
             "type": "texte",
             "valeur": "Le **poste ER 40** équipait les unités de transmission à partir des années 1950. Conçu pour la liaison en phonie sur de courtes distances, il tenait dans un sac à dos et fonctionnait sur pile sèche.\n\nSa robustesse en a fait un matériel de référence pendant près de vingt ans.\n\n- Portée utile : 5 à 8 kilomètres\n- Masse en ordre de marche : 11 kilogrammes\n- Alimentation : pile sèche de 90 volts\n\nL'exemplaire présenté ici a été remis en état par l'_atelier de restauration du musée_ en 2019."
           }
-        }
+        },
+        "suite": [
+          {
+            "id": "02599879-2b9d-4877-8127-7085f256c8ea",
+            "largeur": "pleine",
+            "valeur": {
+              "type": "quiz",
+              "question": "Ce poste servait à… (plusieurs réponses possibles)",
+              "reponses": [
+                {
+                  "id": "9d779d78-5022-454c-a0f8-41059b6421d5",
+                  "texte": "Transmettre des messages en morse",
+                  "correcte": true,
+                  "explication": "Texte de démonstration — à remplacer par l'explication du musée."
+                },
+                {
+                  "id": "f091bd60-6107-41be-a855-ef6666562dec",
+                  "texte": "Transmettre la voix en phonie",
+                  "correcte": true,
+                  "explication": "Texte de démonstration — à remplacer par l'explication du musée."
+                },
+                {
+                  "id": "3cf7b658-1ba6-44d0-ada5-07521fadf277",
+                  "texte": "Écouter la radio civile",
+                  "correcte": false,
+                  "explication": "Texte de démonstration — ici on explique pourquoi c'est faux."
+                },
+                {
+                  "id": "cff052fc-9875-456d-9116-13c36c7e16ae",
+                  "texte": "Photographier le terrain",
+                  "correcte": false,
+                  "explication": "Texte de démonstration — ici on explique pourquoi c'est faux."
+                }
+              ]
+            }
+          },
+          {
+            "id": "dfb226bd-ecd4-461d-8c55-ebf59a595fe9",
+            "largeur": "pleine",
+            "valeur": {
+              "type": "frise",
+              "consigne": "Replacez ces inventions du plus ancien au plus récent.",
+              "evenements": [
+                {
+                  "id": "b18f5757-61bc-4317-9ec3-97fd084c37f6",
+                  "libelle": "Le télégraphe électrique",
+                  "annee": 1837,
+                  "detail": "Exemple de démonstration — date à valider par le musée."
+                },
+                {
+                  "id": "79a6d24f-4bd1-473a-8822-0946dacecca0",
+                  "libelle": "Le téléphone",
+                  "annee": 1876,
+                  "detail": ""
+                },
+                {
+                  "id": "ee9ed1e2-7455-4dd8-bc6b-f24990025174",
+                  "libelle": "La radio",
+                  "annee": 1895,
+                  "detail": ""
+                },
+                {
+                  "id": "83889788-b6b4-4ae8-9e11-e29d31e21cab",
+                  "libelle": "La fibre optique",
+                  "annee": 1970,
+                  "detail": ""
+                }
+              ]
+            }
+          }
+        ]
       }
     },
     {

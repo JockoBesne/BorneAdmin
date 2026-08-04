@@ -3,6 +3,10 @@ import { modelePar } from './modeles/index.js'
 import {
   BLOC_LIBRE_GALERIE_MAX,
   BLOC_LIBRE_TEXTE_MAX_SIGNES,
+  FRISE_EVENEMENTS_MAX,
+  FRISE_EVENEMENTS_MIN,
+  QUIZ_REPONSES_MAX,
+  QUIZ_REPONSES_MIN,
   type ContenuPage,
   type DefEmplacement,
   type InfoMedia,
@@ -41,6 +45,24 @@ export const DEFS_BLOCS_LIBRES: Record<TypeBlocLibre, DefEmplacement> = {
     libelle: 'Vidéo ajoutée',
     requis: false,
     dureeMaxSecondes: 1800,
+  },
+  quiz: {
+    type: 'quiz',
+    libelle: 'Quiz',
+    requis: false,
+    minReponses: QUIZ_REPONSES_MIN,
+    maxReponses: QUIZ_REPONSES_MAX,
+    conseil:
+      "Cochez la ou les bonnes réponses — il peut y en avoir plusieurs : le visiteur coche puis valide. L'explication s'affiche à la correction, sous sa réponse : c'est elle qu'il retiendra.",
+  },
+  frise: {
+    type: 'frise',
+    libelle: 'Frise à remettre dans l’ordre',
+    requis: false,
+    minEvenements: FRISE_EVENEMENTS_MIN,
+    maxEvenements: FRISE_EVENEMENTS_MAX,
+    conseil:
+      "Écrivez chaque événement et son année : l'ordre attendu en est déduit, vous n'avez rien à numéroter.",
   },
 }
 
@@ -218,6 +240,57 @@ function controlerEmplacement(
         ajouter(
           'conseille',
           `Une galerie est plus lisible à partir de ${def.min} photos (il y en a ${valeur.elements.length}).`,
+        )
+      }
+      break
+    }
+
+    case 'quiz': {
+      if (valeur.type !== 'quiz') return
+      const remplies = valeur.reponses.filter((reponse) => reponse.texte.trim() !== '')
+
+      if (remplies.length < def.minReponses) {
+        ajouter(
+          'conseille',
+          `Ce quiz n'a que ${remplies.length} réponse${remplies.length > 1 ? 's' : ''} : il en faut au moins ${def.minReponses}.`,
+        )
+        return
+      }
+      // Un quiz sans bonne réponse ne peut pas être réussi : ce n'est pas un
+      // choix éditorial, c'est un oubli — donc bloquant.
+      if (!remplies.some((reponse) => reponse.correcte)) {
+        ajouter('bloquant', "Ce quiz n'a aucune bonne réponse cochée : le visiteur ne pourra jamais le réussir.")
+      }
+      if (remplies.every((reponse) => reponse.explication.trim() === '')) {
+        ajouter(
+          'conseille',
+          "Aucune réponse de ce quiz n'a d'explication : le visiteur saura s'il a juste, mais n'apprendra rien.",
+        )
+      }
+      break
+    }
+
+    case 'frise': {
+      if (valeur.type !== 'frise') return
+      const remplis = valeur.evenements.filter((evenement) => evenement.libelle.trim() !== '')
+
+      if (remplis.length < def.minEvenements) {
+        ajouter(
+          'conseille',
+          `Cette frise n'a que ${remplis.length} événement${remplis.length > 1 ? 's' : ''} : il en faut au moins ${def.minEvenements}.`,
+        )
+        return
+      }
+      if (valeur.consigne.trim() === '') {
+        ajouter('conseille', "Cette frise n'a pas de consigne : le visiteur ne saura pas quoi faire.")
+      }
+      // Deux mêmes années ne cassent rien — la correction les accepte dans les
+      // deux sens — mais c'est presque toujours une faute de frappe.
+      const annees = remplis.map((evenement) => evenement.annee)
+      if (new Set(annees).size !== annees.length) {
+        ajouter(
+          'conseille',
+          'Deux événements de cette frise portent la même année : les deux ordres seront acceptés.',
         )
       }
       break

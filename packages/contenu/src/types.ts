@@ -5,7 +5,14 @@ export type IdModele = 't1' | 't2' | 't3'
 /** Déclinaisons produites à l'envoi d'une image (§15.3 de la conception). */
 export type ProfilImage = 'vignette' | 'moyen' | 'grand' | 'origine'
 
-export type TypeEmplacement = 'titre' | 'texte' | 'image' | 'galerie' | 'video'
+export type TypeEmplacement =
+  | 'titre'
+  | 'texte'
+  | 'image'
+  | 'galerie'
+  | 'video'
+  | 'quiz'
+  | 'frise'
 
 // ── Déclaration d'un emplacement (structure autorisée par le modèle) ──────────
 
@@ -39,8 +46,25 @@ export interface DefVideo extends DefBase {
   type: 'video'
   dureeMaxSecondes: number
 }
+export interface DefQuiz extends DefBase {
+  type: 'quiz'
+  minReponses: number
+  maxReponses: number
+}
+export interface DefFrise extends DefBase {
+  type: 'frise'
+  minEvenements: number
+  maxEvenements: number
+}
 
-export type DefEmplacement = DefTitre | DefTexte | DefImage | DefGalerie | DefVideo
+export type DefEmplacement =
+  | DefTitre
+  | DefTexte
+  | DefImage
+  | DefGalerie
+  | DefVideo
+  | DefQuiz
+  | DefFrise
 
 // ── Valeurs saisies par l'utilisateur ────────────────────────────────────────
 
@@ -71,20 +95,76 @@ export interface ValeurVideo {
   legende: string
 }
 
+// ── Ateliers interactifs ─────────────────────────────────────────────────────
+
+/**
+ * Une réponse d'un quiz. « explication » est ce que le visiteur lit une fois
+ * qu'il a répondu : c'est là que se trouve la valeur pédagogique de l'atelier,
+ * pas dans le score. Elle est donc proposée pour chaque réponse, juste ou non.
+ */
+export interface ReponseQuiz {
+  id: string
+  texte: string
+  correcte: boolean
+  explication: string
+}
+
+export interface ValeurQuiz {
+  type: 'quiz'
+  question: string
+  reponses: ReponseQuiz[]
+}
+
+/**
+ * Un événement à replacer sur la frise. L'ordre attendu n'est pas saisi à la
+ * main : il est **déduit de l'année**. Le personnel n'a donc qu'à écrire
+ * l'événement et sa date, sans se soucier de numéroter quoi que ce soit.
+ */
+export interface EvenementFrise {
+  id: string
+  libelle: string
+  annee: number
+  /** Phrase révélée à la correction. Facultative. */
+  detail: string
+}
+
+export interface ValeurFrise {
+  type: 'frise'
+  consigne: string
+  evenements: EvenementFrise[]
+}
+
 export type ValeurEmplacement =
   | ValeurTitre
   | ValeurTexte
   | ValeurImage
   | ValeurGalerie
   | ValeurVideo
+  | ValeurQuiz
+  | ValeurFrise
 
 // ── Blocs libres ─────────────────────────────────────────────────────────────
 
 /** Types de blocs que le personnel peut ajouter librement à une page. */
-export type TypeBlocLibre = 'texte' | 'image' | 'galerie' | 'video'
+export type TypeBlocLibre = 'texte' | 'image' | 'galerie' | 'video' | 'quiz' | 'frise'
 
 export const BLOC_LIBRE_TEXTE_MAX_SIGNES = 2000
 export const BLOC_LIBRE_GALERIE_MAX = 12
+
+// Limites des ateliers. Elles ne sont pas décoratives : au-delà, l'atelier ne
+// tient plus dans la largeur de l'écran, ou devient trop long pour un visiteur
+// debout devant une borne.
+export const QUIZ_QUESTION_MAX_SIGNES = 200
+export const QUIZ_REPONSE_MAX_SIGNES = 120
+export const QUIZ_EXPLICATION_MAX_SIGNES = 300
+export const QUIZ_REPONSES_MIN = 2
+export const QUIZ_REPONSES_MAX = 6
+
+export const FRISE_CONSIGNE_MAX_SIGNES = 200
+export const FRISE_LIBELLE_MAX_SIGNES = 90
+export const FRISE_DETAIL_MAX_SIGNES = 200
+export const FRISE_EVENEMENTS_MIN = 3
+export const FRISE_EVENEMENTS_MAX = 6
 
 /**
  * Bloc ajouté librement à une page.
@@ -105,7 +185,7 @@ export interface BlocLibre {
    * (toute la largeur), ce qui garde valides les contenus écrits avant ce champ.
    */
   largeur?: 'pleine' | 'moitie'
-  valeur: ValeurTexte | ValeurImage | ValeurGalerie | ValeurVideo
+  valeur: ValeurTexte | ValeurImage | ValeurGalerie | ValeurVideo | ValeurQuiz | ValeurFrise
 }
 
 /**

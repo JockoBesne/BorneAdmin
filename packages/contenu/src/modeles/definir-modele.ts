@@ -1,10 +1,16 @@
 import { z, type ZodTypeAny } from 'zod'
-import type {
-  ContenuPage,
-  DefEmplacement,
-  IdModele,
-  SectionModele,
-  ValeurEmplacement,
+import {
+  FRISE_CONSIGNE_MAX_SIGNES,
+  FRISE_DETAIL_MAX_SIGNES,
+  FRISE_LIBELLE_MAX_SIGNES,
+  QUIZ_EXPLICATION_MAX_SIGNES,
+  QUIZ_QUESTION_MAX_SIGNES,
+  QUIZ_REPONSE_MAX_SIGNES,
+  type ContenuPage,
+  type DefEmplacement,
+  type IdModele,
+  type SectionModele,
+  type ValeurEmplacement,
 } from '../types.js'
 
 /**
@@ -68,6 +74,40 @@ function schemaEmplacement(def: DefEmplacement): ZodTypeAny {
           )
           .max(def.max),
       })
+    // Les ateliers existent aujourd'hui comme blocs ajoutés, pas comme
+    // emplacements d'un modèle. Les deux branches sont écrites quand même :
+    // un modèle qui déclarerait un atelier fonctionnerait sans retouche ici,
+    // et le compilateur n'a plus de trou à signaler.
+    case 'quiz':
+      return z.object({
+        type: z.literal('quiz'),
+        question: z.string().max(QUIZ_QUESTION_MAX_SIGNES),
+        reponses: z
+          .array(
+            z.object({
+              id: z.string(),
+              texte: z.string().max(QUIZ_REPONSE_MAX_SIGNES),
+              correcte: z.boolean(),
+              explication: z.string().max(QUIZ_EXPLICATION_MAX_SIGNES),
+            }),
+          )
+          .max(def.maxReponses),
+      })
+    case 'frise':
+      return z.object({
+        type: z.literal('frise'),
+        consigne: z.string().max(FRISE_CONSIGNE_MAX_SIGNES),
+        evenements: z
+          .array(
+            z.object({
+              id: z.string(),
+              libelle: z.string().max(FRISE_LIBELLE_MAX_SIGNES),
+              annee: z.number().int().min(-3000).max(3000),
+              detail: z.string().max(FRISE_DETAIL_MAX_SIGNES),
+            }),
+          )
+          .max(def.maxEvenements),
+      })
   }
 }
 
@@ -83,6 +123,10 @@ function valeurVide(def: DefEmplacement): ValeurEmplacement {
       return { type: 'video', mediaId: null, legende: '' }
     case 'galerie':
       return { type: 'galerie', elements: [] }
+    case 'quiz':
+      return { type: 'quiz', question: '', reponses: [] }
+    case 'frise':
+      return { type: 'frise', consigne: '', evenements: [] }
   }
 }
 

@@ -1,17 +1,27 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import {
   controlerContenu,
   DEFS_BLOCS_LIBRES,
   lireSuite,
   modelePar,
   positionBloc,
+  FRISE_CONSIGNE_MAX_SIGNES,
+  FRISE_DETAIL_MAX_SIGNES,
+  FRISE_LIBELLE_MAX_SIGNES,
+  QUIZ_EXPLICATION_MAX_SIGNES,
+  QUIZ_QUESTION_MAX_SIGNES,
+  QUIZ_REPONSE_MAX_SIGNES,
   type BlocLibre,
   type ContenuPage,
   type DefEmplacement,
+  type EvenementFrise,
   type InfoMedia,
   type Manifeste,
   type MediaManifeste,
   type PageManifeste,
+  type ReponseQuiz,
+  type ValeurFrise,
+  type ValeurQuiz,
   type TypeBlocLibre,
   type ValeurEmplacement,
 } from '@borne/contenu'
@@ -129,14 +139,7 @@ export function EditeurPage({
       // Un nouveau bloc naît en bas de page ; les flèches le remontent ensuite,
       // y compris entre les blocs du modèle.
       apres: modele?.sections[modele.sections.length - 1]?.nom,
-      valeur:
-        type === 'texte'
-          ? { type: 'texte', valeur: '' }
-          : type === 'image'
-            ? { type: 'image', mediaId: null, legende: '' }
-            : type === 'video'
-              ? { type: 'video', mediaId: null, legende: '' }
-              : { type: 'galerie', elements: [] },
+      valeur: valeurNeuve(type),
     }
     surModification((precedente) => {
       const contenuPage = precedente.contenu as ContenuPage
@@ -525,6 +528,12 @@ export function EditeurPage({
             <button type="button" className="abtn" onClick={() => ajouterBloc('video')}>
               Vidéo
             </button>
+            <button type="button" className="abtn" onClick={() => ajouterBloc('quiz')}>
+              Quiz
+            </button>
+            <button type="button" className="abtn" onClick={() => ajouterBloc('frise')}>
+              Frise
+            </button>
             <button
               type="button"
               className="abtn abtn--discret"
@@ -602,8 +611,61 @@ function resumeBloc(valeur: ValeurEmplacement | undefined): string {
       return valeur.elements.length === 0
         ? 'vide'
         : `${valeur.elements.length} photo${valeur.elements.length > 1 ? 's' : ''}`
+    case 'quiz': {
+      const remplies = valeur.reponses.filter((reponse) => reponse.texte.trim() !== '').length
+      if (valeur.question.trim() === '') return 'sans question'
+      return `${remplies} réponse${remplies > 1 ? 's' : ''}`
+    }
+    case 'frise': {
+      const remplis = valeur.evenements.filter((evenement) => evenement.libelle.trim() !== '').length
+      return remplis === 0 ? 'vide' : `${remplis} événement${remplis > 1 ? 's' : ''}`
+    }
   }
 }
+
+/**
+ * Contenu d'un bloc qui vient d'être ajouté. Les ateliers naissent avec leurs
+ * lignes vides déjà en place : le personnel voit tout de suite ce qu'on attend
+ * de lui, au lieu d'une liste vide devant laquelle il faut deviner.
+ */
+function valeurNeuve(type: TypeBlocLibre): BlocLibre['valeur'] {
+  switch (type) {
+    case 'texte':
+      return { type: 'texte', valeur: '' }
+    case 'image':
+      return { type: 'image', mediaId: null, legende: '' }
+    case 'video':
+      return { type: 'video', mediaId: null, legende: '' }
+    case 'galerie':
+      return { type: 'galerie', elements: [] }
+    case 'quiz':
+      return {
+        type: 'quiz',
+        question: '',
+        reponses: [reponseNeuve(true), reponseNeuve(false)],
+      }
+    case 'frise':
+      return {
+        type: 'frise',
+        consigne: '',
+        evenements: [evenementNeuf(), evenementNeuf(), evenementNeuf()],
+      }
+  }
+}
+
+const reponseNeuve = (correcte: boolean): ReponseQuiz => ({
+  id: crypto.randomUUID(),
+  texte: '',
+  correcte,
+  explication: '',
+})
+
+const evenementNeuf = (): EvenementFrise => ({
+  id: crypto.randomUUID(),
+  libelle: '',
+  annee: new Date().getFullYear(),
+  detail: '',
+})
 
 const LEGENDE_MAX = 200
 
@@ -799,7 +861,262 @@ function FormulaireBloc({
     )
   }
 
+  if (def.type === 'quiz' && valeur.type === 'quiz') {
+    return (
+      <FormulaireQuiz def={def} valeur={valeur} surChangement={surChangement} conseil={conseil} />
+    )
+  }
+
+  if (def.type === 'frise' && valeur.type === 'frise') {
+    return (
+      <FormulaireFrise def={def} valeur={valeur} surChangement={surChangement} conseil={conseil} />
+    )
+  }
+
   return null
+}
+
+/**
+ * Formulaire du quiz.
+ *
+ * Une réponse tient sur une ligne : son texte, la case « bonne réponse », et
+ * l'explication lue par le visiteur après son choix. Rien à numéroter, rien à
+ * ordonner — l'ordre d'affichage est celui de la saisie.
+ */
+function FormulaireQuiz({
+  def,
+  valeur,
+  surChangement,
+  conseil,
+}: {
+  def: Extract<DefEmplacement, { type: 'quiz' }>
+  valeur: Extract<ValeurEmplacement, { type: 'quiz' }>
+  surChangement: (transformation: (valeur: ValeurEmplacement) => ValeurEmplacement) => void
+  conseil: ReactNode
+}) {
+  const modifier = (transformation: (quiz: ValeurQuiz) => ValeurQuiz) =>
+    surChangement((v) => (v.type === 'quiz' ? transformation(v) : v))
+
+  const changerReponse = (id: string, champs: Partial<ReponseQuiz>) =>
+    modifier((quiz) => ({
+      ...quiz,
+      reponses: quiz.reponses.map((reponse) =>
+        reponse.id === id ? { ...reponse, ...champs } : reponse,
+      ),
+    }))
+
+  return (
+    <div className="pan__formulaire">
+      <label className="champ">
+        <span className="champ__libelle">Question</span>
+        <textarea
+          autoFocus
+          rows={2}
+          maxLength={QUIZ_QUESTION_MAX_SIGNES}
+          value={valeur.question}
+          onChange={(champ) => modifier((quiz) => ({ ...quiz, question: champ.target.value }))}
+        />
+        <span className="champ__compte">
+          {valeur.question.length} / {QUIZ_QUESTION_MAX_SIGNES}
+        </span>
+      </label>
+
+      <ul className="atelier-liste">
+        {valeur.reponses.map((reponse, index) => (
+          <li key={reponse.id} className="atelier-ligne">
+            <div className="atelier-ligne__entete">
+              <span className="atelier-ligne__rang">Réponse {index + 1}</span>
+              <label className="atelier-ligne__juste">
+                <input
+                  type="checkbox"
+                  checked={reponse.correcte}
+                  onChange={(champ) =>
+                    changerReponse(reponse.id, { correcte: champ.target.checked })
+                  }
+                />
+                bonne réponse
+              </label>
+              {valeur.reponses.length > def.minReponses ? (
+                <button
+                  type="button"
+                  className="atelier-ligne__retirer"
+                  aria-label={`Retirer la réponse ${index + 1}`}
+                  onClick={() =>
+                    modifier((quiz) => ({
+                      ...quiz,
+                      reponses: quiz.reponses.filter((autre) => autre.id !== reponse.id),
+                    }))
+                  }
+                >
+                  ✕
+                </button>
+              ) : null}
+            </div>
+            <input
+              placeholder="Texte de la réponse"
+              maxLength={QUIZ_REPONSE_MAX_SIGNES}
+              value={reponse.texte}
+              onChange={(champ) => changerReponse(reponse.id, { texte: champ.target.value })}
+            />
+            <textarea
+              rows={2}
+              placeholder="Explication montrée au visiteur après son choix"
+              maxLength={QUIZ_EXPLICATION_MAX_SIGNES}
+              value={reponse.explication}
+              onChange={(champ) => changerReponse(reponse.id, { explication: champ.target.value })}
+            />
+          </li>
+        ))}
+      </ul>
+
+      {valeur.reponses.length < def.maxReponses ? (
+        <button
+          type="button"
+          className="abtn"
+          onClick={() =>
+            modifier((quiz) => ({ ...quiz, reponses: [...quiz.reponses, reponseNeuve(false)] }))
+          }
+        >
+          + Ajouter une réponse
+        </button>
+      ) : (
+        <p className="pan__aide">Ce quiz est complet ({def.maxReponses} réponses au maximum).</p>
+      )}
+      {conseil}
+    </div>
+  )
+}
+
+/**
+ * Formulaire de la frise.
+ *
+ * On saisit un événement et son année ; l'ordre attendu s'en déduit. Les lignes
+ * peuvent donc être saisies dans n'importe quel ordre — c'est voulu : on ajoute
+ * un événement oublié sans rien réorganiser.
+ */
+function FormulaireFrise({
+  def,
+  valeur,
+  surChangement,
+  conseil,
+}: {
+  def: Extract<DefEmplacement, { type: 'frise' }>
+  valeur: Extract<ValeurEmplacement, { type: 'frise' }>
+  surChangement: (transformation: (valeur: ValeurEmplacement) => ValeurEmplacement) => void
+  conseil: ReactNode
+}) {
+  const modifier = (transformation: (frise: ValeurFrise) => ValeurFrise) =>
+    surChangement((v) => (v.type === 'frise' ? transformation(v) : v))
+
+  const changerEvenement = (id: string, champs: Partial<EvenementFrise>) =>
+    modifier((frise) => ({
+      ...frise,
+      evenements: frise.evenements.map((evenement) =>
+        evenement.id === id ? { ...evenement, ...champs } : evenement,
+      ),
+    }))
+
+  // Aperçu de l'ordre attendu : le personnel vérifie d'un coup d'œil que les
+  // années donnent bien la chronologie qu'il a en tête.
+  const ordonnes = [...valeur.evenements]
+    .filter((evenement) => evenement.libelle.trim() !== '')
+    .sort((a, b) => a.annee - b.annee)
+
+  return (
+    <div className="pan__formulaire">
+      <label className="champ">
+        <span className="champ__libelle">Consigne</span>
+        <input
+          autoFocus
+          placeholder="Replacez ces événements du plus ancien au plus récent."
+          maxLength={FRISE_CONSIGNE_MAX_SIGNES}
+          value={valeur.consigne}
+          onChange={(champ) => modifier((frise) => ({ ...frise, consigne: champ.target.value }))}
+        />
+      </label>
+
+      <ul className="atelier-liste">
+        {valeur.evenements.map((evenement, index) => (
+          <li key={evenement.id} className="atelier-ligne">
+            <div className="atelier-ligne__entete">
+              <span className="atelier-ligne__rang">Événement {index + 1}</span>
+              <label className="atelier-ligne__annee">
+                année
+                <input
+                  type="number"
+                  min={-3000}
+                  max={3000}
+                  value={evenement.annee}
+                  onChange={(champ) =>
+                    changerEvenement(evenement.id, {
+                      annee: Number.parseInt(champ.target.value, 10) || 0,
+                    })
+                  }
+                />
+              </label>
+              {valeur.evenements.length > def.minEvenements ? (
+                <button
+                  type="button"
+                  className="atelier-ligne__retirer"
+                  aria-label={`Retirer l'événement ${index + 1}`}
+                  onClick={() =>
+                    modifier((frise) => ({
+                      ...frise,
+                      evenements: frise.evenements.filter((autre) => autre.id !== evenement.id),
+                    }))
+                  }
+                >
+                  ✕
+                </button>
+              ) : null}
+            </div>
+            <input
+              placeholder="Événement (ce que le visiteur doit replacer)"
+              maxLength={FRISE_LIBELLE_MAX_SIGNES}
+              value={evenement.libelle}
+              onChange={(champ) => changerEvenement(evenement.id, { libelle: champ.target.value })}
+            />
+            <input
+              placeholder="Précision révélée à la correction (facultatif)"
+              maxLength={FRISE_DETAIL_MAX_SIGNES}
+              value={evenement.detail}
+              onChange={(champ) => changerEvenement(evenement.id, { detail: champ.target.value })}
+            />
+          </li>
+        ))}
+      </ul>
+
+      {valeur.evenements.length < def.maxEvenements ? (
+        <button
+          type="button"
+          className="abtn"
+          onClick={() =>
+            modifier((frise) => ({ ...frise, evenements: [...frise.evenements, evenementNeuf()] }))
+          }
+        >
+          + Ajouter un événement
+        </button>
+      ) : (
+        <p className="pan__aide">
+          Cette frise est complète ({def.maxEvenements} événements au maximum).
+        </p>
+      )}
+
+      {ordonnes.length > 1 ? (
+        <div className="atelier-ordre">
+          <p className="champ__conseil">Ordre attendu, déduit des années :</p>
+          <ol>
+            {ordonnes.map((evenement) => (
+              <li key={evenement.id}>
+                <strong>{evenement.annee}</strong> — {evenement.libelle}
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
+      {conseil}
+    </div>
+  )
 }
 
 /** Choix d'un média dans la bibliothèque du contenu. */

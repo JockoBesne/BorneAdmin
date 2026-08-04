@@ -1105,3 +1105,92 @@ button {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
 }
+
+
+/* ── Ateliers : formulaires de l'administration ────────────────────────────
+ *
+ * Une ligne = une réponse de quiz, ou un événement de frise. Le cadre et le
+ * rang à gauche disent d'un coup d'œil où commence et où finit chaque ligne :
+ * sans eux, une suite de champs devient illisible dès la troisième. */
+
+.atelier-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.atelier-ligne {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--trait, rgba(0, 0, 0, 0.12));
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.atelier-ligne__entete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.atelier-ligne__rang {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.7;
+}
+
+.atelier-ligne__juste,
+.atelier-ligne__annee {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.atelier-ligne__annee input {
+  width: 96px;
+}
+
+.atelier-ligne__retirer {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 15px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.atelier-ligne__retirer:hover,
+.atelier-ligne__retirer:focus-visible {
+  background: rgba(179, 38, 30, 0.12);
+  color: #b3261e;
+  opacity: 1;
+}
+
+/* Ordre attendu de la frise : c'est la relecture du personnel, pas une saisie. */
+.atelier-ordre {
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent, #1b5fa8);
+  border-radius: 0 8px 8px 0;
+  background: rgba(27, 95, 168, 0.07);
+}
+
+.atelier-ordre ol {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 20px;
+}
