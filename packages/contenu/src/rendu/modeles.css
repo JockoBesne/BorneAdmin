@@ -913,3 +913,69 @@
     animation: none;
   }
 }
+
+/* ── Habillage d'un bloc ───────────────────────────────────────────────────
+ *
+ * Fond et mise en forme choisis bloc par bloc, dans l'éditeur. Ces règles
+ * viennent en dernier, et débordent volontairement sur les descendants
+ * (« * ») : chaque bloc se donne déjà sa couleur et sa graisse (`.b-h1`,
+ * `.b-corps`…), qu'une valeur simplement héritée du parent ne remplacerait
+ * pas. Sans le sélecteur descendant, mettre un titre en gras ne ferait rien.
+ *
+ * Les blocs sans habillage n'ont aucune de ces classes : leur rendu est celui
+ * d'avant, inchangé. */
+
+.b-hab {
+  display: block;
+  width: 100%;
+  /* Même hauteur que l'enveloppe de l'éditeur : les blocs qui comptent sur la
+     hauteur de leur cadre (galerie, vidéo) la retrouvent à l'identique. */
+  height: 100%;
+}
+
+/* Un fond a besoin d'air : sans marge intérieure, le texte collerait au bord.
+   La marge n'existe que s'il y a un fond — sinon rien ne bouge dans la page. */
+.b-hab--fond {
+  padding: 28px 32px;
+  border-radius: 18px;
+}
+
+.b-hab--couleur,
+.b-hab--couleur * {
+  color: inherit;
+}
+
+.b-hab--gras,
+.b-hab--gras * {
+  font-weight: 700;
+}
+
+.b-hab--italique,
+.b-hab--italique * {
+  font-style: italic;
+}
+
+.b-hab--souligne,
+.b-hab--souligne * {
+  text-decoration: underline;
+}
+
+.b-hab--centre {
+  text-align: center;
+}
+
+.b-hab--droite {
+  text-align: right;
+}
+
+/* Un texte de corps est bridé à 60 signes de large : centrer ses lignes sans
+   déplacer sa colonne le laisserait collé à gauche, ce qui ne ressemble pas à
+   ce qu'on a demandé. On déplace donc aussi la colonne. */
+.b-hab--centre .b-corps {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.b-hab--droite .b-corps {
+  margin-left: auto;
+}

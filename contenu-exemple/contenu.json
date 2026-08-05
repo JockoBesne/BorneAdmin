@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-04T13:21:03.168Z",
+  "genereLe": "2026-08-05T11:37:55.182Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
@@ -30,7 +30,77 @@
           },
           "texte": {
             "type": "texte",
-            "valeur": "Le **poste ER 40** équipait les unités de transmission à partir des années 1950. Conçu pour la liaison en phonie sur de courtes distances, il tenait dans un sac à dos et fonctionnait sur pile sèche.\n\nSa robustesse en a fait un matériel de référence pendant près de vingt ans.\n\n- Portée utile : 5 à 8 kilomètres\n- Masse en ordre de marche : 11 kilogrammes\n- Alimentation : pile sèche de 90 volts\n\nL'exemplaire présenté ici a été remis en état par l'_atelier de restauration du musée_ en 2019."
+            "valeur": "Le poste ER 40 équipait les unités de transmission à partir des années 1950. Conçu pour la liaison en phonie sur de courtes distances, il tenait dans un sac à dos et fonctionnait sur pile sèche.\n\nSa robustesse en a fait un matériel de référence pendant près de vingt ans.\n\n- Portée utile : 5 à 8 kilomètres\n- Masse en ordre de marche : 11 kilogrammes\n- Alimentation : pile sèche de 90 volts\n\nL'exemplaire présenté ici a été remis en état par l'atelier de restauration du musée en 2019.",
+            "lignes": [
+              {
+                "morceaux": [
+                  {
+                    "texte": "Le "
+                  },
+                  {
+                    "gras": true,
+                    "texte": "poste ER 40"
+                  },
+                  {
+                    "texte": " équipait les unités de transmission à partir des années 1950. Conçu pour la liaison en phonie sur de courtes distances, il tenait dans un sac à dos et fonctionnait sur pile sèche."
+                  }
+                ]
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": [
+                  {
+                    "texte": "Sa robustesse en a fait un matériel de référence pendant près de vingt ans."
+                  }
+                ]
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "puce": true,
+                "morceaux": [
+                  {
+                    "texte": "Portée utile : 5 à 8 kilomètres"
+                  }
+                ]
+              },
+              {
+                "puce": true,
+                "morceaux": [
+                  {
+                    "texte": "Masse en ordre de marche : 11 kilogrammes"
+                  }
+                ]
+              },
+              {
+                "puce": true,
+                "morceaux": [
+                  {
+                    "texte": "Alimentation : pile sèche de 90 volts"
+                  }
+                ]
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": [
+                  {
+                    "texte": "L'exemplaire présenté ici a été remis en état par l'"
+                  },
+                  {
+                    "italique": true,
+                    "texte": "atelier de restauration du musée"
+                  },
+                  {
+                    "texte": " en 2019."
+                  }
+                ]
+              }
+            ]
           }
         },
         "suite": [

@@ -2,7 +2,9 @@ import type {
   BlocLibre,
   ContenuPage,
   ElementGalerie,
+  StyleBloc,
   ValeurImage,
+  ValeurTexte,
   ValeurVideo,
 } from './types.js'
 
@@ -16,6 +18,16 @@ export function lireTexte(contenu: ContenuPage, nom: string): string {
     return valeur.valeur
   }
   return ''
+}
+
+/**
+ * Le texte d'un emplacement, mise en forme comprise. `lireTexte` ne rend que
+ * les caractères ; c'est celle-ci qu'il faut pour afficher un texte.
+ */
+export function lireValeurTexte(contenu: ContenuPage, nom: string): ValeurTexte {
+  const valeur = contenu.emplacements[nom]
+  if (valeur && valeur.type === 'texte') return valeur
+  return { type: 'texte', valeur: '' }
 }
 
 export function lireImage(contenu: ContenuPage, nom: string): ValeurImage {
@@ -39,6 +51,31 @@ export function lireGalerie(contenu: ContenuPage, nom: string): ElementGalerie[]
 /** Blocs ajoutés à la suite de la page. Toujours un tableau, jamais undefined. */
 export function lireSuite(contenu: ContenuPage): BlocLibre[] {
   return contenu.suite ?? []
+}
+
+/**
+ * Habillage d'un bloc (fond, mise en forme du texte), par son nom : celui de
+ * l'emplacement pour un bloc du modèle, « suite:<identifiant> » pour un bloc
+ * ajouté. Absent = le bloc s'affiche sans habillage.
+ */
+export function lireStyle(contenu: ContenuPage, nom: string): StyleBloc | undefined {
+  return contenu.styles?.[nom]
+}
+
+/**
+ * Un habillage dont plus rien n'est réglé. On ne le garde pas dans le contenu :
+ * remettre un bloc à zéro doit laisser le fichier tel qu'il était avant qu'on y
+ * touche, sans habillage vide qui traîne.
+ */
+export function estStyleVide(style: StyleBloc): boolean {
+  return (
+    style.fond === undefined &&
+    style.couleur === undefined &&
+    !style.gras &&
+    !style.italique &&
+    !style.souligne &&
+    (style.alignement === undefined || style.alignement === 'gauche')
+  )
 }
 
 /**

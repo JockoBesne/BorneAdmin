@@ -72,9 +72,44 @@ export interface ValeurTitre {
   type: 'titre'
   valeur: string
 }
+/**
+ * Un morceau de texte d'un seul tenant, avec sa mise en forme. Les marques sont
+ * facultatives : un morceau sans marque est du texte ordinaire.
+ */
+export interface MorceauTexte {
+  texte: string
+  gras?: boolean
+  italique?: boolean
+  souligne?: boolean
+}
+
+/** Une ligne de texte. `puce` = ligne d'une liste ; absent = paragraphe. */
+export interface LigneTexte {
+  puce?: boolean
+  morceaux: MorceauTexte[]
+}
+
+/**
+ * Un texte, avec sa mise en forme.
+ *
+ * Deux champs qui disent la même chose sous deux angles :
+ * - `valeur` est le texte **sans** mise en forme. C'est lui qu'on compte, qu'on
+ *   contrôle, et qui dit si le bloc est vide ;
+ * - `lignes` porte la mise en forme (gras, italique, souligné, puces).
+ *
+ * `lignes` est facultatif, à deux titres. Les textes écrits avant son
+ * introduction n'en ont pas : leur mise en forme est alors relue de l'ancienne
+ * écriture (`**gras**`, `_italique_`, « - » en tête de ligne) rangée dans
+ * `valeur`. Et un texte sans aucune mise en forme n'en écrit pas non plus : le
+ * fichier de contenu reste aussi simple qu'avant.
+ *
+ * Jamais de HTML, ni ici ni à l'écriture : le texte collé depuis un traitement
+ * de texte ne peut donc apporter ni style ni script.
+ */
 export interface ValeurTexte {
   type: 'texte'
   valeur: string
+  lignes?: LigneTexte[]
 }
 export interface ValeurImage {
   type: 'image'
@@ -198,6 +233,29 @@ export interface SectionModele {
   emplacements: string[]
 }
 
+// ── Habillage d'un bloc ──────────────────────────────────────────────────────
+
+export type AlignementBloc = 'gauche' | 'centre' | 'droite'
+
+/**
+ * Habillage d'un bloc : sa couleur de fond, et la mise en forme de son texte.
+ *
+ * Tous les champs sont facultatifs, et un habillage entièrement vide n'est pas
+ * écrit du tout : un bloc sans habillage s'affiche exactement comme avant
+ * l'introduction de ce réglage — les contenus déjà écrits restent valides.
+ */
+export interface StyleBloc {
+  /** Couleur de fond du bloc, « #rrggbb ». Absente = pas de fond. */
+  fond?: string
+  /** Couleur du texte du bloc. Absente = la couleur de la page. */
+  couleur?: string
+  gras?: boolean
+  italique?: boolean
+  souligne?: boolean
+  /** Absent = gauche, l'alignement ordinaire. */
+  alignement?: AlignementBloc
+}
+
 /**
  * Contenu complet d'une page : un modèle, une valeur par emplacement, et la
  * suite — les blocs ajoutés librement sous la mise en page du modèle.
@@ -208,6 +266,15 @@ export interface ContenuPage {
   modele: IdModele
   emplacements: Record<string, ValeurEmplacement>
   suite?: BlocLibre[]
+  /**
+   * Habillage des blocs, rangé par nom de bloc : le nom de l'emplacement pour
+   * un bloc du modèle (« titre », « image »…), « suite:<identifiant> » pour un
+   * bloc ajouté. C'est le même nom que celui qu'emploie l'éditeur, donc un seul
+   * rangement suffit pour les deux sortes de blocs.
+   *
+   * Facultatif : absent tant qu'aucun bloc de la page n'est personnalisé.
+   */
+  styles?: Record<string, StyleBloc>
 }
 
 // ── Contrôles avant publication ──────────────────────────────────────────────

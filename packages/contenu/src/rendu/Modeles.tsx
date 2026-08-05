@@ -1,15 +1,18 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   estBlocLibreVide,
   lireGalerie,
   lireImage,
+  lireStyle,
   lireSuite,
   lireTexte,
+  lireValeurTexte,
   lireVideo,
   positionBloc,
 } from '../lecture.js'
 import { modelePar } from '../modeles/index.js'
-import type { BlocLibre } from '../types.js'
+import { lignesDeTexte } from '../texte.js'
+import type { BlocLibre, ContenuPage, StyleBloc, ValeurTexte } from '../types.js'
 import { AtelierFrise, AtelierQuiz } from './ateliers.jsx'
 import { BlocGalerie, BlocImage, BlocVideo } from './blocs.jsx'
 import { TexteEnrichi } from './TexteEnrichi.jsx'
@@ -21,14 +24,54 @@ import type { EnveloppeEmplacement, PropsModele } from './types.js'
 
 const SANS_ENVELOPPE: EnveloppeEmplacement = (_info, defaut) => defaut
 
+/**
+ * Habillage d'un bloc : son fond et la mise en forme de son texte.
+ *
+ * Un bloc sans habillage n'est pas enveloppé du tout — le rendu des pages
+ * écrites avant ce réglage est inchangé, au nœud près. Les classes font le
+ * travail (voir « modeles.css ») : elles doivent l'emporter sur la couleur et
+ * la graisse que chaque bloc se donne lui-même (`.b-h1`, `.b-corps`…), ce qu'un
+ * simple style hérité ne ferait pas.
+ */
+function Habillage({ style, children }: { style: StyleBloc | undefined; children: ReactNode }) {
+  if (!style) return <>{children}</>
+
+  const classes = ['b-hab']
+  if (style.fond) classes.push('b-hab--fond')
+  if (style.couleur) classes.push('b-hab--couleur')
+  if (style.gras) classes.push('b-hab--gras')
+  if (style.italique) classes.push('b-hab--italique')
+  if (style.souligne) classes.push('b-hab--souligne')
+  if (style.alignement === 'centre') classes.push('b-hab--centre')
+  if (style.alignement === 'droite') classes.push('b-hab--droite')
+  if (classes.length === 1) return <>{children}</>
+
+  return (
+    <div className={classes.join(' ')} style={{ background: style.fond, color: style.couleur }}>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * L'enveloppe des blocs, habillage compris. Elle passe par un seul point : la
+ * borne et l'éditeur habillent donc les blocs exactement pareil, et l'aperçu
+ * reste fidèle sans que rien ne soit à tenir en double.
+ */
+function habiller(contenu: ContenuPage, emp?: EnveloppeEmplacement): EnveloppeEmplacement {
+  const base = emp ?? SANS_ENVELOPPE
+  return (info, defaut) =>
+    base(info, <Habillage style={lireStyle(contenu, info.nom)}>{defaut}</Habillage>)
+}
+
 function TitreOuVide({ texte, secours }: { texte: string; secours: string }) {
   if (texte.trim() === '') return <span className="b-attente">{secours}</span>
   return <>{texte}</>
 }
 
-function TexteOuVide({ texte, secours }: { texte: string; secours: string }) {
-  if (texte.trim() === '') return <span className="b-attente">{secours}</span>
-  return <TexteEnrichi texte={texte} />
+function TexteOuVide({ valeur, secours }: { valeur: ValeurTexte; secours: string }) {
+  if (valeur.valeur.trim() === '') return <span className="b-attente">{secours}</span>
+  return <TexteEnrichi lignes={lignesDeTexte(valeur)} />
 }
 
 /**
@@ -40,7 +83,7 @@ function TexteOuVide({ texte, secours }: { texte: string; secours: string }) {
  */
 function RenduSuite({ contenu, media, emp, surImage, section }: PropsModele & { section: string }) {
   const edition = emp !== undefined
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   const sections = (modelePar(contenu.modele)?.sections ?? []).map((candidate) => candidate.nom)
   const blocs = lireSuite(contenu).filter(
     (bloc) =>
@@ -59,7 +102,7 @@ function RenduSuite({ contenu, media, emp, surImage, section }: PropsModele & { 
             {env(
               { nom, type: 'texte', classe: 'b-corps' },
               <div className="b-corps">
-                <TexteOuVide texte={bloc.valeur.valeur} secours="Texte ajouté (vide)" />
+                <TexteOuVide valeur={bloc.valeur} secours="Texte ajouté (vide)" />
               </div>,
             )}
           </div>
@@ -171,7 +214,7 @@ function RenduSuite({ contenu, media, emp, surImage, section }: PropsModele & { 
 // ── Modèle 1 — Une image, un texte ───────────────────────────────────────────
 
 export function Modele1({ contenu, media, emp, surImage }: PropsModele) {
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   return (
     <article className="mdl mdl-1">
       <header className="mdl-1__entete">
@@ -204,7 +247,7 @@ export function Modele1({ contenu, media, emp, surImage }: PropsModele) {
         {env(
           { nom: 'texte', type: 'texte', classe: 'b-corps' },
           <div className="b-corps">
-            <TexteOuVide texte={lireTexte(contenu, 'texte')} secours="Texte de la page" />
+            <TexteOuVide valeur={lireValeurTexte(contenu, 'texte')} secours="Texte de la page" />
           </div>,
         )}
       </div>
@@ -217,7 +260,7 @@ export function Modele1({ contenu, media, emp, surImage }: PropsModele) {
 // ── Modèle 2 — Image et texte côte à côte ────────────────────────────────────
 
 export function Modele2({ contenu, media, emp, surImage }: PropsModele) {
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   const galerie = lireGalerie(contenu, 'galerie')
 
   return (
@@ -252,7 +295,7 @@ export function Modele2({ contenu, media, emp, surImage }: PropsModele) {
             { nom: 'texte', type: 'texte', classe: 'b-corps' },
             <div className="b-corps">
               <TexteOuVide
-                texte={lireTexte(contenu, 'texte')}
+                valeur={lireValeurTexte(contenu, 'texte')}
                 secours="Texte de description"
               />
             </div>,
@@ -294,7 +337,7 @@ export function Modele3({
   surImage,
   lecteurVideo = false,
 }: PropsModele) {
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   const encartTitre = lireTexte(contenu, 'encartTitre')
   const encartTexte = lireTexte(contenu, 'encartTexte')
   const encartVide = encartTitre.trim() === '' && encartTexte.trim() === ''
@@ -338,7 +381,7 @@ export function Modele3({
               { nom: 'texte', type: 'texte', classe: 'b-corps' },
               <div className="b-corps b-corps--clair">
                 <TexteOuVide
-                  texte={lireTexte(contenu, 'texte')}
+                  valeur={lireValeurTexte(contenu, 'texte')}
                   secours="Texte superposé (court)"
                 />
               </div>,
@@ -355,7 +398,7 @@ export function Modele3({
             {env(
               { nom: 'encartTexte', type: 'texte', classe: 'b-petit' },
               <div className="b-petit">
-                <TexteOuVide texte={encartTexte} secours="Information pratique" />
+                <TexteOuVide valeur={lireValeurTexte(contenu, 'encartTexte')} secours="Information pratique" />
               </div>,
             )}
           </aside>

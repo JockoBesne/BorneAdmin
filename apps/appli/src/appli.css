@@ -553,6 +553,93 @@ button {
   min-width: 0;
 }
 
+/* ── Personnalisation d'un bloc ──────────────────────────────────────────────
+ *
+ * Dépliée juste sous le bloc cliqué, dans la liste. Le trait de gauche la
+ * rattache visuellement au bloc qu'elle habille : c'est ce qui évite de la
+ * confondre avec un réglage de la page entière. */
+
+.perso {
+  margin: 8px 0 4px 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--b-trait);
+  border-left: 3px solid var(--b-accent);
+  border-radius: 10px;
+  background: var(--b-surface);
+}
+
+/* La croix seule, calée à droite : le panneau n'a pas de titre, le bloc juste
+   au-dessus le porte déjà. La marge négative la remonte contre le bord du
+   panneau, sans lui réserver une ligne à elle. */
+.perso__tete {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -6px;
+}
+
+/* Le formulaire du contenu perd son cadre une fois dans le panneau du bloc :
+   sinon on lirait une boîte dans une boîte. */
+.perso .pan__formulaire {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+/* Sépare le contenu du bloc de sa personnalisation, dans le même panneau. */
+.perso__soustitre {
+  padding-top: 12px;
+  border-top: 1px solid var(--b-trait);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--b-texte-doux);
+}
+
+/* Les commandes passent à la ligne plutôt que de déborder du panneau : la
+   largeur disponible change avec le retrait des blocs ajoutés. */
+.perso__groupe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.perso__gras {
+  font-weight: 800;
+}
+
+.perso__italique {
+  font-style: italic;
+}
+
+.perso__souligne {
+  text-decoration: underline;
+}
+
+/* Aperçu de la couleur choisie, sur le bouton qui ouvre le disque. Le damier
+   se voit à travers une pastille sans couleur : « aucun fond » se distingue
+   ainsi d'un fond blanc. */
+.perso__pastille {
+  display: inline-block;
+  vertical-align: middle;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(245, 247, 250, 0.35);
+  background-image: linear-gradient(45deg, rgba(245, 247, 250, 0.25) 50%, transparent 50%);
+}
+
+.perso__roue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
 .pan__retrait {
   flex: 1;
   min-width: 0;
@@ -650,6 +737,32 @@ button {
 
 .pan input:focus-visible,
 .pan textarea:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 1px;
+}
+
+/* Champ d'un texte mis en forme : même habillage qu'une zone de saisie
+   ordinaire, mais ce qu'on y lit est déjà en gras, en italique ou souligné —
+   il n'y a plus de « ** » à taper ni à déchiffrer. */
+.champ__riche {
+  min-height: 190px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid rgba(245, 247, 250, 0.2);
+  border-radius: 10px;
+  background: #0e2237;
+  color: var(--b-texte);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  /* Les espaces saisis sont gardés tels quels, et un mot trop long revient à la
+     ligne au lieu d'élargir le panneau. */
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.champ__riche:focus-visible {
   outline: 2px solid var(--b-accent);
   outline-offset: 1px;
 }

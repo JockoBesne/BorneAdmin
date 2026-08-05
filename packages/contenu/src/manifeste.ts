@@ -50,6 +50,22 @@ const LEGENDE_MAX = 200
  * le schéma supprime les champs qu'il ne connaît pas, et sans cette
  * déclaration la suite serait effacée à chaque enregistrement.
  */
+/**
+ * Une ligne de texte mis en forme. Facultative partout : un texte sans mise en
+ * forme, ou écrit avant l'introduction de ce champ, n'en a pas.
+ */
+export const schemaLigneTexte = z.object({
+  puce: z.boolean().optional(),
+  morceaux: z.array(
+    z.object({
+      texte: z.string(),
+      gras: z.boolean().optional(),
+      italique: z.boolean().optional(),
+      souligne: z.boolean().optional(),
+    }),
+  ),
+})
+
 export const schemaBlocLibre = z.object({
   id: z.string(),
   // Section du modèle après laquelle le bloc s'affiche ; absent = bas de page.
@@ -59,6 +75,7 @@ export const schemaBlocLibre = z.object({
     z.object({
       type: z.literal('texte'),
       valeur: z.string().max(BLOC_LIBRE_TEXTE_MAX_SIGNES),
+      lignes: z.array(schemaLigneTexte).optional(),
     }),
     z.object({
       type: z.literal('image'),
@@ -110,6 +127,21 @@ export const schemaBlocLibre = z.object({
   ]),
 })
 
+/**
+ * Habillage d'un bloc : fond et mise en forme du texte. Tous les champs sont
+ * facultatifs, donc une page écrite avant l'introduction de ce réglage reste
+ * valide — et, comme pour la suite, il faut le déclarer ici, sinon le schéma
+ * effacerait l'habillage à chaque enregistrement.
+ */
+export const schemaStyleBloc = z.object({
+  fond: z.string().regex(COULEUR).optional(),
+  couleur: z.string().regex(COULEUR).optional(),
+  gras: z.boolean().optional(),
+  italique: z.boolean().optional(),
+  souligne: z.boolean().optional(),
+  alignement: z.enum(['gauche', 'centre', 'droite']).optional(),
+})
+
 export const schemaPageManifeste = z.object({
   id: z.string(),
   titre: z.string(),
@@ -127,6 +159,9 @@ export const schemaPageManifeste = z.object({
     // restent valides sans conversion, et une page sans blocs ajoutés n'écrit
     // rien de plus dans le fichier.
     suite: z.array(schemaBlocLibre).optional(),
+    // Habillage des blocs, rangé par nom de bloc. Facultatif : absent tant
+    // qu'aucun bloc de la page n'est personnalisé.
+    styles: z.record(z.string(), schemaStyleBloc).optional(),
   }),
 })
 

@@ -1,66 +1,60 @@
 import { Fragment, type ReactNode } from 'react'
+import { texteBrut } from '../texte.js'
+import type { LigneTexte, MorceauTexte } from '../types.js'
 
 /**
- * Rendu du sous-ensemble de texte enrichi (§7.5.3) :
- *   **gras**, _italique_, et lignes commençant par « - » pour une liste.
+ * Rendu d'un texte mis en forme : gras, italique, souligné, et lignes en liste.
  *
- * Aucun HTML n'est stocké, donc aucun HTML n'est rendu : l'injection de script
- * et les styles collés depuis Word sont impossibles par construction.
+ * Le texte est stocké en morceaux portant leurs marques, jamais en HTML : ni
+ * script ni style ne peut donc arriver par un texte collé depuis un traitement
+ * de texte — c'est vrai par construction, pas par nettoyage.
  */
 
-const MARQUAGE = /(\*\*[^*]+\*\*|_[^_]+_)/g
-
-function enrichirLigne(ligne: string): ReactNode[] {
-  return ligne
-    .split(MARQUAGE)
-    .filter((part) => part !== '')
-    .map((part, i) => {
-      if (part.length > 4 && part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i}>{part.slice(2, -2)}</strong>
-      }
-      if (part.length > 2 && part.startsWith('_') && part.endsWith('_')) {
-        return <em key={i}>{part.slice(1, -1)}</em>
-      }
-      return <Fragment key={i}>{part}</Fragment>
-    })
+function Morceaux({ morceaux }: { morceaux: MorceauTexte[] }) {
+  return (
+    <>
+      {morceaux.map((morceau, i) => {
+        let noeud: ReactNode = morceau.texte
+        if (morceau.souligne) noeud = <u>{noeud}</u>
+        if (morceau.italique) noeud = <em>{noeud}</em>
+        if (morceau.gras) noeud = <strong>{noeud}</strong>
+        return <Fragment key={i}>{noeud}</Fragment>
+      })}
+    </>
+  )
 }
 
-type Bloc = { type: 'paragraphe'; lignes: string[] } | { type: 'liste'; lignes: string[] }
+type Bloc = { type: 'paragraphe' | 'liste'; lignes: LigneTexte[] }
 
-function decouper(texte: string): Bloc[] {
+/** Les lignes en puces qui se suivent forment une seule liste. */
+function regrouper(lignes: LigneTexte[]): Bloc[] {
   const blocs: Bloc[] = []
-  for (const brute of texte.split('\n')) {
-    const ligne = brute.trim()
-    if (ligne === '') continue
+  for (const ligne of lignes) {
+    // Une ligne vide sépare les paragraphes, elle ne s'affiche pas.
+    if (texteBrut([ligne]).trim() === '') continue
 
-    const estPuce = ligne.startsWith('- ')
-    const contenu = estPuce ? ligne.slice(2) : ligne
     const dernier = blocs[blocs.length - 1]
-
-    if (estPuce) {
-      if (dernier?.type === 'liste') dernier.lignes.push(contenu)
-      else blocs.push({ type: 'liste', lignes: [contenu] })
-    } else {
-      blocs.push({ type: 'paragraphe', lignes: [contenu] })
-    }
+    if (ligne.puce && dernier?.type === 'liste') dernier.lignes.push(ligne)
+    else blocs.push({ type: ligne.puce ? 'liste' : 'paragraphe', lignes: [ligne] })
   }
   return blocs
 }
 
-export function TexteEnrichi({ texte }: { texte: string }) {
-  const blocs = decouper(texte)
+export function TexteEnrichi({ lignes }: { lignes: LigneTexte[] }) {
   return (
     <>
-      {blocs.map((bloc, i) =>
+      {regrouper(lignes).map((bloc, i) =>
         bloc.type === 'liste' ? (
           <ul key={i} className="b-liste">
             {bloc.lignes.map((ligne, j) => (
-              <li key={j}>{enrichirLigne(ligne)}</li>
+              <li key={j}>
+                <Morceaux morceaux={ligne.morceaux} />
+              </li>
             ))}
           </ul>
         ) : (
           <p key={i} className="b-paragraphe">
-            {enrichirLigne(bloc.lignes[0] ?? '')}
+            <Morceaux morceaux={bloc.lignes[0]?.morceaux ?? []} />
           </p>
         ),
       )}

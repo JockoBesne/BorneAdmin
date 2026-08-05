@@ -95,3 +95,77 @@ ni les contenus existants. *(Réalisé : couleurs par page facultatives sur
 
 **Pourquoi.** Un module natif se recompile à chaque montée de version de Node /
 Electron — fragile pour une installation que personne ne maintiendra.
+
+## 2026-08-05 — Habillage d'un bloc : un seul rangement, par nom de bloc
+
+**Contexte.** L'utilisateur veut personnaliser un bloc depuis l'éditeur : fond
+du bloc, et mise en forme de son texte (gras, italique, souligné, alignement,
+couleur). La liste de droite mélange les blocs du modèle et les blocs ajoutés.
+
+**Décision.** Un seul champ facultatif, `contenu.styles`, rangé **par nom de
+bloc** : le nom de l'emplacement pour un bloc du modèle, `suite:<identifiant>`
+pour un bloc ajouté. C'est déjà le nom qu'emploient l'éditeur et l'enveloppe du
+rendu.
+
+**Pourquoi.** L'autre voie — un champ `style` sur `BlocLibre` et un rangement à
+part pour les emplacements — obligeait à tenir deux chemins pour un réglage
+unique. Un seul rangement donne un seul point d'application dans le rendu
+(`Habillage`), donc un aperçu fidèle sans rien tenir en double. L'habillage
+d'un bloc retiré part avec lui, et un habillage remis à zéro est effacé : une
+page qu'on personnalise puis qu'on remet comme avant retrouve son fichier
+d'origine.
+
+## 2026-08-05 — Un seul panneau par bloc, ouvert sous lui
+
+**Contexte.** Le formulaire de contenu d'un bloc (son texte, sa photo, les
+réponses de son quiz…) s'affichait tout en bas du panneau de droite, loin du
+bloc cliqué. La personnalisation, elle, venait d'être ajoutée sous le bloc :
+deux endroits pour un même bloc.
+
+**Décision.** **Tout** ce qui concerne un bloc s'ouvre sous lui, dans un seul
+panneau : le contenu d'abord, la personnalisation ensuite. Plus rien en bas de
+la colonne. Le panneau se ferme par une croix ou en recliquant le bloc — la même
+action que celle qui l'a ouvert.
+
+**Pourquoi.** On modifie le bloc là où on vient de le cliquer, sans chercher
+ailleurs dans la colonne où le réglage a pu s'afficher. Deux conséquences à
+connaître :
+
+- l'`autoFocus` des formulaires est devenu `focus({ preventScroll: true })` :
+  sinon, ouvrir un bloc emportait la vue jusqu'au champ, par-dessus le panneau
+  qui venait de se déplier ;
+- à l'ouverture, c'est la **ligne entière** (le bloc *et* son panneau) qu'on
+  amène dans la vue, pas le panneau seul : un panneau plus haut que la colonne
+  se collerait en haut et chasserait de l'écran le bloc qu'on vient de cliquer.
+
+## 2026-08-05 — Texte enrichi : la mise en forme se pose dans le champ
+
+**Contexte.** Un texte se tapait avec des marques : `**gras**`, `_italique_`.
+Il fallait donc connaître cette écriture, et le champ montrait des étoiles là où
+la page montre du gras.
+
+**Décision.** Le champ d'un bloc de texte devient un vrai éditeur : on
+sélectionne un morceau, on clique **G / I / S**, et le champ l'affiche mis en
+forme. Les trois boutons de la personnalisation agissent, sur un bloc de texte,
+**sur la sélection** — pas sur le bloc entier.
+
+**Pourquoi.** Ce qu'on voit dans le champ est ce que le visiteur verra. Personne
+n'a plus à apprendre une écriture, et « ce mot est en gras » cesse d'être
+confondu avec « ce bloc est en gras ».
+
+**Comment, et pourquoi comme ça.**
+
+- Le texte est rangé en **morceaux marqués** (`lignes`), jamais en HTML. La
+  règle « aucun HTML n'entre dans le contenu » tient donc toujours : le champ
+  est relu nœud par nœud, et un collage est réinséré en texte brut.
+- `valeur` reste le texte **sans** mise en forme. Tout ce qui s'appuyait dessus
+  — compteur de signes, contrôles avant publication, « ce bloc est-il vide ? »,
+  résumé dans la liste — continue de marcher sans être touché.
+- `lignes` est **facultatif** dans les deux sens : les textes déjà écrits sont
+  relus de l'ancienne écriture (et convertis au premier passage dans
+  l'éditeur), et un texte sans mise en forme n'écrit rien de plus.
+- Les listes ne changent pas de règle : une ligne commençant par « - » reste une
+  puce, dans le champ comme sur la page.
+- Le champ est **maître de son contenu** : son texte n'est posé qu'à
+  l'ouverture. Le réécrire à chaque rendu, comme le fait un champ contrôlé de
+  React, replacerait le curseur au début à chaque lettre.

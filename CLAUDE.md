@@ -46,6 +46,19 @@ demande** au premier lancement — la panne est donc moins fréquente qu'avant.
 **Ne jamais versionner `node_modules/`** (déjà dans `.gitignore`) : le binaire
 Electron dépend du système d'exploitation.
 
+**Plantage au démarrage sous Linux (`SIGSEGV`).** Sur un bureau Linux moderne,
+l'affichage passe par **Wayland** ; Electron 43 s'y écrase au lancement sur les
+systèmes un peu anciens (constaté sur Ubuntu 22.04 / GNOME 42, carte Intel).
+Aucune fenêtre ne s'ouvre, le message est `electron exited with signal SIGSEGV`.
+Les commandes du dépôt passent donc `--ozone-platform=x11` (voir les scripts
+`demarrer` et `electron` de `apps/appli/package.json`) : l'application utilise
+l'affichage historique X11, disponible partout, sans rien changer au rendu. Ce
+drapeau ne concerne que Linux — Windows, le système du poste de la salle,
+l'ignore. **En lançant Electron à la main** (test CDP, par exemple), il faut le
+répéter : `electron . --ozone-platform=x11 --remote-debugging-port=9222`.
+Le régler depuis le code (`app.commandLine.appendSwitch`) **ne marche pas** :
+le mode d'affichage est choisi avant que `principal.cjs` soit lu.
+
 Les workspaces actifs sont `packages/contenu`, `packages/ui`, `apps/appli`.
 `apps/api`, `apps/admin`, `apps/borne` restent sur le disque comme **réservoir**
 de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
@@ -65,7 +78,9 @@ de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
   - `src/Admin.tsx` — administration : liste des pages (créer / dupliquer /
     supprimer / réordonner), panneau « Apparence », enregistrement automatique.
   - `src/EditeurPage.tsx` — éditeur d'une page : aperçu fidèle à gauche, blocs à
-    droite ; blocs du modèle + blocs ajoutés (`suite`).
+    droite ; blocs du modèle + blocs ajoutés (`suite`). Cliquer un bloc déplie
+    **sous lui** son panneau (`PanneauBloc`) : contenu (`FormulaireBloc`) puis
+    personnalisation.
   - `src/RoueCouleur.tsx` — disque de couleur (canvas TSV + luminosité + hex).
   - `src/couleurs.ts` — conversions de couleur + fabrique des variables CSS.
   - `src/contenu.ts` — chargement/enregistrement du contenu, résolution des
@@ -95,6 +110,28 @@ de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
 - **Bloc ajouté** / **suite** = blocs libres qu'on ajoute à une page, en plus des
   emplacements du modèle. Un bloc mémorise `apres` (la section après laquelle il
   s'affiche) : les flèches ▲▼ le déplacent, y compris entre les emplacements.
+- **Texte enrichi** (`ValeurTexte`) = un texte se range sous deux angles :
+  `valeur`, le texte **sans** mise en forme (c'est lui qu'on compte, qu'on
+  contrôle, et qui dit si le bloc est vide), et `lignes`, la mise en forme —
+  une liste de lignes faites de morceaux portant leurs marques (`gras`,
+  `italique`, `souligne`), plus `puce` pour une ligne de liste. `lignes` est
+  **facultatif** : absent, la mise en forme est relue de l'ancienne écriture
+  (`**gras**`, `_italique_`, « - » en tête) rangée dans `valeur` — les contenus
+  déjà écrits s'affichent donc sans conversion. Un texte sans aucune mise en
+  forme n'écrit pas ses lignes non plus. Outils dans `packages/contenu/src/texte.ts`
+  (`lignesDeTexte`, `texteBrut`, `sansMiseEnForme`). **Jamais de HTML stocké** :
+  la saisie (`apps/appli/src/ChampTexteRiche.tsx`) relit le champ nœud par nœud,
+  et un collage arrive en texte brut.
+- **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond, et mise
+  en forme de son texte (gras, italique, souligné, alignement, couleur). Rangé
+  dans `contenu.styles`, par nom de bloc — le nom de l'emplacement (`titre`,
+  `image`…) ou `suite:<identifiant>` pour un bloc ajouté. Un seul rangement
+  couvre donc les deux sortes de blocs. Appliqué par `Habillage` dans
+  `rendu/Modeles.tsx`, par où passent **tous** les blocs : la borne et l'aperçu
+  habillent pareil. Un bloc sans habillage n'est pas enveloppé du tout.
+  Les classes `.b-hab--*` visent aussi les descendants (`.b-hab--gras *`) :
+  chaque bloc se donne déjà sa couleur et sa graisse (`.b-h1`, `.b-corps`), qu'une
+  valeur simplement héritée ne remplacerait pas.
 - **Toile** (`ToileBorne`) = conteneur de référence **1920 px de large**, mis à
   l'échelle sur la largeur du parent (`zoom`). Une page **défile** si elle est
   plus haute qu'un écran (les images ne sont plus jamais rognées).
@@ -131,7 +168,9 @@ de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
 
 L'application est une fenêtre Electron. Pour vérifier un changement sans écran
 tactile :
-- lancer avec le port de débogage : `electron . --remote-debugging-port=9222` ;
+- lancer avec le port de débogage :
+  `electron . --ozone-platform=x11 --remote-debugging-port=9222` (le drapeau
+  `--ozone-platform` évite le plantage Wayland, voir plus haut) ;
 - piloter/inspecter la page via le protocole CDP (WebSocket sur `:9222`) — Node
   intègre un client WebSocket, aucun paquet à installer.
 - Deux pièges observés :
@@ -173,6 +212,19 @@ tactile :
 - **Défilement du panneau de l'éditeur** : la grille `.edit` borne la hauteur de
   ligne et les sections ne se compriment plus (`.pan > * { flex-shrink: 0 }`) —
   on atteint les deux disques de couleur et le bouton du bas.
+- **Un seul panneau par bloc, ouvert sous lui.** Dans l'éditeur, cliquer un bloc
+  de la liste de droite déplie **sous lui** tout ce qui le concerne : son
+  **contenu** (texte, photo, réponses du quiz…) puis sa **personnalisation** —
+  fond du bloc, gras, italique, souligné, alignement, couleur du texte. Plus rien
+  en bas de la colonne. Fermeture par la croix ou en recliquant le bloc. Vaut
+  pour les blocs du modèle comme pour les blocs ajoutés. Voir « Habillage » dans
+  les concepts clés.
+- **Champ de texte enrichi.** Un bloc de texte se saisit **mis en forme** : on
+  sélectionne un mot, on clique G / I / S, et le champ l'affiche aussitôt en
+  gras, en italique ou souligné. Plus de `**` ni de `_` à taper. Sur un bloc de
+  texte, ces trois boutons agissent donc sur **la sélection**, pas sur le bloc
+  entier ; ailleurs (titre, image, atelier…) ils habillent le bloc comme avant.
+  Voir « Texte enrichi » dans les concepts clés.
 - **Retour à la ligne du texte** (`overflow-wrap: break-word` hérité par `.mdl`,
   titres compris) : on revient à la ligne entre les mots ; seul un mot plus large
   que son bloc (adresse web, code collé) est coupé au bord — rien ne déborde.

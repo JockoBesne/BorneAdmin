@@ -1,10 +1,23 @@
-import { Fragment, useMemo, useState, type ReactNode } from 'react'
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react'
 import {
   controlerContenu,
   DEFS_BLOCS_LIBRES,
+  estStyleVide,
+  lignesDeTexte,
+  lireStyle,
   lireSuite,
   modelePar,
   positionBloc,
+  sansMiseEnForme,
+  texteBrut,
   FRISE_CONSIGNE_MAX_SIGNES,
   FRISE_DETAIL_MAX_SIGNES,
   FRISE_LIBELLE_MAX_SIGNES,
@@ -19,7 +32,10 @@ import {
   type Manifeste,
   type MediaManifeste,
   type PageManifeste,
+  type AlignementBloc,
+  type LigneTexte,
   type ReponseQuiz,
+  type StyleBloc,
   type ValeurFrise,
   type ValeurQuiz,
   type TypeBlocLibre,
@@ -31,8 +47,9 @@ import {
   type EnveloppeEmplacement,
   type ResoudreMedia,
 } from '@borne/contenu/rendu'
+import { ChampTexteRiche, type CommandesTexteRiche } from './ChampTexteRiche.jsx'
 import { importerMedia, resolveurMedias } from './contenu.js'
-import { couleursEffectives, stylesCouleurs } from './couleurs.js'
+import { couleursEffectives, stylesCouleurs, type Couleurs } from './couleurs.js'
 import { RoueCouleur } from './RoueCouleur.jsx'
 
 /**
@@ -157,14 +174,35 @@ export function EditeurPage({
       const contenuPage = precedente.contenu as ContenuPage
       return {
         ...precedente,
-        contenu: {
+        contenu: sansStylesVides({
           ...contenuPage,
           suite: lireSuite(contenuPage).filter((bloc) => bloc.id !== id),
-        },
+          // L'habillage du bloc part avec lui : sans cela il resterait dans le
+          // fichier sans plus rien à habiller.
+          styles: sansEntree(contenuPage.styles, `suite:${id}`),
+        }),
       }
     })
     setRetraitEnCours(null)
     if (selection === `suite:${id}`) setSelection(null)
+  }
+
+  // ── Habillage d'un bloc : fond, mise en forme du texte ─────────────────────
+
+  const modifierStyle = (
+    nom: string,
+    transformation: (style: StyleBloc) => StyleBloc,
+  ) => {
+    surModification((precedente) => {
+      const contenuPage = precedente.contenu as ContenuPage
+      const styles = { ...(contenuPage.styles ?? {}) }
+      const nouveau = transformation(styles[nom] ?? {})
+      // Un habillage remis à zéro est retiré, pas gardé vide : une page qu'on
+      // repersonnalise puis remet comme avant retrouve son contenu d'origine.
+      if (estStyleVide(nouveau)) delete styles[nom]
+      else styles[nom] = nouveau
+      return { ...precedente, contenu: sansStylesVides({ ...contenuPage, styles }) }
+    })
   }
 
   // ── Couleurs propres à la page ─────────────────────────────────────────────
@@ -325,13 +363,6 @@ export function EditeurPage({
     )
   }
 
-  const defSelection = selection ? defPour(selection) : undefined
-  const valeurSelection = selection
-    ? selection.startsWith('suite:')
-      ? suite.find((bloc) => `suite:${bloc.id}` === selection)?.valeur
-      : contenu.emplacements[selection]
-    : undefined
-
   // La page dans son ordre réel : chaque section du modèle, puis les blocs
   // ajoutés qui la suivent. C'est ce plan que le panneau affiche.
   const nomsSections = modele.sections.map((section) => section.nom)
@@ -339,6 +370,34 @@ export function EditeurPage({
     section,
     blocs: suite.filter((bloc) => positionBloc(bloc, nomsSections) === section.nom),
   }))
+
+  /**
+   * Tout ce qui concerne un bloc s'ouvre **sous lui** : son contenu (le texte,
+   * la photo…) et sa personnalisation, dans un seul panneau. Rien n'est renvoyé
+   * ailleurs dans la colonne : on modifie le bloc là où on vient de le cliquer.
+   */
+  const editionDuBloc = (nom: string) => {
+    if (selection !== nom) return null
+    const def = defPour(nom)
+    const valeur = nom.startsWith('suite:')
+      ? suite.find((bloc) => `suite:${bloc.id}` === nom)?.valeur
+      : contenu.emplacements[nom]
+    if (!def || !valeur) return null
+
+    return (
+      <PanneauBloc
+        def={def}
+        valeur={valeur}
+        style={lireStyle(contenu, nom) ?? {}}
+        couleursPage={couleursPage}
+        resoudre={resoudre}
+        surContenu={(transformation) => modifierEmplacement(nom, transformation)}
+        surStyle={(transformation) => modifierStyle(nom, transformation)}
+        surChoisirMedia={(type) => setSelecteur({ nom, type })}
+        surFermeture={() => setSelection(null)}
+      />
+    )
+  }
 
   return (
     <div className="edit">
@@ -417,13 +476,15 @@ export function EditeurPage({
                         {resumeBloc(contenu.emplacements[nom])}
                       </span>
                     </button>
+                    {editionDuBloc(nom)}
                   </li>
                 )
               })}
               {blocs.map((bloc, indexBloc) => {
                 const nom = `suite:${bloc.id}`
                 return (
-                  <li key={bloc.id} className="pan__ligne pan__ligne--ajoutee">
+                  <li key={bloc.id} className="pan__ligne--ajoutee">
+                    <div className="pan__ligne">
                     {retraitEnCours === bloc.id ? (
                       <>
                         <span className="pan__retrait">Retirer ce bloc ?</span>
@@ -500,6 +561,8 @@ export function EditeurPage({
                         </button>
                       </>
                     )}
+                    </div>
+                    {editionDuBloc(nom)}
                   </li>
                 )
               })}
@@ -552,16 +615,7 @@ export function EditeurPage({
           </button>
         )}
 
-        {selection && defSelection && valeurSelection ? (
-          <FormulaireBloc
-            key={selection}
-            def={defSelection}
-            valeur={valeurSelection}
-            resoudre={resoudre}
-            surChangement={(transformation) => modifierEmplacement(selection, transformation)}
-            surChoisirMedia={(type) => setSelecteur({ nom: selection, type })}
-          />
-        ) : (
+        {selection ? null : (
           <p className="pan__aide">
             Cliquez un bloc — ici ou directement sur la page — pour le modifier.
           </p>
@@ -592,6 +646,48 @@ export function EditeurPage({
       ) : null}
     </div>
   )
+}
+
+/**
+ * Donne le clavier au premier champ d'un formulaire, sans faire défiler le
+ * panneau. Le défilement d'un « autoFocus » ordinaire emporterait la vue
+ * jusqu'au formulaire, tout en bas — par-dessus la personnalisation qui vient
+ * de se déplier sous le bloc cliqué.
+ *
+ * Définie ici, hors des composants : une fonction recréée à chaque rendu serait
+ * rappelée à chaque frappe, et remettrait le curseur au début du champ.
+ */
+const donnerLeClavier = (element: HTMLInputElement | HTMLTextAreaElement | null) => {
+  element?.focus({ preventScroll: true })
+}
+
+/** Les trois marques de mise en forme : champ, lettre du bouton, libellé. */
+const MARQUES: ['gras' | 'italique' | 'souligne', string, string][] = [
+  ['gras', 'G', 'Gras'],
+  ['italique', 'I', 'Italique'],
+  ['souligne', 'S', 'Souligné'],
+]
+
+/** Retire une entrée du rangement des habillages, sans toucher à l'original. */
+function sansEntree(
+  styles: Record<string, StyleBloc> | undefined,
+  nom: string,
+): Record<string, StyleBloc> {
+  const copie = { ...(styles ?? {}) }
+  delete copie[nom]
+  return copie
+}
+
+/**
+ * Contenu de page dont le rangement des habillages disparaît s'il est vide :
+ * une page dont aucun bloc n'est personnalisé s'écrit exactement comme avant
+ * l'introduction de ce réglage.
+ */
+function sansStylesVides(contenu: ContenuPage): ContenuPage {
+  if (contenu.styles && Object.keys(contenu.styles).length > 0) return contenu
+  const copie = { ...contenu }
+  delete copie.styles
+  return copie
 }
 
 /** Résumé d'un bloc pour la liste : dit d'un coup d'œil ce qu'il contient. */
@@ -667,6 +763,213 @@ const evenementNeuf = (): EvenementFrise => ({
   detail: '',
 })
 
+/**
+ * Le panneau d'un bloc, déplié juste sous lui dans la liste : son contenu
+ * d'abord (le texte, la photo, les réponses du quiz…), puis sa personnalisation
+ * (fond et mise en forme du texte). Un seul endroit pour tout ce qui concerne
+ * un bloc — on le modifie là où on vient de le cliquer, sans avoir à chercher
+ * ailleurs dans la colonne. On le ferme par la croix, ou en recliquant le bloc.
+ *
+ * Les deux disques de couleur ne sont pas montrés d'emblée : côte à côte ils
+ * feraient plus de cinq cents pixels de haut, et le bloc suivant serait rejeté
+ * hors de l'écran. On ouvre celui dont on a besoin.
+ */
+function PanneauBloc({
+  def,
+  valeur,
+  style,
+  couleursPage,
+  resoudre,
+  surContenu,
+  surStyle,
+  surChoisirMedia,
+  surFermeture,
+}: {
+  def: DefEmplacement
+  valeur: ValeurEmplacement
+  style: StyleBloc
+  /** Couleurs effectives de la page : le point de départ des disques. */
+  couleursPage: Couleurs
+  resoudre: ResoudreMedia
+  surContenu: (transformation: (valeur: ValeurEmplacement) => ValeurEmplacement) => void
+  surStyle: (transformation: (style: StyleBloc) => StyleBloc) => void
+  surChoisirMedia: (type: 'image' | 'video') => void
+  surFermeture: () => void
+}) {
+  const [roue, setRoue] = useState<'fond' | 'couleur' | null>(null)
+  const cadre = useRef<HTMLDivElement>(null)
+  const commandesTexte = useRef<CommandesTexteRiche | null>(null)
+
+  // Sur un bloc de texte, G / I / S ne colorent pas le bloc entier : ils
+  // mettent en forme **le morceau sélectionné**, dans le champ juste au-dessus.
+  // C'est la différence entre « ce bloc est en gras » et « ce mot est en gras ».
+  const texteRiche = def.type === 'texte' && valeur.type === 'texte'
+
+  // Le bloc cliqué peut se trouver au ras du bas de la colonne. On amène dans
+  // la vue la ligne entière — le bloc **et** son panneau, d'où le « li » — et du
+  // strict nécessaire : « nearest » ne bouge rien quand tout est déjà visible.
+  // Viser le panneau seul le collerait en haut de la colonne, en chassant hors
+  // de l'écran le bloc qu'on vient de cliquer.
+  useEffect(() => {
+    cadre.current?.closest('li')?.scrollIntoView({ block: 'nearest' })
+  }, [])
+
+  const basculer = (champ: 'gras' | 'italique' | 'souligne') => {
+    if (texteRiche) commandesTexte.current?.basculer(champ)
+    else surStyle((precedent) => ({ ...precedent, [champ]: !precedent[champ] }))
+  }
+
+  const changerCouleur = (champ: 'fond' | 'couleur', hex: string) =>
+    surStyle((precedent) => ({ ...precedent, [champ]: hex }))
+
+  const retirerCouleur = (champ: 'fond' | 'couleur') =>
+    surStyle((precedent) => {
+      const copie = { ...precedent }
+      delete copie[champ]
+      return copie
+    })
+
+  const alignement = style.alignement ?? 'gauche'
+  const alignements: [AlignementBloc, string][] = [
+    ['gauche', 'Gauche'],
+    ['centre', 'Centre'],
+    ['droite', 'Droite'],
+  ]
+
+  const couleurRoue =
+    roue === 'fond'
+      ? (style.fond ?? couleursPage.couleurFond)
+      : (style.couleur ?? couleursPage.couleurTexte)
+
+  return (
+    <div className="perso" ref={cadre}>
+      {/* Pas de titre ici : le bloc juste au-dessus porte déjà son nom, et le
+          formulaire le redit sur son premier champ. Seule la croix reste. */}
+      <div className="perso__tete">
+        <button
+          type="button"
+          className="abtn abtn--mini abtn--discret"
+          aria-label="Fermer ce bloc"
+          onClick={surFermeture}
+        >
+          ✕
+        </button>
+      </div>
+
+      <FormulaireBloc
+        def={def}
+        valeur={valeur}
+        resoudre={resoudre}
+        commandesTexte={commandesTexte}
+        surChangement={surContenu}
+        surChoisirMedia={surChoisirMedia}
+      />
+
+      <span className="perso__soustitre">Personnalisation</span>
+
+      <div
+        className="perso__groupe"
+        role="group"
+        aria-label={texteRiche ? 'Mise en forme du texte sélectionné' : 'Mise en forme du texte'}
+      >
+        {MARQUES.map(([champ, lettre, libelle]) => (
+          <button
+            key={champ}
+            type="button"
+            className={`abtn abtn--mini${!texteRiche && style[champ] ? ' abtn--actif' : ''}`}
+            // Sur un texte, ces boutons ne sont pas des interrupteurs du bloc :
+            // ils agissent sur la sélection. Pas d'état « enfoncé », donc — la
+            // mise en forme se voit dans le champ lui-même.
+            aria-pressed={texteRiche ? undefined : style[champ] === true}
+            title={texteRiche ? `${libelle} — sur le texte sélectionné` : libelle}
+            // Garde la sélection : sans cela le clic donnerait le clavier au
+            // bouton, et il n'y aurait plus rien de sélectionné à mettre en forme.
+            onMouseDown={texteRiche ? (evenement) => evenement.preventDefault() : undefined}
+            onClick={() => basculer(champ)}
+          >
+            <span className={`perso__${champ}`}>{lettre}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="perso__groupe" role="group" aria-label="Alignement du texte">
+        {alignements.map(([alignementChoisi, libelle]) => (
+          <button
+            key={alignementChoisi}
+            type="button"
+            className={`abtn${alignement === alignementChoisi ? ' abtn--actif' : ''}`}
+            aria-pressed={alignement === alignementChoisi}
+            onClick={() =>
+              surStyle((precedent) => ({ ...precedent, alignement: alignementChoisi }))
+            }
+          >
+            {libelle}
+          </button>
+        ))}
+      </div>
+
+      <div className="perso__groupe">
+        <button
+          type="button"
+          className={`abtn${roue === 'fond' ? ' abtn--actif' : ''}`}
+          aria-expanded={roue === 'fond'}
+          onClick={() => setRoue((ouverte) => (ouverte === 'fond' ? null : 'fond'))}
+        >
+          <span
+            className="perso__pastille"
+            // « backgroundColor » et non « background » : la forme courte
+            // effacerait le damier de la classe, qui signale « aucun fond ».
+            style={{ backgroundColor: style.fond ?? 'transparent' }}
+            aria-hidden="true"
+          />
+          Fond du bloc
+        </button>
+        <button
+          type="button"
+          className={`abtn${roue === 'couleur' ? ' abtn--actif' : ''}`}
+          aria-expanded={roue === 'couleur'}
+          onClick={() => setRoue((ouverte) => (ouverte === 'couleur' ? null : 'couleur'))}
+        >
+          <span
+            className="perso__pastille"
+            style={{ backgroundColor: style.couleur ?? couleursPage.couleurTexte }}
+            aria-hidden="true"
+          />
+          Texte
+        </button>
+      </div>
+
+      {roue ? (
+        <div className="perso__roue">
+          <RoueCouleur valeur={couleurRoue} surChangement={(hex) => changerCouleur(roue, hex)} />
+          {(roue === 'fond' ? style.fond : style.couleur) !== undefined ? (
+            <button
+              type="button"
+              className="abtn abtn--discret"
+              onClick={() => retirerCouleur(roue)}
+            >
+              {roue === 'fond' ? 'Retirer le fond' : 'Reprendre la couleur de la page'}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {estStyleVide(style) ? null : (
+        <button
+          type="button"
+          className="abtn abtn--discret"
+          onClick={() => {
+            setRoue(null)
+            surStyle(() => ({}))
+          }}
+        >
+          Remettre ce bloc comme les autres
+        </button>
+      )}
+    </div>
+  )
+}
+
 const LEGENDE_MAX = 200
 
 /**
@@ -678,50 +981,77 @@ function FormulaireBloc({
   def,
   valeur,
   resoudre,
+  commandesTexte,
   surChangement,
   surChoisirMedia,
 }: {
   def: DefEmplacement
   valeur: ValeurEmplacement
   resoudre: ResoudreMedia
+  /** Boîte par laquelle les boutons G I S atteignent le texte sélectionné. */
+  commandesTexte: RefObject<CommandesTexteRiche | null>
   surChangement: (transformation: (valeur: ValeurEmplacement) => ValeurEmplacement) => void
   surChoisirMedia: (type: 'image' | 'video') => void
 }) {
   const conseil = def.conseil ? <p className="champ__conseil">{def.conseil}</p> : null
 
-  if ((def.type === 'titre' || def.type === 'texte') && valeur.type === def.type) {
+  // Un texte se saisit mis en forme, directement dans le champ.
+  if (def.type === 'texte' && valeur.type === 'texte') {
+    const changerLignes = (lignes: LigneTexte[]) =>
+      surChangement((v) => {
+        if (v.type !== 'texte') return v
+        const plat = texteBrut(lignes)
+        // Un texte sans mise en forme n'écrit pas ses lignes : le fichier de
+        // contenu reste alors exactement ce qu'il était auparavant.
+        if (sansMiseEnForme(lignes)) {
+          const copie = { ...v, valeur: plat }
+          delete copie.lignes
+          return copie
+        }
+        return { ...v, valeur: plat, lignes }
+      })
+
+    return (
+      <div className="pan__formulaire">
+        <div className="champ">
+          <span className="champ__libelle">{def.libelle}</span>
+          <ChampTexteRiche
+            lignes={lignesDeTexte(valeur)}
+            maxSignes={def.maxSignes}
+            commandes={commandesTexte}
+            surChangement={changerLignes}
+          />
+          <span className="champ__compte">
+            {valeur.valeur.length} / {def.maxSignes}
+          </span>
+        </div>
+        <p className="champ__conseil">
+          Sélectionnez un mot, puis <strong>G</strong> / <em>I</em> / <u>S</u> ci-dessous pour
+          le mettre en forme. Une ligne commençant par «&nbsp;-&nbsp;» devient une puce.
+        </p>
+        {conseil}
+      </div>
+    )
+  }
+
+  if (def.type === 'titre' && valeur.type === 'titre') {
     const changerTexte = (texte: string) =>
-      surChangement((v) => (v.type === def.type ? { ...v, valeur: texte } : v))
+      surChangement((v) => (v.type === 'titre' ? { ...v, valeur: texte } : v))
 
     return (
       <div className="pan__formulaire">
         <label className="champ">
           <span className="champ__libelle">{def.libelle}</span>
-          {def.type === 'titre' ? (
-            <input
-              autoFocus
-              maxLength={def.maxSignes}
-              value={valeur.valeur}
-              onChange={(evenement) => changerTexte(evenement.target.value)}
-            />
-          ) : (
-            <textarea
-              autoFocus
-              rows={10}
-              maxLength={def.maxSignes}
-              value={valeur.valeur}
-              onChange={(evenement) => changerTexte(evenement.target.value)}
-            />
-          )}
+          <input
+            ref={donnerLeClavier}
+            maxLength={def.maxSignes}
+            value={valeur.valeur}
+            onChange={(evenement) => changerTexte(evenement.target.value)}
+          />
           <span className="champ__compte">
             {valeur.valeur.length} / {def.maxSignes}
           </span>
         </label>
-        {def.type === 'texte' ? (
-          <p className="champ__conseil">
-            Mise en forme : **gras**, _italique_, listes commençant par «&nbsp;-&nbsp;».
-          </p>
-        ) : null}
         {conseil}
       </div>
     )
@@ -910,7 +1240,7 @@ function FormulaireQuiz({
       <label className="champ">
         <span className="champ__libelle">Question</span>
         <textarea
-          autoFocus
+          ref={donnerLeClavier}
           rows={2}
           maxLength={QUIZ_QUESTION_MAX_SIGNES}
           value={valeur.question}
@@ -1027,7 +1357,7 @@ function FormulaireFrise({
       <label className="champ">
         <span className="champ__libelle">Consigne</span>
         <input
-          autoFocus
+          ref={donnerLeClavier}
           placeholder="Replacez ces événements du plus ancien au plus récent."
           maxLength={FRISE_CONSIGNE_MAX_SIGNES}
           value={valeur.consigne}
