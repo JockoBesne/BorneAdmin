@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-04T07:18:31.312Z",
+  "genereLe": "2026-08-05T08:05:09.582Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
@@ -32,7 +32,17 @@
             "type": "texte",
             "valeur": "Le **poste ER 40** équipait les unités de transmission à partir des années 1950. Conçu pour la liaison en phonie sur de courtes distances, il tenait dans un sac à dos et fonctionnait sur pile sèche.\n\nSa robustesse en a fait un matériel de référence pendant près de vingt ans.\n\n- Portée utile : 5 à 8 kilomètres\n- Masse en ordre de marche : 11 kilogrammes\n- Alimentation : pile sèche de 90 volts\n\nL'exemplaire présenté ici a été remis en état par l'_atelier de restauration du musée_ en 2019."
           }
-        }
+        },
+        "suite": [
+          {
+            "id": "9a74b956-afd1-442d-91b3-3e76b68877a3",
+            "apres": "texte",
+            "valeur": {
+              "type": "texte",
+              "valeur": ""
+            }
+          }
+        ]
       }
     },
     {
@@ -74,7 +84,19 @@
               }
             ]
           }
-        }
+        },
+        "suite": [
+          {
+            "id": "159bd946-760a-4446-b3d6-11f518634b7e",
+            "apres": "galerie",
+            "largeur": "moitie",
+            "valeur": {
+              "type": "image",
+              "mediaId": null,
+              "legende": ""
+            }
+          }
+        ]
       }
     },
     {
@@ -106,6 +128,106 @@
           "encartTexte": {
             "type": "texte",
             "valeur": "Le film complet, d'une durée de 22 minutes, est projeté en salle 3 tous les jours à 15 h."
+          }
+        }
+      }
+    },
+    {
+      "id": "page-1cea6acb-1c5e-4ed6-bb10-dba46edfaaa0",
+      "titre": "EXPO",
+      "modele": "t2",
+      "ordre": 4,
+      "vignette": null,
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "EXPO"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-galerie-1",
+            "legende": "Poste radio de campagne"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": ""
+          },
+          "galerie": {
+            "type": "galerie",
+            "elements": []
+          }
+        }
+      }
+    },
+    {
+      "id": "page-da21e8ea-7bb9-49df-809d-fa78e4cf7070",
+      "titre": "Sans titre",
+      "modele": "t2",
+      "ordre": 5,
+      "vignette": null,
+      "couleurFond": "#1f407a",
+      "couleurTexte": "#8c64fa",
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": ""
+          },
+          "image": {
+            "type": "image",
+            "mediaId": null,
+            "legende": ""
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": ""
+          },
+          "galerie": {
+            "type": "galerie",
+            "elements": []
+          }
+        },
+        "suite": [
+          {
+            "id": "8b468367-a6d8-4409-adfc-89fbd689309e",
+            "apres": "galerie",
+            "largeur": "moitie",
+            "valeur": {
+              "type": "galerie",
+              "elements": []
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-361aeea3-fbfe-456e-b292-fafcd7234621",
+      "titre": "Sans titre",
+      "modele": "t2",
+      "ordre": 6,
+      "vignette": null,
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": ""
+          },
+          "image": {
+            "type": "image",
+            "mediaId": null,
+            "legende": ""
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": ""
+          },
+          "galerie": {
+            "type": "galerie",
+            "elements": []
           }
         }
       }

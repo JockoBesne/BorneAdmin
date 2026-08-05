@@ -194,12 +194,80 @@ du bloc s'il n'est pas coupé) est de **couper au bord uniquement un mot plus
 large que son bloc** (`overflow-wrap: break-word` posé sur `.mdl`) ; les mots
 normaux restent entiers.
 
-Restent les grandes étapes de `CONTEXTE.md` :
+### Matériel — corrigé le 2026-08-04, à ne pas oublier
 
-- **Étape 3 — dossier partagé.** Réglage du chemin, copie locale au démarrage
-  puis périodique, publication versionnée (garder les N derniers dossiers datés).
+Il n'y a **qu'un seul ordinateur** : celui de la salle. L'**écran tactile est un
+simple moniteur** (HDMI + USB), sans stockage ni système. Le contenu est préparé
+**sur ce même ordinateur**. Résolution **1920×1080 paysage, confirmée**.
+
+Conséquence : l'ancienne **étape 3 (dossier partagé) est sans objet** — rien à
+synchroniser. Voir `DECISIONS.md`.
+
+### Reste à faire
+
 - **Étape 4 — empaquetage.** `.exe` (electron-builder), démarrage automatique,
-  plein écran par défaut sur le poste de la salle.
+  plein écran par défaut. **Seule grande étape restante.**
+- **Sauvegarde du contenu** (besoin distinct de l'ancienne étape 3) : copie datée
+  sur clé USB ou dossier réseau, contre la panne de disque ou la fausse manœuvre.
+  À cadrer avec le musée.
+
+### Glisser-déposer des blocs (demandé le 2026-08-04)
+
+**Aujourd'hui.** Dans l'éditeur (`apps/appli/src/EditeurPage.tsx`) : on réordonne
+avec les flèches ▲▼ (`deplacerBloc`), on choisit la largeur avec le bouton ◧/▭
+(`basculerLargeur`), et « + Ajouter un bloc » dépose toujours le nouveau bloc
+**en bas de page**. Aucun glissement nulle part.
+
+**Décisions (arbitrées avec l'utilisateur) :**
+
+1. On doit pouvoir attraper un bloc **aux deux endroits** : dans la liste du
+   panneau de droite **et** directement sur l'aperçu de la page.
+2. Les **flèches ▲▼ restent**, en secours du glissement (plus précises au doigt,
+   et recours si un glissement rate).
+3. **Déposer un bloc sur le flanc d'un autre les met côte à côte** (même rangée).
+   Le glissement commande donc aussi la largeur, en plus de l'ordre.
+4. On doit pouvoir **glisser un type depuis le menu d'ajout jusqu'à un endroit
+   précis de la page**, au lieu de le voir atterrir en bas.
+
+**Quatre capacités à construire :**
+
+- déplacer un bloc existant depuis la **liste du panneau** ;
+- déplacer un bloc existant depuis l'**aperçu** ;
+- **déposer sur le flanc** d'un bloc → les deux passent en demi-largeur, même rangée ;
+- **glisser depuis le menu d'ajout** vers une position choisie.
+
+**Pièges techniques à ne pas manquer :**
+
+- **Ne pas utiliser l'API « drag and drop » HTML5** (`dragstart`/`drop`) : elle ne
+  fonctionne pas au doigt. Utiliser les **événements pointeur**
+  (`pointerdown`/`pointermove`/`pointerup` + `setPointerCapture`), comme
+  `AccesAdmin.tsx` et `RoueCouleur.tsx` le font déjà.
+- L'aperçu est **mis à l'échelle** (`zoom` sur `.toile__ecran`, souvent ~0,6).
+  Les coordonnées du pointeur doivent être converties avant d'être comparées aux
+  positions des blocs, sinon le dépôt tombe à côté.
+- L'ancrage existant doit être respecté : un bloc mémorise `apres` (la section du
+  modèle après laquelle il s'affiche). Un dépôt doit **produire le bon `apres`**,
+  et pouvoir placer un bloc **entre les blocs du modèle** — la logique de
+  `deplacerBloc` (regroupement par section puis remise à plat) est le point de
+  départ, pas à jeter.
+- Le côte à côte est aujourd'hui **implicite** : deux blocs `largeur: 'moitie'`
+  *consécutifs* forment une rangée (`RenduSuite`). Un dépôt sur le flanc doit
+  donc à la fois régler `largeur` **et** garantir que les deux blocs sont voisins
+  dans la liste.
+- Prévoir un **repère visuel de dépôt** (trait d'insertion, surbrillance du
+  flanc) : sans lui, l'utilisateur ne sait pas où le bloc va tomber.
+- L'enregistrement automatique existant s'en charge : ne pas ajouter de bouton.
+
+**Ordre conseillé** (chaque étape est livrable et testable seule) :
+
+1. glissement dans la **liste du panneau** — le plus simple et le plus fiable ;
+2. glissement sur l'**aperçu** (conversion de coordonnées) ;
+3. **dépôt sur le flanc** = côte à côte ;
+4. glissement **depuis le menu d'ajout**.
+
+> C'est la fonctionnalité d'interface la plus lourde du projet à ce jour. Le
+> découpage ci-dessus évite de tout casser d'un coup, et permet de s'arrêter à
+> l'étape 1 ou 2 si le confort obtenu suffit.
 
 Détails à surveiller, sans urgence :
 

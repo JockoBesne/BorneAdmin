@@ -6,6 +6,36 @@ Format : **contexte → décision → pourquoi**.
 
 ---
 
+## 2026-08-04 — Un seul ordinateur : l'étape « dossier partagé » disparaît
+
+**Contexte.** `CONTEXTE.md` supposait **deux** postes : un PC de bureau pour
+préparer le contenu, un PC en salle pour l'afficher, reliés par un dossier
+partagé Windows. Toute l'étape 3 (copie au démarrage puis périodique,
+publication versionnée) reposait sur cette hypothèse.
+
+**Correction apportée par l'utilisateur.** Il n'y a **qu'un seul ordinateur**,
+celui de la salle. L'**écran tactile n'est pas un appareil autonome** : c'est un
+simple moniteur (HDMI pour l'image, USB pour le toucher), sans stockage ni
+système. Le contenu est préparé **sur ce même ordinateur**, clavier et souris
+branchés le temps de la modification.
+
+**Décision.** L'**étape 3 devient sans objet** : il n'y a rien à synchroniser,
+rien à publier vers un autre poste. L'application actuelle, qui écrit sur place
+dans son dossier de contenu, suffit telle quelle.
+
+**Ce qui subsiste, pour une autre raison.** Une **sauvegarde** du contenu (copie
+datée sur clé USB ou dossier réseau) reste souhaitable — non pour transporter le
+contenu, mais pour survivre à une panne de disque ou à une fausse manœuvre.
+
+**Pourquoi c'est important.** Le choix de l'application Electron unique n'est pas
+remis en cause, il est **renforcé** : un seul programme, un seul poste, aucun
+service réseau, rien à maintenir. La seule grande étape restante devient
+l'empaquetage `.exe` (étape 4).
+
+**Confirmé au passage.** Résolution de l'écran : **1920×1080 paysage** — c'est
+bien l'hypothèse de `ToileBorne` et des trois modèles, aucune reprise de mise en
+page n'est nécessaire.
+
 ## 2026-08-03 — Architecture : application Electron unique
 
 **Contexte.** `CONCEPTION.md` prévoyait un client/serveur (API Fastify + SQLite +
