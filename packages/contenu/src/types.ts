@@ -26,7 +26,11 @@ interface DefBase {
    */
   colonnes?: number
   requis: boolean
-  /** Conseil affiché dans le panneau de droite de l'éditeur. */
+  /**
+   * Conseil de rédaction. **N'est plus affiché** : le panneau d'un bloc ne porte
+   * aucune règle d'utilisation. Conservé parce que le réservoir de code
+   * (`apps/admin`) s'en sert encore, et qu'il documente l'intention du modèle.
+   */
   conseil?: string
 }
 

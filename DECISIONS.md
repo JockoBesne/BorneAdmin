@@ -123,9 +123,11 @@ bloc cliqué. La personnalisation, elle, venait d'être ajoutée sous le bloc :
 deux endroits pour un même bloc.
 
 **Décision.** **Tout** ce qui concerne un bloc s'ouvre sous lui, dans un seul
-panneau : le contenu d'abord, la personnalisation ensuite. Plus rien en bas de
-la colonne. Le panneau se ferme par une croix ou en recliquant le bloc — la même
-action que celle qui l'a ouvert.
+panneau. Plus rien en bas de la colonne. Le panneau se ferme par une croix ou en
+recliquant le bloc — la même action que celle qui l'a ouvert.
+
+*(L'ordre a été inversé depuis : la barre d'outils passe **avant** le contenu —
+voir l'entrée « Barre d'outils » plus bas.)*
 
 **Pourquoi.** On modifie le bloc là où on vient de le cliquer, sans chercher
 ailleurs dans la colonne où le réglage a pu s'afficher. Deux conséquences à
@@ -169,3 +171,105 @@ confondu avec « ce bloc est en gras ».
 - Le champ est **maître de son contenu** : son texte n'est posé qu'à
   l'ouverture. Le réécrire à chaque rendu, comme le fait un champ contrôlé de
   React, replacerait le curseur au début à chaque lettre.
+
+## 2026-08-05 — Barre d'outils au-dessus du champ, sans mode d'emploi
+
+**Contexte.** Les réglages d'un bloc s'affichaient sous son champ de saisie, en
+gros boutons en pastille, accompagnés de phrases expliquant comment s'en servir
+(« Sélectionnez un mot, puis G / I / S… », plus le `conseil` du modèle).
+
+**Décision.** Les réglages passent **au-dessus** du champ, ramassés en une
+**barre d'outils** de boutons carrés — gras, italique, souligné | alignement |
+couleur du texte, fond du bloc — séparés par un filet, à la manière d'un
+traitement de texte. Aucune règle d'utilisation n'est écrite dans le panneau :
+les `conseil` des modèles ne sont plus affichés.
+
+**Pourquoi.** C'est la disposition que le personnel du musée connaît déjà : les
+icônes se reconnaissent sans être expliquées. Au-dessus du champ, les boutons
+restent en vue pendant la saisie, au lieu de descendre avec un texte qui
+s'allonge.
+
+**À savoir.** Les boutons font 28 px, et non les 32 des autres boutons de
+l'administration : c'est ce qui fait tenir les huit commandes sur une seule
+ligne, y compris dans le panneau resserré d'un bloc ajouté. On vise à la souris,
+sur le PC du bureau — la borne, elle, n'a pas d'administration. Les icônes
+d'alignement sont **dessinées** en SVG : les caractères d'alignement d'Unicode
+manquent à beaucoup de polices et s'afficheraient en carrés vides.
+
+## 2026-08-05 — La barre appartient au champ texte, pas au panneau
+
+**Contexte.** La barre de mise en forme était posée par le panneau, en tête. Sur
+un bloc photo ou galerie, on ne savait plus à quoi elle se rapportait ni où elle
+devait aller.
+
+**Décision.** La barre devient un composant que le **formulaire** place lui-même,
+juste au-dessus de son champ texte. Chaque champ texte principal porte donc sa
+barre. Portée retenue : les champs principaux — texte, titre, légende, question
+du quiz, consigne de la frise ; les listes qui se répètent (chaque réponse,
+chaque événement) suivent la mise en forme du bloc.
+
+**Pourquoi.** La place de la barre n'est plus une question : elle est là où on
+écrit. Et comme chaque type de bloc n'a qu'un seul champ texte principal, cette
+règle ne multiplie pas les barres — il y en a toujours **une par bloc**, et les
+réglages continuent de porter sur le bloc entier (d'où « couleur du fond du
+bloc »). Deux blocs n'ont pas de champ où l'accrocher : la galerie et une photo
+ou vidéo pas encore choisie. La barre y prend la tête du formulaire.
+
+**Piège rencontré.** Envelopper le champ et sa barre dans un `<label>` casse
+tout : un libellé désigne son **premier élément de formulaire**, qui devient
+alors un bouton de la barre au lieu de la zone de saisie — cliquer le mot
+« Titre » enfonçait une commande de mise en forme, et l'écrivait sur le disque.
+Ces champs sont donc des `<div>`, avec un `aria-label` sur la saisie.
+
+**Formulations.** « Personnalisation » disparaît (la barre se comprend seule),
+« Fond du bloc » devient « Couleur du fond du bloc », et « Remettre ce bloc comme
+les autres » devient « **Rétablir par défaut** ». « Apparence » a été écarté pour
+le titre de section : le nom est déjà pris par les réglages généraux de la borne.
+
+## 2026-08-05 — Le champ et sa barre ne font qu'un composant
+
+**Contexte.** La barre de mise en forme restait un élément que chaque formulaire
+plaçait à la main. Rien n'empêchait de l'oublier, de la mettre au mauvais
+endroit, ou de l'afficher là où il n'y a rien à écrire.
+
+**Décision.** Un seul composant, `ChampMisEnForme`, réunit le libellé, la barre,
+la saisie et le compteur. La barre ne s'obtient qu'en passant par lui.
+
+**Pourquoi.** « Pas de champ texte, pas de barre » devient vrai par
+construction, et non par vigilance. La galerie, le quiz, la frise et une photo
+ou vidéo pas encore choisie n'ont donc plus de barre du tout.
+
+**Conséquence assumée.** Ces blocs ne se règlent plus depuis l'éditeur : ni
+couleur de fond, ni alignement. Un habillage déjà enregistré sur l'un d'eux
+continue de s'afficher, mais ne peut plus être modifié ni remis à zéro. C'était
+le choix demandé : la barre n'a de sens qu'à côté d'un texte.
+
+## 2026-08-05 — Les largeurs incluent marges et bordure (`box-sizing`)
+
+**Contexte.** Les champs du quiz et de la frise sortaient de leur cadre de 13 px
+de chaque côté, et le panneau se mettait à défiler horizontalement.
+
+**Décision.** `appli.css` pose désormais `box-sizing: border-box` sur tout, comme
+le fait déjà le rendu de la borne (`modeles.css`).
+
+**Pourquoi.** La feuille de l'application ne l'avait jamais posée : un champ en
+`width: 100 %` avec 12 px de marge intérieure et 1 px de bordure mesurait donc
+26 px de plus que son conteneur. Corriger champ par champ aurait laissé le piège
+en place pour le suivant.
+
+## 2026-08-05 — Barre de défilement des champs texte
+
+**Contexte.** La barre du système est large et posée sur un fond clair, qui
+tranche dans un panneau sombre.
+
+**Décision.** Barre reprise en entier pour les champs texte de l'administration :
+fine (10 px), sans fond, curseur à la couleur d'accent, **flèches conservées** en
+haut et en bas.
+
+**Pourquoi.** Elle se fond dans le panneau, et les flèches restent utiles à la
+souris sur le PC du bureau.
+
+**À savoir.** Dès qu'on habille une barre par `::-webkit-scrollbar`, le
+navigateur **retire ses boutons par défaut** : les flèches sont donc dessinées à
+la main, en SVG glissé dans `background-image`. Le sélecteur `:single-button` est
+indispensable — sans lui, une paire de boutons apparaît à chaque bout.

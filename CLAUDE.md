@@ -122,6 +122,21 @@ de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
   (`lignesDeTexte`, `texteBrut`, `sansMiseEnForme`). **Jamais de HTML stocké** :
   la saisie (`apps/appli/src/ChampTexteRiche.tsx`) relit le champ nœud par nœud,
   et un collage arrive en texte brut.
+- **Champ mis en forme** (`ChampMisEnForme`) = un champ texte **et** sa barre
+  d'outils, réunis en un seul composant : libellé, barre, saisie, compteur. La
+  barre (`BarreMiseEnForme` : gras, italique, souligné | alignement | couleur du
+  texte, couleur du fond du bloc, plus « Rétablir par défaut ») ne s'obtient
+  qu'en passant par lui. **Pas de champ texte, pas de barre** — et c'est vrai
+  sans qu'on ait à y penser : la galerie, le quiz, la frise et une photo ou
+  vidéo pas encore choisie n'en ont donc aucune. Conséquence assumée : ces blocs
+  ne se règlent pas depuis l'éditeur (ni fond, ni alignement).
+  Il y a **une barre par bloc** au plus : chaque type de bloc n'a qu'un champ
+  texte principal (texte, titre, légende).
+  Piège : ce champ et sa barre ne doivent **jamais** être enveloppés dans un
+  `<label>` — un libellé désigne son premier élément de formulaire, qui serait un
+  bouton de la barre, et cliquer le libellé enfoncerait une commande (constaté :
+  ça écrivait un alignement sur le disque). D'où le `<div className="champ">` de
+  `ChampMisEnForme` et les `aria-label` sur les saisies.
 - **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond, et mise
   en forme de son texte (gras, italique, souligné, alignement, couleur). Rangé
   dans `contenu.styles`, par nom de bloc — le nom de l'emplacement (`titre`,
@@ -168,6 +183,20 @@ de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
   salle n'a pas de clavier, un visiteur ne peut donc pas s'en servir).
   L'appui capture le pointeur pour tolérer le glissement du doigt ; la capture
   est enveloppée d'un `try` — si elle échoue, l'appui doit rester valable.
+
+## Pièges d'affichage déjà rencontrés
+
+- **`box-sizing: border-box` est posé sur tout** dans `appli.css`, comme dans
+  `modeles.css`. Sans lui, un champ en `width: 100 %` avec ses marges intérieures
+  dépasse son conteneur de 26 px — c'est ce qui faisait sortir les champs du quiz
+  et de la frise hors du panneau.
+- **Barre de défilement des champs texte** : reprise en entier (fine, sans fond,
+  couleur d'accent). Habiller une barre par `::-webkit-scrollbar` **retire les
+  boutons par défaut** : les flèches sont redessinées en SVG, et `:single-button`
+  évite qu'une paire apparaisse à chaque bout.
+- **`.roue__hex` est nommé à part** dans la règle des champs : le disque de
+  couleur sert aussi hors du panneau (fenêtre « Apparence de la borne »), où le
+  champ garderait sinon le fond blanc du navigateur.
 
 ## Contraintes à toujours garder en tête
 
@@ -234,12 +263,13 @@ tactile :
   ligne et les sections ne se compriment plus (`.pan > * { flex-shrink: 0 }`) —
   on atteint les deux disques de couleur et le bouton du bas.
 - **Un seul panneau par bloc, ouvert sous lui.** Dans l'éditeur, cliquer un bloc
-  de la liste de droite déplie **sous lui** tout ce qui le concerne : son
-  **contenu** (texte, photo, réponses du quiz…) puis sa **personnalisation** —
-  fond du bloc, gras, italique, souligné, alignement, couleur du texte. Plus rien
-  en bas de la colonne. Fermeture par la croix ou en recliquant le bloc. Vaut
-  pour les blocs du modèle comme pour les blocs ajoutés. Voir « Habillage » dans
-  les concepts clés.
+  de la liste de droite déplie **sous lui** tout ce qui le concerne. Plus rien en
+  bas de la colonne ; fermeture par la croix (dans le coin, à la hauteur du
+  libellé du premier champ — elle ne prend pas de ligne à elle) ou en recliquant
+  le bloc. Le panneau ne porte ni titre de section ni règle d'utilisation — les `conseil` des modèles
+  ne sont plus affichés. Vaut pour les blocs du modèle comme pour les blocs
+  ajoutés. Voir « Barre de mise en forme » et « Habillage » dans les concepts
+  clés.
 - **Champ de texte enrichi.** Un bloc de texte se saisit **mis en forme** : on
   sélectionne un mot, on clique G / I / S, et le champ l'affiche aussitôt en
   gras, en italique ou souligné. Plus de `**` ni de `_` à taper. Sur un bloc de
