@@ -238,6 +238,21 @@ export interface ContenuPage {
    * jamais été retouchée garde exactement la mise en page de son modèle.
    */
   largeurs?: Record<string, number>
+  /**
+   * Ordre libre des cellules de la page, du haut vers le bas.
+   *
+   * Chaque entrée est soit le **nom d'un emplacement du modèle** (« titre »,
+   * « image »…), soit **`suite:<identifiant>`** pour un bloc ajouté. Une fois
+   * ce champ présent, il fait autorité : il décide à la fois de l'**ordre** et
+   * de **ce qui est affiché** — un emplacement du modèle absent de la liste a
+   * été retiré de la page.
+   *
+   * Facultatif. Absent, on retombe sur l'ordre d'origine (les sections du
+   * modèle, puis les blocs ancrés par « apres ») : les pages jamais réordonnées
+   * restent donc valides et inchangées. L'éditeur ne l'écrit qu'au premier
+   * déplacement ou retrait.
+   */
+  ordre?: string[]
 }
 
 // ── Contrôles avant publication ──────────────────────────────────────────────

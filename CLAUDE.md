@@ -93,8 +93,17 @@ de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
   modèle déclare ses **sections** (`sections` dans `definir-modele`).
 - **Emplacement** = un morceau imposé par le modèle (titre, image, texte…).
 - **Bloc ajouté** / **suite** = blocs libres qu'on ajoute à une page, en plus des
-  emplacements du modèle. Un bloc mémorise `apres` (la section après laquelle il
-  s'affiche) : les flèches ▲▼ le déplacent, y compris entre les emplacements.
+  emplacements du modèle.
+- **`ordre`** (2026-08-05) = **la** liste des cellules d'une page, du haut vers
+  le bas, emplacements du modèle et blocs ajoutés **mélangés** (`titre`,
+  `suite:<id>`…). Elle décide de l'ordre **et** de la présence : un emplacement
+  du modèle absent de la liste a été *retiré de la page* (sa valeur est
+  conservée, on peut le remettre). Calculée par **`ordreCellules()`**
+  (`lecture.ts`), utilisée à l'identique par le rendu, les contrôles et
+  l'éditeur — donc l'aperçu ne peut pas diverger de la borne.
+  Facultative : absente, on retombe sur l'ordre du modèle (sections + `apres`),
+  donc les pages jamais réordonnées sont inchangées. Le modèle n'est plus qu'un
+  **point de départ**, et `apres` ne sert que d'héritage.
 - **Grille de 12 colonnes** (`COLONNES_GRILLE`) = la mise en page de **toute la
   page**. Emplacements du modèle et blocs ajoutés sont des cellules de même
   nature (`RenduGrille` dans `rendu/Modeles.tsx`), chacune d'une largeur de 3 à

@@ -1,4 +1,4 @@
-import { estBlocLibreVide, lireSuite } from './lecture.js'
+import { estBlocLibreVide, lireSuite, ordreCellules } from './lecture.js'
 import { modelePar } from './modeles/index.js'
 import {
   BLOC_LIBRE_GALERIE_MAX,
@@ -90,7 +90,23 @@ export function controlerContenu(
 
   const problemes: Probleme[] = []
 
+  // Un emplacement retiré de la page n'est plus affiché : on ne contrôle pas sa
+  // valeur, mais on le signale s'il était requis — sans bloquer, le musée reste
+  // maître de sa mise en page.
+  const affiches = new Set(ordreCellules(contenu, modele))
+
   for (const [nom, def] of Object.entries(modele.emplacements)) {
+    if (!affiches.has(nom)) {
+      if (def.requis) {
+        problemes.push({
+          emplacement: nom,
+          gravite: 'conseille',
+          message: `« ${def.libelle} » a été retiré de cette page. Son contenu est conservé : vous pouvez le remettre.`,
+        })
+      }
+      continue
+    }
+
     const valeur = contenu.emplacements[nom]
     if (!valeur) {
       if (def.requis) {

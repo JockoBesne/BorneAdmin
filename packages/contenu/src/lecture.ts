@@ -111,6 +111,63 @@ export function colonnesEmplacement(
   return Math.min(COLONNES_GRILLE, Math.max(COLONNES_MIN, Math.round(brute)))
 }
 
+/**
+ * Ordre réel des cellules d'une page, du haut vers le bas.
+ *
+ * Une cellule est soit un emplacement du modèle (« titre »), soit un bloc
+ * ajouté (« suite:<id> »). C'est **la** référence : le rendu, les contrôles et
+ * l'éditeur l'utilisent tous, donc la page affichée est toujours celle que
+ * l'éditeur montre.
+ *
+ * Deux cas :
+ * - `contenu.ordre` présent → il fait autorité (ordre **et** présence : un
+ *   emplacement absent de la liste a été retiré de la page). On filtre les
+ *   entrées devenues caduques (bloc supprimé, emplacement disparu du modèle).
+ * - absent → ordre d'origine : les sections du modèle dans l'ordre déclaré,
+ *   chacune suivie des blocs qui s'y ancrent (`apres`). Les pages jamais
+ *   réordonnées s'affichent donc exactement comme avant.
+ */
+export function ordreCellules(
+  contenu: ContenuPage,
+  modele: {
+    emplacements: Record<string, unknown>
+    sections: readonly { nom: string; emplacements: readonly string[] }[]
+  },
+): string[] {
+  const suite = lireSuite(contenu)
+  const existe = (cle: string): boolean =>
+    cle.startsWith('suite:')
+      ? suite.some((bloc) => `suite:${bloc.id}` === cle)
+      : Object.prototype.hasOwnProperty.call(modele.emplacements, cle)
+
+  if (contenu.ordre && contenu.ordre.length > 0) {
+    const vues = new Set<string>()
+    const retenues = contenu.ordre.filter((cle) => {
+      if (vues.has(cle) || !existe(cle)) return false
+      vues.add(cle)
+      return true
+    })
+    // Un bloc ajouté après coup par une autre version de l'application ne doit
+    // pas disparaître silencieusement : on le remet en fin de page.
+    for (const bloc of suite) {
+      if (!vues.has(`suite:${bloc.id}`)) retenues.push(`suite:${bloc.id}`)
+    }
+    return retenues
+  }
+
+  const noms = modele.sections.map((section) => section.nom)
+  const cles: string[] = []
+  for (const section of modele.sections) {
+    for (const nom of section.emplacements) {
+      if (existe(nom)) cles.push(nom)
+    }
+    for (const bloc of suite) {
+      if (positionBloc(bloc, noms) === section.nom) cles.push(`suite:${bloc.id}`)
+    }
+  }
+  return cles
+}
+
 /** Tous les identifiants de médias référencés par une page (index d'usage, §9.4). */
 export function mediasReferences(contenu: ContenuPage): string[] {
   const ids = new Set<string>()
