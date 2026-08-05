@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import {
   colonnesDe,
   colonnesEmplacement,
@@ -8,19 +8,22 @@ import {
   hauteurReglable,
   lireGalerie,
   lireImage,
+  lireStyle,
   lireSuite,
   lireTexte,
+  lireValeurTexte,
   lireVideo,
   positionBloc,
 } from '../lecture.js'
 import { modelePar } from '../modeles/index.js'
+import { lignesDeTexte } from '../texte.js'
 import {
   COLONNES_GRILLE,
   COLONNES_MIN,
-  HAUTEUR_MAX,
-  HAUTEUR_MIN,
-  HAUTEUR_PAS,
   type BlocLibre,
+  type ContenuPage,
+  type StyleBloc,
+  type ValeurTexte,
 } from '../types.js'
 import { AtelierFrise, AtelierQuiz } from './ateliers.jsx'
 import { BlocGalerie, BlocImage, BlocVideo } from './blocs.jsx'
@@ -33,14 +36,54 @@ import type { EnveloppeEmplacement, PropsModele } from './types.js'
 
 const SANS_ENVELOPPE: EnveloppeEmplacement = (_info, defaut) => defaut
 
+/**
+ * Habillage d'un bloc : son fond et la mise en forme de son texte.
+ *
+ * Un bloc sans habillage n'est pas enveloppé du tout — le rendu des pages
+ * écrites avant ce réglage est inchangé, au nœud près. Les classes font le
+ * travail (voir « modeles.css ») : elles doivent l'emporter sur la couleur et
+ * la graisse que chaque bloc se donne lui-même (`.b-h1`, `.b-corps`…), ce qu'un
+ * simple style hérité ne ferait pas.
+ */
+function Habillage({ style, children }: { style: StyleBloc | undefined; children: ReactNode }) {
+  if (!style) return <>{children}</>
+
+  const classes = ['b-hab']
+  if (style.fond) classes.push('b-hab--fond')
+  if (style.couleur) classes.push('b-hab--couleur')
+  if (style.gras) classes.push('b-hab--gras')
+  if (style.italique) classes.push('b-hab--italique')
+  if (style.souligne) classes.push('b-hab--souligne')
+  if (style.alignement === 'centre') classes.push('b-hab--centre')
+  if (style.alignement === 'droite') classes.push('b-hab--droite')
+  if (classes.length === 1) return <>{children}</>
+
+  return (
+    <div className={classes.join(' ')} style={{ background: style.fond, color: style.couleur }}>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * L'enveloppe des blocs, habillage compris. Elle passe par un seul point : la
+ * borne et l'éditeur habillent donc les blocs exactement pareil, et l'aperçu
+ * reste fidèle sans que rien ne soit à tenir en double.
+ */
+function habiller(contenu: ContenuPage, emp?: EnveloppeEmplacement): EnveloppeEmplacement {
+  const base = emp ?? SANS_ENVELOPPE
+  return (info, defaut) =>
+    base(info, <Habillage style={lireStyle(contenu, info.nom)}>{defaut}</Habillage>)
+}
+
 function TitreOuVide({ texte, secours }: { texte: string; secours: string }) {
   if (texte.trim() === '') return <span className="b-attente">{secours}</span>
   return <>{texte}</>
 }
 
-function TexteOuVide({ texte, secours }: { texte: string; secours: string }) {
-  if (texte.trim() === '') return <span className="b-attente">{secours}</span>
-  return <TexteEnrichi texte={texte} />
+function TexteOuVide({ valeur, secours }: { valeur: ValeurTexte; secours: string }) {
+  if (valeur.valeur.trim() === '') return <span className="b-attente">{secours}</span>
+  return <TexteEnrichi lignes={lignesDeTexte(valeur)} />
 }
 
 
@@ -228,22 +271,26 @@ function RenduGrille({
   lecteurVideo,
 }: PropsModele) {
   const edition = emp !== undefined
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   const modele = modelePar(contenu.modele)
   if (!modele) return null
 
   const sections = modele.sections.map((section) => section.nom)
   const suite = lireSuite(contenu)
 
-  const cellules: React.ReactNode[] = []
+  const cellules: ReactNode[] = []
 
   const enveloppeCellule = (
     cle: string,
     colonnes: number,
     classe: string,
+<<<<<<< HEAD
     enfant: React.ReactNode,
     type: string,
     hauteur: number | undefined,
+=======
+    enfant: ReactNode,
+>>>>>>> 3d014a6df72dad8b142ebe14911b10a50e856e74
   ) => (
     <div
       key={cle}
@@ -313,7 +360,7 @@ function renduEmplacement(
   type: string,
   ctx: Pick<PropsModele, 'contenu' | 'media' | 'surImage' | 'lecteurVideo'>,
   env: EnveloppeEmplacement,
-): React.ReactNode {
+): ReactNode {
   const { contenu, media, surImage, lecteurVideo } = ctx
   switch (type) {
     case 'titre':
@@ -327,7 +374,7 @@ function renduEmplacement(
       return env(
         { nom, type: 'texte', classe: 'b-corps' },
         <div className="b-corps">
-          <TexteOuVide texte={lireTexte(contenu, nom)} secours="Texte de la page" />
+          <TexteOuVide valeur={lireValeurTexte(contenu, nom)} secours="Texte de la page" />
         </div>,
       )
     case 'image':
@@ -378,7 +425,7 @@ function renduBlocLibre(
   bloc: BlocLibre,
   ctx: Pick<PropsModele, 'contenu' | 'media' | 'surImage' | 'lecteurVideo'>,
   env: EnveloppeEmplacement,
-): React.ReactNode {
+): ReactNode {
   const { media, surImage, lecteurVideo } = ctx
   const nom = `suite:${bloc.id}`
   // Éditeur : les vidéos et les ateliers sont affichés mais inertes, sinon
@@ -390,7 +437,7 @@ function renduBlocLibre(
       return env(
         { nom, type: 'texte', classe: 'b-corps' },
         <div className="b-corps">
-          <TexteOuVide texte={bloc.valeur.valeur} secours="Texte ajouté (vide)" />
+          <TexteOuVide valeur={bloc.valeur} secours="Texte ajouté (vide)" />
         </div>,
       )
     case 'image':
@@ -473,7 +520,7 @@ function GrilleBlocsAjoutes({
   lecteurVideo,
 }: PropsModele) {
   const edition = emp !== undefined
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   const sections = (modelePar(contenu.modele)?.sections ?? []).map((s) => s.nom)
   const blocs = lireSuite(contenu).filter((bloc) => edition || !estBlocLibreVide(bloc))
   if (blocs.length === 0) return null
@@ -520,7 +567,7 @@ export function Modele3({
   surRedimensionner,
   lecteurVideo = false,
 }: PropsModele) {
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   const encartTitre = lireTexte(contenu, 'encartTitre')
   const encartTexte = lireTexte(contenu, 'encartTexte')
   const encartVide = encartTitre.trim() === '' && encartTexte.trim() === ''
@@ -564,7 +611,7 @@ export function Modele3({
               { nom: 'texte', type: 'texte', classe: 'b-corps' },
               <div className="b-corps b-corps--clair">
                 <TexteOuVide
-                  texte={lireTexte(contenu, 'texte')}
+                  valeur={lireValeurTexte(contenu, 'texte')}
                   secours="Texte superposé (court)"
                 />
               </div>,
@@ -581,7 +628,10 @@ export function Modele3({
             {env(
               { nom: 'encartTexte', type: 'texte', classe: 'b-petit' },
               <div className="b-petit">
-                <TexteOuVide texte={encartTexte} secours="Information pratique" />
+                <TexteOuVide
+                  valeur={lireValeurTexte(contenu, 'encartTexte')}
+                  secours="Information pratique"
+                />
               </div>,
             )}
           </aside>

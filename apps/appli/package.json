@@ -7,8 +7,8 @@
   "main": "electron/principal.cjs",
   "scripts": {
     "construire": "vite build",
-    "demarrer": "vite build && electron .",
-    "electron": "electron ."
+    "demarrer": "vite build && electron . --ozone-platform=x11",
+    "electron": "electron . --ozone-platform=x11"
   },
   "dependencies": {
     "@borne/contenu": "*",

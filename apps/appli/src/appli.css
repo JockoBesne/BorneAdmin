@@ -5,6 +5,17 @@
  * l'administration. C'est ce qui garantit que les deux affichent la même
  * chose, par construction et non par ressemblance. */
 
+/* Une largeur inclut ses marges intérieures et sa bordure.
+   Sans cette règle, un champ en « width: 100 % » avec 12 px de marge intérieure
+   et 1 px de bordure dépasse son conteneur de 26 px — c'est ce qui faisait sortir
+   les champs du quiz et de la frise hors du panneau. Le rendu de la borne pose
+   déjà la même règle de son côté (« modeles.css »). */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html,
 body,
 #racine {
@@ -553,6 +564,161 @@ button {
   min-width: 0;
 }
 
+/* ── Personnalisation d'un bloc ──────────────────────────────────────────────
+ *
+ * Dépliée juste sous le bloc cliqué, dans la liste. Le trait de gauche la
+ * rattache visuellement au bloc qu'elle habille : c'est ce qui évite de la
+ * confondre avec un réglage de la page entière. */
+
+.perso {
+  /* Repère de la croix, posée dans le coin. */
+  position: relative;
+  margin: 8px 0 4px 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--b-trait);
+  border-left: 3px solid var(--b-accent);
+  border-radius: 10px;
+  background: var(--b-surface);
+}
+
+
+/* Le formulaire perd son cadre une fois dans le panneau du bloc : sinon on
+   lirait une boîte dans une boîte. Il n'a plus rien à séparer non plus — la
+   barre de mise en forme est désormais dans le formulaire, contre son champ. */
+.perso .pan__formulaire {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+
+/* Barre d'outils de la personnalisation.
+   Des boutons carrés serrés, groupés par famille et séparés par un filet : la
+   disposition d'un traitement de texte, que le personnel du musée connaît déjà.
+   Les groupes passent à la ligne plutôt que de déborder — la largeur
+   disponible change avec le retrait des blocs ajoutés. */
+/* La barre et ce qu'elle déplie (disque de couleur, remise à zéro) forment un
+   bloc, posé juste au-dessus du champ qu'ils habillent. */
+.barre {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ruban {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--b-trait);
+  border-radius: 8px;
+  background: rgba(245, 247, 250, 0.04);
+}
+
+.ruban__groupe {
+  display: flex;
+  gap: 2px;
+}
+
+.ruban__separateur {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 4px;
+  background: var(--b-trait);
+}
+
+/* 28 px, et non les 32 des autres boutons de l'administration : c'est ce qui
+   fait tenir les huit commandes sur une seule ligne, y compris dans le panneau
+   resserré d'un bloc ajouté. On vise à la souris, sur le PC du bureau — la
+   borne, elle, n'a pas d'administration. */
+.ruban__bouton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--b-texte);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.ruban__bouton:hover,
+.ruban__bouton:focus-visible {
+  border-color: rgba(233, 180, 76, 0.5);
+  background: rgba(233, 180, 76, 0.12);
+}
+
+.ruban__bouton--actif {
+  border-color: var(--b-accent);
+  background: rgba(233, 180, 76, 0.22);
+  color: var(--b-accent);
+}
+
+.ruban__lettre {
+  font-weight: 700;
+}
+
+/* Bandeau de couleur sous l'icône, comme dans un traitement de texte : on voit
+   la couleur qui sera posée sans avoir à ouvrir le disque. Le damier se lit à
+   travers une couleur absente — « aucun fond » se distingue ainsi du blanc. */
+.ruban__barre {
+  width: 16px;
+  height: 3px;
+  border-radius: 1px;
+  background-image: linear-gradient(45deg, rgba(245, 247, 250, 0.3) 50%, transparent 50%);
+  box-shadow: inset 0 0 0 1px rgba(245, 247, 250, 0.28);
+}
+
+/* La croix, dans le coin du panneau, à la hauteur du libellé du premier champ.
+   Plus petite que les autres boutons : elle doit tenir sur la ligne du libellé
+   sans mordre sur la barre d'outils, juste en dessous. */
+.perso__fermer {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 1;
+  min-height: 24px;
+  min-width: 24px;
+  padding: 0;
+  font-size: 12px;
+}
+
+/* La première rangée du formulaire laisse la place à la croix, quelle qu'elle
+   soit : un libellé, une liste de photos ou un simple message. */
+.perso .pan__formulaire > *:first-child {
+  padding-right: 34px;
+}
+
+.perso__gras {
+  font-weight: 800;
+}
+
+.perso__italique {
+  font-style: italic;
+}
+
+.perso__souligne {
+  text-decoration: underline;
+}
+
+.perso__roue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
 .pan__retrait {
   flex: 1;
   min-width: 0;
@@ -631,8 +797,12 @@ button {
   color: var(--b-texte-doux);
 }
 
+/* « .roue__hex » est nommé à part : le disque de couleur sert aussi dans la
+   fenêtre des réglages généraux, hors du panneau, où son champ garderait sinon
+   le fond blanc du navigateur en plein écran sombre. */
 .pan input,
-.pan textarea {
+.pan textarea,
+.roue__hex {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid rgba(245, 247, 250, 0.2);
@@ -649,9 +819,87 @@ button {
 }
 
 .pan input:focus-visible,
-.pan textarea:focus-visible {
+.pan textarea:focus-visible,
+.roue__hex:focus-visible {
   outline: 2px solid var(--b-accent);
   outline-offset: 1px;
+}
+
+/* Champ d'un texte mis en forme : même habillage qu'une zone de saisie
+   ordinaire, mais ce qu'on y lit est déjà en gras, en italique ou souligné —
+   il n'y a plus de « ** » à taper ni à déchiffrer. */
+.champ__riche {
+  min-height: 190px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid rgba(245, 247, 250, 0.2);
+  border-radius: 10px;
+  background: #0e2237;
+  color: var(--b-texte);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  /* Les espaces saisis sont gardés tels quels, et un mot trop long revient à la
+     ligne au lieu d'élargir le panneau. */
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.champ__riche:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 1px;
+}
+
+/* Barre de défilement des champs texte.
+ *
+ * Celle du système est large et posée sur un fond clair, qui tranche dans un
+ * panneau sombre. On la reprend en entier : fine, sans fond, curseur à la
+ * couleur d'accent.
+ *
+ * Les flèches sont **dessinées à la main** : dès qu'on habille une barre par
+ * « ::-webkit-scrollbar », le navigateur retire ses boutons par défaut. On les
+ * remonte donc avec un petit SVG, et « single-button » n'en met qu'un à chaque
+ * bout — sans lui, une paire apparaît en haut comme en bas. */
+
+.champ__riche::-webkit-scrollbar,
+.pan textarea::-webkit-scrollbar {
+  width: 10px;
+}
+
+.champ__riche::-webkit-scrollbar-track,
+.pan textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.champ__riche::-webkit-scrollbar-thumb,
+.pan textarea::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background: var(--b-accent);
+}
+
+.champ__riche::-webkit-scrollbar-thumb:hover,
+.pan textarea::-webkit-scrollbar-thumb:hover {
+  background: #f0c56a;
+}
+
+.champ__riche::-webkit-scrollbar-button:single-button,
+.pan textarea::-webkit-scrollbar-button:single-button {
+  height: 10px;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 8px 6px;
+}
+
+.champ__riche::-webkit-scrollbar-button:single-button:vertical:decrement,
+.pan textarea::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 6'><path d='M4 0 8 6H0z' fill='%23e9b44c'/></svg>");
+}
+
+.champ__riche::-webkit-scrollbar-button:single-button:vertical:increment,
+.pan textarea::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 6'><path d='M0 0h8L4 6z' fill='%23e9b44c'/></svg>");
 }
 
 .champ__compte {
