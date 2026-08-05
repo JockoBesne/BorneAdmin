@@ -19,6 +19,12 @@ export type TypeEmplacement =
 interface DefBase {
   /** Libellé montré à l'utilisateur, en français. */
   libelle: string
+  /**
+   * Largeur par défaut de l'emplacement, en colonnes sur 12. C'est elle qui
+   * donne au modèle sa mise en page d'origine ; une page peut ensuite la
+   * remplacer (voir « largeurs » dans ContenuPage). Absent = pleine largeur.
+   */
+  colonnes?: number
   requis: boolean
   /** Conseil affiché dans le panneau de droite de l'éditeur. */
   conseil?: string
@@ -183,6 +189,13 @@ export type ValeurEmplacement =
 /** Types de blocs que le personnel peut ajouter librement à une page. */
 export type TypeBlocLibre = 'texte' | 'image' | 'galerie' | 'video' | 'quiz' | 'frise'
 
+/** Nombre de colonnes de la grille de mise en page d'une page. 12 se divise
+ *  par 2, 3 et 4 : le quart, le tiers, la moitié et les deux tiers tombent donc
+ *  juste, ce qui n'aurait pas été le cas avec 10. */
+export const COLONNES_GRILLE = 12
+/** En dessous d'un quart de largeur, un bloc n'est plus lisible sur la borne. */
+export const COLONNES_MIN = 3
+
 export const BLOC_LIBRE_TEXTE_MAX_SIGNES = 2000
 export const BLOC_LIBRE_GALERIE_MAX = 12
 
@@ -215,11 +228,20 @@ export interface BlocLibre {
    */
   apres?: string
   /**
-   * Largeur du bloc dans la page. « moitie » = deux blocs côte à côte : deux
-   * blocs « moitie » consécutifs partagent une rangée. Absent = « pleine »
-   * (toute la largeur), ce qui garde valides les contenus écrits avant ce champ.
+   * Ancienne largeur, en deux valeurs. Conservée pour que les contenus écrits
+   * avant « colonnes » restent valides ; « colonnes » l'emporte si présent.
    */
   largeur?: 'pleine' | 'moitie'
+  /**
+   * Largeur du bloc en colonnes, sur une grille de 12 (voir COLONNES_GRILLE).
+   * C'est ce que règle la poignée de redimensionnement : on tire, la largeur
+   * s'aimante sur une colonne. Les blocs s'enchaînent et passent à la ligne
+   * quand la rangée est pleine — une page ne peut donc ni se trouer ni voir
+   * deux blocs se chevaucher.
+   *
+   * Absent : déduit de « largeur » (moitie = 6, sinon 12).
+   */
+  colonnes?: number
   valeur: ValeurTexte | ValeurImage | ValeurGalerie | ValeurVideo | ValeurQuiz | ValeurFrise
 }
 
@@ -275,6 +297,14 @@ export interface ContenuPage {
    * Facultatif : absent tant qu'aucun bloc de la page n'est personnalisé.
    */
   styles?: Record<string, StyleBloc>
+  /**
+   * Largeurs choisies à la poignée pour les emplacements du modèle, en
+   * colonnes sur 12, par nom d'emplacement.
+   *
+   * Facultatif, et seuls les emplacements réglés y figurent : une page qui n'a
+   * jamais été retouchée garde exactement la mise en page de son modèle.
+   */
+  largeurs?: Record<string, number>
 }
 
 // ── Contrôles avant publication ──────────────────────────────────────────────

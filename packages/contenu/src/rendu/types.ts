@@ -39,4 +39,10 @@ export interface PropsModele {
   surImage?: (mediaId: string) => void
   /** Borne : lecteur vidéo réel. Administration : image de couverture seule. */
   lecteurVideo?: boolean
+  /**
+   * Administration : règle la largeur d'un bloc ajouté (en colonnes sur 12).
+   * Absent côté borne — c'est ce qui fait que la poignée n'existe que dans
+   * l'éditeur, sans dupliquer le rendu.
+   */
+  surRedimensionner?: (idBloc: string, colonnes: number) => void
 }
