@@ -143,25 +143,6 @@ export function EditeurPage({
 
   // ── Blocs ajoutés : ajout, retrait, déplacement ────────────────────────────
 
-  const ajouterBloc = (type: TypeBlocLibre) => {
-    const bloc: BlocLibre = {
-      id: crypto.randomUUID(),
-      // Un nouveau bloc naît en bas de page ; les flèches le remontent ensuite,
-      // y compris entre les blocs du modèle.
-      apres: modele?.sections[modele.sections.length - 1]?.nom,
-      valeur: valeurNeuve(type),
-    }
-    surModification((precedente) => {
-      const contenuPage = precedente.contenu as ContenuPage
-      return {
-        ...precedente,
-        contenu: { ...contenuPage, suite: [...lireSuite(contenuPage), bloc] },
-      }
-    })
-    setAjoutOuvert(false)
-    setSelection(`suite:${bloc.id}`)
-  }
-
   // ── Couleurs propres à la page ─────────────────────────────────────────────
 
   const changerCouleurPage = (champ: 'couleurFond' | 'couleurTexte', hex: string) =>
@@ -433,49 +414,84 @@ export function EditeurPage({
   }
 
   /**
-   * Applique le dépôt : déplace la cellule dans l'ordre de la page, et répartit
-   * les colonnes quand on la pose sur un flanc.
+   * Place une cellule à l'endroit désigné par le dépôt : rang dans l'ordre de
+   * la page, et répartition des colonnes quand on la pose sur un flanc.
    *
    * Tout passe par « ordre », la liste unique des cellules : un emplacement du
-   * modèle et un bloc ajouté s'y déplacent exactement pareil.
+   * modèle et un bloc ajouté s'y déplacent exactement pareil. Sert au
+   * déplacement d'un bloc existant **comme** à l'arrivée d'un bloc tout neuf
+   * glissé depuis le menu d'ajout.
    */
+  const placerCellule = (
+    contenuPage: ContenuPage,
+    cleGlisse: string,
+    depot: Depot,
+  ): ContenuPage | null => {
+    const reste = ordreCellules(contenuPage, modele).filter((cle) => cle !== cleGlisse)
+
+    let vers = reste.indexOf(depot.cle)
+    if (vers < 0) return null
+    if (depot.ou === 'apres' || depot.ou === 'droite') vers += 1
+    reste.splice(vers, 0, cleGlisse)
+
+    let resultat: ContenuPage = { ...contenuPage, ordre: reste }
+
+    if (depot.ou === 'gauche' || depot.ou === 'droite') {
+      // Côte à côte : les deux cellules doivent tenir sur les mêmes 12
+      // colonnes. Si le voisin est trop large pour laisser la place minimale,
+      // on partage en deux moitiés ; sinon il garde sa largeur et l'autre
+      // prend le reste.
+      const largeurVoisin = colonnesDeCle(resultat, depot.cle)
+      const partage = largeurVoisin > COLONNES_GRILLE - COLONNES_MIN
+      const colonnesVoisin = partage ? COLONNES_GRILLE / 2 : largeurVoisin
+      resultat = avecLargeur(resultat, depot.cle, colonnesVoisin)
+      resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE - colonnesVoisin)
+    } else {
+      // Déposé au-dessus ou en dessous : le bloc prend **toute la largeur**,
+      // il occupe donc une rangée à lui seul. C'est ce que le geste annonce —
+      // un trait horizontal pleine largeur — et cela évite qu'un bloc resté
+      // en demi-largeur se glisse à côté du voisin sans qu'on l'ait demandé.
+      resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE)
+    }
+
+    return resultat
+  }
+
+  /** Déplace une cellule existante à l'endroit désigné par le dépôt. */
   const deposerCellule = (cleGlisse: string, depot: Depot) => {
     surModification((precedente) => {
       const avant = precedente.contenu as ContenuPage
-      let contenuPage = avant
-      const ordre = ordreCellules(contenuPage, modele)
+      if (cleGlisse === depot.cle) return precedente
+      if (!ordreCellules(avant, modele).includes(cleGlisse)) return precedente
 
-      const depuis = ordre.indexOf(cleGlisse)
-      if (depuis < 0 || cleGlisse === depot.cle) return precedente
-      const reste = ordre.filter((cle) => cle !== cleGlisse)
-
-      let vers = reste.indexOf(depot.cle)
-      if (vers < 0) return precedente
-      if (depot.ou === 'apres' || depot.ou === 'droite') vers += 1
-      reste.splice(vers, 0, cleGlisse)
-
-      contenuPage = { ...contenuPage, ordre: reste }
-
-      if (depot.ou === 'gauche' || depot.ou === 'droite') {
-        // Côte à côte : les deux cellules doivent tenir sur les mêmes 12
-        // colonnes. Si le voisin est trop large pour laisser la place minimale,
-        // on partage en deux moitiés ; sinon il garde sa largeur et l'autre
-        // prend le reste.
-        const largeurVoisin = colonnesDeCle(contenuPage, depot.cle)
-        const partage = largeurVoisin > COLONNES_GRILLE - COLONNES_MIN
-        const colonnesVoisin = partage ? COLONNES_GRILLE / 2 : largeurVoisin
-        contenuPage = avecLargeur(contenuPage, depot.cle, colonnesVoisin)
-        contenuPage = avecLargeur(contenuPage, cleGlisse, COLONNES_GRILLE - colonnesVoisin)
-      } else {
-        // Déposé au-dessus ou en dessous : le bloc prend **toute la largeur**,
-        // il occupe donc une rangée à lui seul. C'est ce que le geste annonce —
-        // un trait horizontal pleine largeur — et cela évite qu'un bloc resté
-        // en demi-largeur se glisse à côté du voisin sans qu'on l'ait demandé.
-        contenuPage = avecLargeur(contenuPage, cleGlisse, COLONNES_GRILLE)
-      }
-
-      return { ...precedente, contenu: recollerOrphelins(avant, contenuPage) }
+      const apres = placerCellule(avant, cleGlisse, depot)
+      if (!apres) return precedente
+      return { ...precedente, contenu: recollerOrphelins(avant, apres) }
     })
+  }
+
+  /**
+   * Crée un bloc et le pose à l'endroit visé : c'est le glissement depuis le
+   * menu d'ajout. Sans dépôt — simple clic sur le type — le bloc naît en bas de
+   * page, comme avant, et les flèches ▲▼ le remontent.
+   */
+  const ajouterBloc = (type: TypeBlocLibre, depot: Depot | null = null) => {
+    const bloc: BlocLibre = {
+      id: crypto.randomUUID(),
+      apres: modele.sections[modele.sections.length - 1]?.nom,
+      valeur: valeurNeuve(type),
+    }
+    const cle = `suite:${bloc.id}`
+
+    surModification((precedente) => {
+      const avant = precedente.contenu as ContenuPage
+      const avecBloc: ContenuPage = { ...avant, suite: [...lireSuite(avant), bloc] }
+      const place = depot ? placerCellule(avecBloc, cle, depot) : null
+      return { ...precedente, contenu: place ?? avecBloc }
+    })
+
+    setAjoutOuvert(false)
+    setSelection(cle)
   }
 
   /** Remet en bas de page un emplacement du modèle qui en avait été retiré. */
@@ -574,13 +590,20 @@ export function EditeurPage({
     if (selection === cle) setSelection(null)
   }
 
-  const auPointeurDescendu = (evenement: React.PointerEvent<HTMLDivElement>, nom: string) => {
+  /**
+   * Clé d'un bloc qui n'existe pas encore : le geste part du menu d'ajout, la
+   * cellule sera créée au moment du dépôt. Le préfixe suffit à la reconnaître —
+   * aucune cellule réelle ne s'appelle ainsi.
+   */
+  const PREFIXE_NEUF = 'nouveau:'
+
+  const auPointeurDescendu = (evenement: React.PointerEvent<HTMLElement>, nom: string) => {
     // La poignée de largeur a son propre glissement : ne pas le lui voler.
     if ((evenement.target as HTMLElement).closest('.mdl__poignee')) return
     depart.current = { x: evenement.clientX, y: evenement.clientY, id: nom, actif: false }
   }
 
-  const auPointeurDeplace = (evenement: React.PointerEvent<HTMLDivElement>) => {
+  const auPointeurDeplace = (evenement: React.PointerEvent<HTMLElement>) => {
     const debut = depart.current
     if (!debut) return
 
@@ -607,10 +630,23 @@ export function EditeurPage({
     arreterDefilement()
     dernierPoint.current = null
     if (debut?.actif) {
-      if (depot) deposerCellule(debut.id, depot)
-      // Empêche le clic qui suit de re-sélectionner : un glissement n'est pas
-      // un clic.
+      if (depot) {
+        if (debut.id.startsWith(PREFIXE_NEUF)) {
+          ajouterBloc(debut.id.slice(PREFIXE_NEUF.length) as TypeBlocLibre, depot)
+        } else {
+          deposerCellule(debut.id, depot)
+        }
+      }
+      // Empêche le clic qui suit de re-sélectionner (ou d'ajouter un second
+      // bloc en bas de page) : un glissement n'est pas un clic.
       vientDeGlisser.current = true
+      // …mais le drapeau doit retomber tout de suite après. Le clic de fin de
+      // geste part avant la moindre minuterie ; s'il n'a pas lieu du tout (le
+      // menu d'ajout se referme au dépôt), sans cela le drapeau avalerait un
+      // vrai clic, plus tard.
+      setTimeout(() => {
+        vientDeGlisser.current = false
+      }, 0)
     }
     setGlisseId(null)
     setDepot(null)
@@ -884,8 +920,9 @@ export function EditeurPage({
 
         {suite.length === 0 ? (
           <p className="pan__aide">
-            Ajoutez du texte, une photo ou une galerie : le bloc se place en bas de page, puis
-            les flèches ▲▼ le déplacent — y compris entre les blocs du modèle.
+            Ajoutez du texte, une photo ou une galerie : touchez le type et le bloc se place en
+            bas de page, ou glissez-le directement à l'endroit voulu sur l'aperçu. Les flèches
+            ▲▼ le déplacent ensuite — y compris entre les blocs du modèle.
           </p>
         ) : null}
 
@@ -912,24 +949,34 @@ export function EditeurPage({
 
         {ajoutOuvert ? (
           <div className="pan__actions" role="group" aria-label="Type de bloc à ajouter">
-            <button type="button" className="abtn" onClick={() => ajouterBloc('texte')}>
-              Texte
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('image')}>
-              Photo
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('galerie')}>
-              Galerie
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('video')}>
-              Vidéo
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('quiz')}>
-              Quiz
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('frise')}>
-              Frise
-            </button>
+            {/* Chaque type s'ajoute de deux façons : on le touche (le bloc se
+                pose en bas de page) ou on le glisse jusqu'à l'endroit voulu sur
+                l'aperçu. Le glissement n'est jamais le seul moyen. */}
+            {TYPES_AJOUTABLES.map(({ type, libelle }) => (
+              <button
+                key={type}
+                type="button"
+                className="abtn"
+                title={`${libelle} — toucher pour l'ajouter en bas, ou glisser sur la page`}
+                onPointerDown={(evenement) =>
+                  auPointeurDescendu(evenement, `${PREFIXE_NEUF}${type}`)
+                }
+                onPointerMove={auPointeurDeplace}
+                onPointerUp={auPointeurRelache}
+                onPointerCancel={auPointeurRelache}
+                onClick={() => {
+                  // Le glissement vient de déposer le bloc : ne pas en ajouter
+                  // un second.
+                  if (vientDeGlisser.current) {
+                    vientDeGlisser.current = false
+                    return
+                  }
+                  ajouterBloc(type)
+                }}
+              >
+                {libelle}
+              </button>
+            ))}
             <button
               type="button"
               className="abtn abtn--discret"
@@ -1018,6 +1065,16 @@ function resumeBloc(valeur: ValeurEmplacement | undefined): string {
     }
   }
 }
+
+/** Les types de blocs proposés par le menu d'ajout, dans l'ordre affiché. */
+const TYPES_AJOUTABLES: { type: TypeBlocLibre; libelle: string }[] = [
+  { type: 'texte', libelle: 'Texte' },
+  { type: 'image', libelle: 'Photo' },
+  { type: 'galerie', libelle: 'Galerie' },
+  { type: 'video', libelle: 'Vidéo' },
+  { type: 'quiz', libelle: 'Quiz' },
+  { type: 'frise', libelle: 'Frise' },
+]
 
 /**
  * Contenu d'un bloc qui vient d'être ajouté. Les ateliers naissent avec leurs

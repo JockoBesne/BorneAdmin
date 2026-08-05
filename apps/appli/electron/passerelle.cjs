@@ -19,4 +19,7 @@ contextBridge.exposeInMainWorld('borne', {
   ecrireContenu: (manifeste) => ipcRenderer.invoke('contenu:ecrire', manifeste),
   /** Fenêtre de choix de fichier puis copie dans medias/. Null si annulé. */
   importerMedia: (type) => ipcRenderer.invoke('medias:importer', type),
+  /** Écrit dans medias/ une image fabriquée par l'interface (couverture vidéo). */
+  enregistrerImage: (nom, donneesBase64) =>
+    ipcRenderer.invoke('medias:enregistrer-image', nom, donneesBase64),
 })

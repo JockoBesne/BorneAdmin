@@ -10,6 +10,10 @@ declare global {
       importerMedia: (
         type: 'image' | 'video',
       ) => Promise<{ chemin: string; octets: number; empreinte: string } | null>
+      enregistrerImage: (
+        nom: string,
+        donneesBase64: string,
+      ) => Promise<{ chemin: string; octets: number } | null>
     }
   }
 }

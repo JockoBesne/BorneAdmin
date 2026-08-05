@@ -23,8 +23,9 @@ ne pas s'y fier sans vérifier).
 
 **Fonctionne** : la borne (sommaire d'accueil, pages, défilement, plein écran
 F11/Échap), l'accès admin caché, l'éditeur complet (textes, images, vidéos,
-galeries, quiz, frises), l'import de médias depuis l'ordinateur, les couleurs
-réglables, le glisser-déposer des blocs.
+galeries, quiz, frises), l'import de médias depuis l'ordinateur (avec **image de
+couverture** pour les vidéos), les couleurs réglables, le glisser-déposer des
+blocs — **complet** depuis le 2026-08-05, menu d'ajout compris.
 
 **Reste à faire, par ordre d'importance.** L'étiquette indique la taille : une
 tâche **longue** demande des essais, des échecs et des reprises — ne pas la
@@ -34,11 +35,11 @@ commencer si le budget de la session est court, on s'arrêterait au milieu.
    par défaut. **Seule grande étape restante** — c'est ce qui rend l'installation
    tenable dans un musée où personne ne dépannera.
 2. **Sauvegarde du contenu** : copie datée sur clé USB ou dossier réseau, contre
-   la panne de disque ou la fausse manœuvre. À cadrer avec le musée.
-3. **Glisser depuis le menu d'ajout** vers une position choisie (le seul point
-   non fait du glisser-déposer ; peu urgent, on ajoute puis on glisse).
-4. Confort, sans urgence : redimensionner les images à l'import ; image de
-   couverture pour une vidéo importée (sinon écran sombre).
+   la panne de disque ou la fausse manœuvre. **À cadrer avec le musée avant de
+   coder** — où va la copie, à quelle fréquence, qui la déclenche (bouton dans
+   l'admin ou automatique).
+3. **Redimensionner les images à l'import** (canvas) — **en attente exprès** :
+   à ne lancer que si le poids des photos devient gênant pour de vrai.
 
 **Sans objet** : l'ancienne « étape 3 — dossier partagé ». Il n'y a **qu'un seul
 ordinateur**, voir ci-dessous.
@@ -75,7 +76,9 @@ ordinateur**, voir ci-dessous.
     `media://`, lecture **et écriture** du `contenu.json` (écriture atomique :
     `.tmp` puis renommage), import de médias (`dialog.showOpenDialog` + copie).
   - `electron/passerelle.cjs` — `contextBridge` : **la seule** surface exposée à
-    l'interface (`window.borne`). Ajouter une capacité = ajouter une ligne ici.
+    l'interface (`window.borne`). Ajouter une capacité = ajouter une ligne ici,
+    **et** son type dans `src/passerelle.d.ts`. Quatre à ce jour : lire et écrire
+    le contenu, importer un média, enregistrer une image fabriquée (couverture).
   - `src/App.tsx` — bascule visiteur / admin.
   - `src/Visiteur.tsx` — borne : **sommaire d'accueil** (`.hub`) puis les pages.
   - `src/AccesAdmin.tsx` — accès caché (coin, appui 5 s, code PIN).
@@ -132,7 +135,26 @@ ordinateur**, voir ci-dessous.
   l'échelle sur la largeur du parent avec **`zoom`** (et non `transform`). Une
   page plus haute qu'un écran **défile**.
 - **`media://`** = protocole interne qui sert un fichier de `medias/` sans
-  exposer le reste du disque.
+  exposer le reste du disque. Il répond aussi l'en-tête
+  `Access-Control-Allow-Origin` et déclare `corsEnabled` : sans cela l'interface
+  peut **afficher** un média mais pas le **lire** (`fetch`), et l'image de
+  couverture d'une vidéo devient impossible.
+- **Image de couverture d'une vidéo** (`posterChemin`) = fabriquée à l'import,
+  dans `contenu.ts` : les octets copiés sont relus, rejoués **depuis la mémoire**
+  (`Blob` + `URL.createObjectURL`), la vidéo est placée à **1 seconde** (une
+  vidéo commence presque toujours par une image noire), un canvas capture
+  l'image, et le processus principal l'écrit dans `medias/` — l'interface
+  n'écrit jamais elle-même sur le disque. Deux pièges vérifiés, coûteux à
+  retrouver :
+  - servie par `media://`, une vidéo est vue comme venant **d'un autre site** :
+    le canvas refuse d'exporter l'image (« tainted canvas ») — d'où le détour
+    par la mémoire ;
+  - poser `crossOrigin="anonymous"` sur le lecteur **casse le déplacement dans
+    la vidéo** : elle reste à zéro, on ne capturerait que l'image noire. Ne pas
+    le faire.
+  - une vidéo importée **avant** cette version n'a pas de couverture : le
+    lecteur se place alors à la première seconde (`#t=1`) au lieu d'un écran
+    noir. Réimporter la vidéo lui en donne une vraie.
 - **Enregistrement automatique** : ~600 ms après la dernière frappe. Pas de
   bouton « Enregistrer » — ne pas en ajouter. Un indicateur d'état est en barre.
 - **Accès admin** : coin haut-droit invisible, appui **5 s**, puis code PIN
@@ -143,12 +165,18 @@ ordinateur**, voir ci-dessous.
 
 ## Glisser-déposer des blocs — état
 
-Fait : glissement **dans le panneau** (poignée `⠿`), glissement **sur l'aperçu**
-(`.emp[data-nom]`, seuil de 8 px pour distinguer le clic), **dépôt sur le flanc**
-= côte à côte avec répartition des colonnes, **dépôt en haut/en bas** = le bloc
-passe en pleine largeur sur sa propre rangée, et **défilement automatique** quand
-on approche d'un bord. Les blocs du modèle se déplacent et se retirent comme les
-autres ; une rangée « Retirés de cette page » permet de les remettre.
+**Complet** (2026-08-05) : glissement **dans le panneau** (poignée `⠿`),
+glissement **sur l'aperçu** (`.emp[data-nom]`, seuil de 8 px pour distinguer le
+clic), glissement **depuis le menu d'ajout** (on attrape le type, le bloc est
+créé au moment du dépôt), **dépôt sur le flanc** = côte à côte avec répartition
+des colonnes, **dépôt en haut/en bas** = le bloc passe en pleine largeur sur sa
+propre rangée, et **défilement automatique** quand on approche d'un bord. Les
+blocs du modèle se déplacent et se retirent comme les autres ; une rangée
+« Retirés de cette page » permet de les remettre.
+
+Un seul endroit range les cellules : **`placerCellule()`** (rang dans `ordre` +
+répartition des colonnes). Le déplacement d'un bloc existant et l'arrivée d'un
+bloc neuf y passent tous les deux — ne pas refaire ce calcul ailleurs.
 
 Ce qu'il faut savoir avant d'y toucher :
 
@@ -166,6 +194,13 @@ Ce qu'il faut savoir avant d'y toucher :
   l'autre en pleine largeur — `recollerOrphelins` dans `EditeurPage.tsx`. Un bloc
   déjà seul n'est pas touché : sa largeur a été choisie exprès. La poignée de
   largeur ne déclenche pas cette règle (sinon elle sauterait pendant le geste).
+- Le drapeau `vientDeGlisser` (qui empêche le clic de fin de geste d'agir deux
+  fois) doit **retomber tout seul**, par une minuterie à 0 ms. Le menu d'ajout se
+  referme au dépôt : le clic de fin de geste n'a alors jamais lieu, et un drapeau
+  resté levé avale le clic **suivant**. Défaut déjà rencontré, déjà corrigé.
+- Le geste ne doit jamais être le seul moyen : les flèches ▲▼, le bouton de
+  largeur et l'appui simple sur un type du menu (le bloc se pose en bas) doublent
+  toujours le glissement.
 
 ## Méthode de test de la fenêtre
 
