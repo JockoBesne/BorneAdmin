@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-05T14:05:36.936Z",
+  "genereLe": "2026-08-05T14:16:28.627Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
@@ -20,10 +20,10 @@
         "modele": "t1",
         "largeurs": {
           "image": 12,
-          "texte": 11
+          "texte": 4
         },
         "hauteurs": {
-          "image": 1120
+          "image": 1140
         },
         "emplacements": {
           "titre": {

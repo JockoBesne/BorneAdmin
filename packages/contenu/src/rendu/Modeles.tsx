@@ -20,6 +20,9 @@ import { lignesDeTexte } from '../texte.js'
 import {
   COLONNES_GRILLE,
   COLONNES_MIN,
+  HAUTEUR_MAX,
+  HAUTEUR_MIN,
+  HAUTEUR_PAS,
   type BlocLibre,
   type ContenuPage,
   type StyleBloc,
@@ -284,13 +287,9 @@ function RenduGrille({
     cle: string,
     colonnes: number,
     classe: string,
-<<<<<<< HEAD
     enfant: React.ReactNode,
     type: string,
     hauteur: number | undefined,
-=======
-    enfant: ReactNode,
->>>>>>> 3d014a6df72dad8b142ebe14911b10a50e856e74
   ) => (
     <div
       key={cle}
