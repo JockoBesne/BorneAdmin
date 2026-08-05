@@ -62,13 +62,44 @@ export function AccesAdmin({ surReussite }: { surReussite: () => void }) {
    * l'accès inutilisable au pire moment. La jauge, elle, est purement visuelle
    * et animée en CSS.
    */
-  const commencer = useCallback(() => {
+  const commencer = useCallback((evenement: React.PointerEvent<HTMLDivElement>) => {
+    // Capture du pointeur : sur une dalle tactile, un doigt maintenu 5 secondes
+    // bouge toujours un peu. Sans capture, le moindre glissement hors du carré
+    // sortait de la zone et remettait le compteur à zéro — l'appui semblait
+    // « ne pas marcher » alors qu'il était sans cesse annulé.
+    // La capture peut échouer (pointeur déjà relâché, événement synthétique).
+    // Elle ne doit alors rien empêcher : sans ce garde-fou, l'exception
+    // interrompt la fonction avant le minuteur et l'accès admin devient
+    // totalement inutilisable — pour un simple confort de glissement.
+    try {
+      evenement.currentTarget.setPointerCapture(evenement.pointerId)
+    } catch {
+      /* appui toujours valable, seulement moins tolérant au glissement */
+    }
     setAppui(true)
     minuteur.current = setTimeout(() => {
       minuteur.current = null
       setAppui(false)
       setPaveOuvert(true)
     }, DUREE_APPUI_MS)
+  }, [])
+
+  /**
+   * Raccourci clavier de secours : Ctrl + Alt + A.
+   *
+   * L'écran de la salle n'a pas de clavier — un visiteur ne peut donc pas le
+   * déclencher. Sur le PC du bureau, où le personnel prépare le contenu, il
+   * évite de garder le bouton de la souris enfoncé cinq secondes à chaque fois.
+   */
+  useEffect(() => {
+    const auClavier = (evenement: KeyboardEvent) => {
+      if (evenement.ctrlKey && evenement.altKey && evenement.key.toLowerCase() === 'a') {
+        evenement.preventDefault()
+        setPaveOuvert(true)
+      }
+    }
+    window.addEventListener('keydown', auClavier)
+    return () => window.removeEventListener('keydown', auClavier)
   }, [])
 
   // La borne tourne des semaines : tout minuteur doit être libéré (§14.6).
@@ -80,7 +111,6 @@ export function AccesAdmin({ surReussite }: { surReussite: () => void }) {
         className={`acces-admin${appui ? ' acces-admin--appui' : ''}`}
         onPointerDown={commencer}
         onPointerUp={arreter}
-        onPointerLeave={arreter}
         onPointerCancel={arreter}
         aria-hidden="true"
       >

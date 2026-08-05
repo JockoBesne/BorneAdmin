@@ -67,6 +67,16 @@ export function estBlocLibreVide(bloc: BlocLibre): boolean {
       return bloc.valeur.mediaId === null
     case 'galerie':
       return bloc.valeur.elements.length === 0
+    // Un atelier est « vide » tant qu'il n'est pas jouable : sans question ou
+    // sans réponses, sans consigne ou sans assez d'événements, il ne doit pas
+    // apparaître devant le public.
+    case 'quiz':
+      return (
+        bloc.valeur.question.trim() === '' ||
+        bloc.valeur.reponses.filter((reponse) => reponse.texte.trim() !== '').length < 2
+      )
+    case 'frise':
+      return bloc.valeur.evenements.filter((evenement) => evenement.libelle.trim() !== '').length < 3
   }
 }
 

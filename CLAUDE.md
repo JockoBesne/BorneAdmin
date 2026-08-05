@@ -106,6 +106,10 @@ de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
 - **Accès admin** : coin haut-droit invisible, appui **5 s**, code PIN (par défaut
   `1975`, dans `reglages.pinAdmin`). Le code est en clair dans `contenu.json` :
   il écarte un visiteur curieux, **ce n'est pas une sécurité**.
+  Raccourci équivalent sur le PC du bureau : **Ctrl + Alt + A** (l'écran de la
+  salle n'a pas de clavier, un visiteur ne peut donc pas s'en servir).
+  L'appui capture le pointeur pour tolérer le glissement du doigt ; la capture
+  est enveloppée d'un `try` — si elle échoue, l'appui doit rester valable.
 
 ## Contraintes à toujours garder en tête
 

@@ -10,6 +10,7 @@ import {
 } from '../lecture.js'
 import { modelePar } from '../modeles/index.js'
 import type { BlocLibre } from '../types.js'
+import { AtelierFrise, AtelierQuiz } from './ateliers.jsx'
 import { BlocGalerie, BlocImage, BlocVideo } from './blocs.jsx'
 import { TexteEnrichi } from './TexteEnrichi.jsx'
 import type { EnveloppeEmplacement, PropsModele } from './types.js'
@@ -105,6 +106,27 @@ function RenduSuite({ contenu, media, emp, surImage, section }: PropsModele & { 
                 // image de couverture seule, comme pour le modèle 3.
                 lisible={!edition}
               />,
+            )}
+          </div>
+        )
+      // Les ateliers ne sont jouables que devant le visiteur : dans l'éditeur,
+      // ils sont affichés mais inertes, sinon toucher une réponse répondrait au
+      // quiz au lieu de sélectionner le bloc à modifier.
+      case 'quiz':
+        return (
+          <div key={bloc.id} className="suite__bloc suite__atelier">
+            {env(
+              { nom, type: 'quiz', classe: '' },
+              <AtelierQuiz valeur={bloc.valeur} jouable={!edition} />,
+            )}
+          </div>
+        )
+      case 'frise':
+        return (
+          <div key={bloc.id} className="suite__bloc suite__atelier">
+            {env(
+              { nom, type: 'frise', classe: '' },
+              <AtelierFrise valeur={bloc.valeur} jouable={!edition} />,
             )}
           </div>
         )

@@ -1,5 +1,16 @@
 import { z } from 'zod'
-import { BLOC_LIBRE_GALERIE_MAX, BLOC_LIBRE_TEXTE_MAX_SIGNES } from './types.js'
+import {
+  BLOC_LIBRE_GALERIE_MAX,
+  BLOC_LIBRE_TEXTE_MAX_SIGNES,
+  FRISE_CONSIGNE_MAX_SIGNES,
+  FRISE_DETAIL_MAX_SIGNES,
+  FRISE_EVENEMENTS_MAX,
+  FRISE_LIBELLE_MAX_SIGNES,
+  QUIZ_EXPLICATION_MAX_SIGNES,
+  QUIZ_QUESTION_MAX_SIGNES,
+  QUIZ_REPONSE_MAX_SIGNES,
+  QUIZ_REPONSES_MAX,
+} from './types.js'
 
 /**
  * Manifeste de publication : instantané complet et immuable du contenu destiné
@@ -64,6 +75,37 @@ export const schemaBlocLibre = z.object({
       type: z.literal('video'),
       mediaId: z.string().nullable(),
       legende: z.string().max(LEGENDE_MAX),
+    }),
+    // ── Ateliers interactifs ──
+    z.object({
+      type: z.literal('quiz'),
+      question: z.string().max(QUIZ_QUESTION_MAX_SIGNES),
+      reponses: z
+        .array(
+          z.object({
+            id: z.string(),
+            texte: z.string().max(QUIZ_REPONSE_MAX_SIGNES),
+            correcte: z.boolean(),
+            explication: z.string().max(QUIZ_EXPLICATION_MAX_SIGNES),
+          }),
+        )
+        .max(QUIZ_REPONSES_MAX),
+    }),
+    z.object({
+      type: z.literal('frise'),
+      consigne: z.string().max(FRISE_CONSIGNE_MAX_SIGNES),
+      evenements: z
+        .array(
+          z.object({
+            id: z.string(),
+            libelle: z.string().max(FRISE_LIBELLE_MAX_SIGNES),
+            // Bornée : une année hors de cette plage est une faute de frappe,
+            // et elle casserait l'échelle de la frise affichée au visiteur.
+            annee: z.number().int().min(-3000).max(3000),
+            detail: z.string().max(FRISE_DETAIL_MAX_SIGNES),
+          }),
+        )
+        .max(FRISE_EVENEMENTS_MAX),
     }),
   ]),
 })
