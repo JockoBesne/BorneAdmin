@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   COLONNES_GRILLE,
   COLONNES_MIN,
@@ -293,6 +293,48 @@ export function EditeurPage({
 
   const depart = useRef<{ x: number; y: number; id: string; actif: boolean } | null>(null)
   const vientDeGlisser = useRef(false)
+  /** Dernière position connue du pointeur, relue par le défilement automatique. */
+  const dernierPoint = useRef<{ x: number; y: number } | null>(null)
+  const minuterieDefilement = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const arreterDefilement = () => {
+    if (minuterieDefilement.current !== null) {
+      clearInterval(minuterieDefilement.current)
+      minuterieDefilement.current = null
+    }
+  }
+
+  // L'éditeur peut être quitté en plein glissement : sans ce nettoyage, la
+  // minuterie continuerait de tourner dans le vide.
+  useEffect(() => arreterDefilement, [])
+
+  /**
+   * Défilement automatique de l'aperçu quand on approche du haut ou du bas.
+   *
+   * Indispensable : un quiz ou une frise occupe presque tout l'écran, la cible
+   * est donc souvent hors de vue au moment où l'on saisit le bloc. Le doigt
+   * peut rester immobile au bord — c'est une minuterie qui fait défiler, pas le
+   * mouvement du pointeur.
+   */
+  const lancerDefilement = () => {
+    if (minuterieDefilement.current !== null) return
+    minuterieDefilement.current = setInterval(() => {
+      const point = dernierPoint.current
+      const glisse = depart.current
+      const toile = document.querySelector('.edit__apercu .toile') as HTMLElement | null
+      if (!point || !glisse?.actif || !toile) return
+
+      const cadre = toile.getBoundingClientRect()
+      const marge = 90
+      const pas = point.y < cadre.top + marge ? -18 : point.y > cadre.bottom - marge ? 18 : 0
+      if (pas === 0) return
+
+      const avant = toile.scrollTop
+      toile.scrollTop += pas
+      // La page a bougé sous le pointeur : la cible visée n'est plus la même.
+      if (toile.scrollTop !== avant) setDepot(depotDepuisPoint(point.x, point.y, glisse.id))
+    }, 16)
+  }
 
   /**
    * Cellule visée par le pointeur, et à quel endroit d'icelle.
@@ -367,15 +409,22 @@ export function EditeurPage({
 
       contenuPage = { ...contenuPage, ordre: reste }
 
-      // Côte à côte : les deux cellules doivent tenir sur les mêmes 12 colonnes.
-      // Si le voisin est trop large pour laisser la place minimale, on partage
-      // en deux moitiés ; sinon il garde sa largeur et l'autre prend le reste.
       if (depot.ou === 'gauche' || depot.ou === 'droite') {
+        // Côte à côte : les deux cellules doivent tenir sur les mêmes 12
+        // colonnes. Si le voisin est trop large pour laisser la place minimale,
+        // on partage en deux moitiés ; sinon il garde sa largeur et l'autre
+        // prend le reste.
         const largeurVoisin = colonnesDeCle(contenuPage, depot.cle)
         const partage = largeurVoisin > COLONNES_GRILLE - COLONNES_MIN
         const colonnesVoisin = partage ? COLONNES_GRILLE / 2 : largeurVoisin
         contenuPage = avecLargeur(contenuPage, depot.cle, colonnesVoisin)
         contenuPage = avecLargeur(contenuPage, cleGlisse, COLONNES_GRILLE - colonnesVoisin)
+      } else {
+        // Déposé au-dessus ou en dessous : le bloc prend **toute la largeur**,
+        // il occupe donc une rangée à lui seul. C'est ce que le geste annonce —
+        // un trait horizontal pleine largeur — et cela évite qu'un bloc resté
+        // en demi-largeur se glisse à côté du voisin sans qu'on l'ait demandé.
+        contenuPage = avecLargeur(contenuPage, cleGlisse, COLONNES_GRILLE)
       }
 
       return { ...precedente, contenu: contenuPage }
@@ -391,6 +440,46 @@ export function EditeurPage({
       return { ...precedente, contenu: { ...contenuPage, ordre: [...ordreActuel, nom] } }
     })
     setSelection(nom)
+  }
+
+  // ── Glisser-déposer dans la liste du panneau ───────────────────────────────
+  //
+  // Second chemin, volontairement plus simple que celui de l'aperçu : les
+  // lignes sont compactes et toutes visibles, donc le geste reste praticable
+  // même quand les blocs sont hauts. Il ne fait que réordonner (haut/bas) ; la
+  // mise côte à côte reste l'affaire de l'aperçu et du bouton de largeur.
+
+  const departListe = useRef<{ y: number; cle: string; actif: boolean } | null>(null)
+  const [cibleListe, setCibleListe] = useState<string | null>(null)
+
+  /** Ligne du panneau visée par le pointeur, et de quel côté l'insérer. */
+  const cibleListeDepuisY = (y: number, cleGlisse: string): string | null => {
+    const lignes = [...document.querySelectorAll<HTMLElement>('.pan__ligne[data-cle]')]
+    for (const ligne of lignes) {
+      const cle = ligne.dataset['cle']
+      if (!cle || cle === cleGlisse) continue
+      const cadre = ligne.getBoundingClientRect()
+      if (y >= cadre.top && y <= cadre.bottom) return cle
+    }
+    return null
+  }
+
+  /** Place la cellule glissée juste avant celle visée. */
+  const deposerDansListe = (cleGlisse: string, cleCible: string) => {
+    surModification((precedente) => {
+      const contenuPage = precedente.contenu as ContenuPage
+      const ordreActuel = ordreCellules(contenuPage, modele)
+      const depuis = ordreActuel.indexOf(cleGlisse)
+      const vers = ordreActuel.indexOf(cleCible)
+      if (depuis < 0 || vers < 0 || depuis === vers) return precedente
+
+      const reste = ordreActuel.filter((cle) => cle !== cleGlisse)
+      const position = reste.indexOf(cleCible)
+      // Vers le bas, on se pose après la cible ; vers le haut, avant : le bloc
+      // atterrit ainsi là où le trait d'insertion l'annonçait.
+      reste.splice(depuis < vers ? position + 1 : position, 0, cleGlisse)
+      return { ...precedente, contenu: { ...contenuPage, ordre: reste } }
+    })
   }
 
   /** Monte ou descend une cellule d'un cran dans l'ordre de la page. */
@@ -454,14 +543,18 @@ export function EditeurPage({
         /* capture refusée : le glissement reste utilisable, simplement moins tolérant */
       }
       setGlisseId(debut.id)
+      lancerDefilement()
     }
 
+    dernierPoint.current = { x: evenement.clientX, y: evenement.clientY }
     setDepot(depotDepuisPoint(evenement.clientX, evenement.clientY, debut.id))
   }
 
   const auPointeurRelache = () => {
     const debut = depart.current
     depart.current = null
+    arreterDefilement()
+    dernierPoint.current = null
     if (debut?.actif) {
       if (depot) deposerCellule(debut.id, depot)
       // Empêche le clic qui suit de re-sélectionner : un glissement n'est pas
@@ -614,7 +707,12 @@ export function EditeurPage({
             return (
               <li
                 key={cle}
-                className={`pan__ligne${blocAjoute ? ' pan__ligne--ajoutee' : ''}`}
+                data-cle={cle}
+                className={`pan__ligne${blocAjoute ? ' pan__ligne--ajoutee' : ''}${
+                  departListe.current?.cle === cle && departListe.current.actif
+                    ? ' pan__ligne--glisse'
+                    : ''
+                }${cibleListe === cle ? ' pan__ligne--cible' : ''}`}
               >
                 {retraitEnCours === cle ? (
                   <>
@@ -638,6 +736,44 @@ export function EditeurPage({
                   </>
                 ) : (
                   <>
+                    {/* Poignée de saisie : on attrape ici, jamais sur le bloc
+                        lui-même — sans quoi le clic de sélection deviendrait
+                        imprévisible. */}
+                    <button
+                      type="button"
+                      className="pan__poignee"
+                      aria-label={`Déplacer : ${def.libelle}`}
+                      title="Glisser pour déplacer"
+                      onPointerDown={(evenement) => {
+                        departListe.current = { y: evenement.clientY, cle, actif: false }
+                      }}
+                      onPointerMove={(evenement) => {
+                        const debut = departListe.current
+                        if (!debut) return
+                        if (!debut.actif) {
+                          if (Math.abs(evenement.clientY - debut.y) < 8) return
+                          debut.actif = true
+                          try {
+                            evenement.currentTarget.setPointerCapture(evenement.pointerId)
+                          } catch {
+                            /* capture refusée : le glissement reste utilisable */
+                          }
+                        }
+                        setCibleListe(cibleListeDepuisY(evenement.clientY, debut.cle))
+                      }}
+                      onPointerUp={() => {
+                        const debut = departListe.current
+                        departListe.current = null
+                        if (debut?.actif && cibleListe) deposerDansListe(debut.cle, cibleListe)
+                        setCibleListe(null)
+                      }}
+                      onPointerCancel={() => {
+                        departListe.current = null
+                        setCibleListe(null)
+                      }}
+                    >
+                      ⠿
+                    </button>
                     <button
                       type="button"
                       className={`pan__bloc${selection === cle ? ' pan__bloc--actif' : ''}`}

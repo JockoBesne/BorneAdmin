@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-05T09:58:55.770Z",
+  "genereLe": "2026-08-05T10:33:02.480Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
@@ -207,6 +207,11 @@
       "vignette": null,
       "contenu": {
         "modele": "t1",
+        "largeurs": {
+          "image": 6,
+          "texte": 6,
+          "titre": 12
+        },
         "emplacements": {
           "titre": {
             "type": "titre",
@@ -224,8 +229,8 @@
         },
         "suite": [
           {
-            "id": "2e5a3759-e116-404b-82b6-8d34995472e4",
-            "apres": "image",
+            "id": "82aae51b-0aea-40cd-88b5-139df2a09b0f",
+            "apres": "texte",
             "colonnes": 6,
             "valeur": {
               "type": "image",
@@ -234,7 +239,30 @@
             }
           },
           {
-            "id": "98eb36cf-9ba0-4101-8cb8-3f76331ed749",
+            "id": "57d003ad-3d57-45fb-b954-ca7f7762206f",
+            "apres": "texte",
+            "colonnes": 12,
+            "valeur": {
+              "type": "quiz",
+              "question": "",
+              "reponses": [
+                {
+                  "id": "b79ec77c-ced2-4532-bc23-8ba3bbbba483",
+                  "texte": "",
+                  "correcte": true,
+                  "explication": ""
+                },
+                {
+                  "id": "3ce9f3f6-85b6-4fd8-b553-aae31bd2a5e6",
+                  "texte": "",
+                  "correcte": false,
+                  "explication": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "0099f12b-6e91-4643-99ad-541dc13b6164",
             "apres": "texte",
             "colonnes": 6,
             "valeur": {
@@ -242,6 +270,14 @@
               "valeur": ""
             }
           }
+        ],
+        "ordre": [
+          "titre",
+          "suite:57d003ad-3d57-45fb-b954-ca7f7762206f",
+          "texte",
+          "suite:82aae51b-0aea-40cd-88b5-139df2a09b0f",
+          "suite:0099f12b-6e91-4643-99ad-541dc13b6164",
+          "image"
         ]
       }
     }

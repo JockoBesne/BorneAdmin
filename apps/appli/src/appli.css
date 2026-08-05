@@ -544,6 +544,34 @@ button {
   margin-left: 14px;
 }
 
+/* Poignée de saisie d'une ligne du panneau. « touch-action: none » empêche la
+   dalle tactile de faire défiler le panneau au lieu de déplacer la ligne. */
+.pan__poignee {
+  flex: none;
+  width: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--b-texte-doux);
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+}
+
+.pan__poignee:hover {
+  color: var(--b-accent);
+}
+
+.pan__ligne--glisse {
+  opacity: 0.4;
+}
+
+/* Trait d'insertion : la ligne glissée se posera à cet endroit. */
+.pan__ligne--cible {
+  box-shadow: 0 -3px 0 0 var(--b-accent);
+}
+
 .pan__ligne--ajoutee .pan__bloc {
   border-style: dashed;
 }
