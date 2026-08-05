@@ -229,7 +229,10 @@
 .b-image__fichier {
   display: block;
   max-width: 100%;
-  max-height: 620px;
+  /* Plafond de hauteur : 620 px d'origine, ou celui réglé à la poignée basse.
+     C'est ce plafond qui empêchait une photo d'occuper toute la largeur d'une
+     cellule large — l'élever la laisse grandir. */
+  max-height: var(--hauteur-bloc, 620px);
   width: auto;
   height: auto;
 }
@@ -358,13 +361,50 @@
 /* Une galerie n'a pas de hauteur propre : sans plafond, elle prendrait la
    taille naturelle des photos et déborderait de la page. */
 .mdl__cellule--galerie {
-  height: 260px;
+  height: var(--hauteur-bloc, 260px);
 }
 
 /* Une vidéo ajoutée prend un cadre 16/9 : sa hauteur découle de sa largeur et
    suit donc la poignée. */
 .mdl__cellule--video {
   aspect-ratio: 16 / 9;
+}
+
+/* Poignée de hauteur : même principe, sur le bord bas, et seulement pour les
+   images et les galeries — la hauteur d'un texte découle de son contenu. */
+.mdl__poignee-bas {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -26px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: ns-resize;
+  touch-action: none;
+  opacity: 0.4;
+  transition: opacity 160ms ease;
+  z-index: 2;
+}
+
+.mdl__cellule:hover .mdl__poignee-bas,
+.mdl__poignee-bas:focus-visible,
+.mdl__poignee-bas:active {
+  opacity: 1;
+}
+
+.mdl__poignee-bas .mdl__poignee-barre {
+  width: 64px;
+  height: 8px;
+}
+
+.mdl__poignee-bas:active .mdl__poignee-barre {
+  width: 100%;
+  border-radius: 6px;
 }
 
 /* ── Poignée de largeur (éditeur seulement) ─────────────────────────────── */

@@ -4,6 +4,8 @@ import {
   BLOC_LIBRE_TEXTE_MAX_SIGNES,
   COLONNES_GRILLE,
   COLONNES_MIN,
+  HAUTEUR_MAX,
+  HAUTEUR_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
   FRISE_DETAIL_MAX_SIGNES,
   FRISE_EVENEMENTS_MAX,
@@ -60,6 +62,7 @@ export const schemaBlocLibre = z.object({
   // Largeur en colonnes réglée à la poignée. Bornée ici aussi : un contenu
   // modifié à la main ne doit pas pouvoir produire un bloc illisible.
   colonnes: z.number().int().min(COLONNES_MIN).max(COLONNES_GRILLE).optional(),
+  hauteur: z.number().int().min(HAUTEUR_MIN).max(HAUTEUR_MAX).optional(),
   valeur: z.discriminatedUnion('type', [
     z.object({
       type: z.literal('texte'),
@@ -131,6 +134,9 @@ export const schemaPageManifeste = z.object({
     // schéma les supprimerait à chaque enregistrement.
     largeurs: z
       .record(z.string(), z.number().int().min(COLONNES_MIN).max(COLONNES_GRILLE))
+      .optional(),
+    hauteurs: z
+      .record(z.string(), z.number().int().min(HAUTEUR_MIN).max(HAUTEUR_MAX))
       .optional(),
     emplacements: z.record(z.string(), z.unknown()),
     // Facultative : les contenus écrits avant l'introduction des blocs libres

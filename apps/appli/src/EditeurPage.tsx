@@ -2,6 +2,8 @@ import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import {
   COLONNES_GRILLE,
   COLONNES_MIN,
+  HAUTEUR_MAX,
+  HAUTEUR_MIN,
   colonnesDe,
   controlerContenu,
   DEFS_BLOCS_LIBRES,
@@ -222,6 +224,35 @@ export function EditeurPage({
     })
   }
 
+  /** Hauteur d'une image ou d'une galerie, en pixels de toile. */
+  const redimensionnerHauteur = (cle: string, hauteur: number) => {
+    const borne = Math.min(HAUTEUR_MAX, Math.max(HAUTEUR_MIN, Math.round(hauteur)))
+    surModification((precedente) => {
+      const contenuPage = precedente.contenu as ContenuPage
+
+      if (cle.startsWith('suite:')) {
+        const id = cle.slice('suite:'.length)
+        return {
+          ...precedente,
+          contenu: {
+            ...contenuPage,
+            suite: lireSuite(contenuPage).map((bloc) =>
+              bloc.id === id ? { ...bloc, hauteur: borne } : bloc,
+            ),
+          },
+        }
+      }
+
+      return {
+        ...precedente,
+        contenu: {
+          ...contenuPage,
+          hauteurs: { ...(contenuPage.hauteurs ?? {}), [cle]: borne },
+        },
+      }
+    })
+  }
+
   /** Largeurs proposées au bouton : les fractions qui tombent juste sur 12. */
   const PALIERS = [COLONNES_GRILLE, 9, 8, 6, 4, 3]
 
@@ -394,6 +425,7 @@ export function EditeurPage({
             media={resoudre}
             emp={enveloppe}
             surRedimensionner={redimensionnerBloc}
+            surHauteur={redimensionnerHauteur}
           />
         </ToileBorne>
       </div>

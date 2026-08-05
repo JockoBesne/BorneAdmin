@@ -3,6 +3,9 @@ import {
   colonnesDe,
   colonnesEmplacement,
   estBlocLibreVide,
+  hauteurDe,
+  hauteurEmplacement,
+  hauteurReglable,
   lireGalerie,
   lireImage,
   lireSuite,
@@ -11,7 +14,14 @@ import {
   positionBloc,
 } from '../lecture.js'
 import { modelePar } from '../modeles/index.js'
-import { COLONNES_GRILLE, COLONNES_MIN, type BlocLibre } from '../types.js'
+import {
+  COLONNES_GRILLE,
+  COLONNES_MIN,
+  HAUTEUR_MAX,
+  HAUTEUR_MIN,
+  HAUTEUR_PAS,
+  type BlocLibre,
+} from '../types.js'
 import { AtelierFrise, AtelierQuiz } from './ateliers.jsx'
 import { BlocGalerie, BlocImage, BlocVideo } from './blocs.jsx'
 import { TexteEnrichi } from './TexteEnrichi.jsx'
@@ -114,6 +124,91 @@ function PoigneeLargeur({
 }
 
 /**
+ * Poignée de hauteur, sur le bord bas — images et galeries seulement.
+ *
+ * Une image est plafonnée en hauteur (620 px par défaut) : sur une cellule
+ * large, c'est ce plafond, et non la largeur, qui l'empêche de grandir.
+ * Le relever la laisse occuper toute la place disponible.
+ */
+function PoigneeHauteur({
+  cle,
+  hauteur,
+  surHauteur,
+}: {
+  cle: string
+  /** Hauteur courante, ou « undefined » tant qu'elle n'a jamais été réglée. */
+  hauteur: number | undefined
+  surHauteur: (cle: string, hauteur: number) => void
+}) {
+  const poignee = useRef<HTMLButtonElement>(null)
+  const depart = useRef<{ y: number; hauteur: number; echelle: number } | null>(null)
+
+  const commencer = (evenement: React.PointerEvent<HTMLButtonElement>) => {
+    const cellule = poignee.current?.parentElement
+    const page = poignee.current?.closest('.mdl')
+    if (!cellule || !page) return
+    // L'aperçu est réduit : un déplacement de N pixels à l'écran vaut N/échelle
+    // pixels de toile. Sans cette conversion, la hauteur suivrait deux fois
+    // plus vite que le doigt.
+    const echelle = page.getBoundingClientRect().width / 1920
+    if (echelle <= 0) return
+    depart.current = {
+      y: evenement.clientY,
+      hauteur: hauteur ?? cellule.getBoundingClientRect().height / echelle,
+      echelle,
+    }
+    try {
+      evenement.currentTarget.setPointerCapture(evenement.pointerId)
+    } catch {
+      /* capture indisponible : le glissement reste possible sans elle */
+    }
+  }
+
+  const glisser = (evenement: React.PointerEvent<HTMLButtonElement>) => {
+    const debut = depart.current
+    if (!debut) return
+    const ecart = (evenement.clientY - debut.y) / debut.echelle
+    const brute = debut.hauteur + ecart
+    const cible = Math.min(
+      HAUTEUR_MAX,
+      Math.max(HAUTEUR_MIN, Math.round(brute / HAUTEUR_PAS) * HAUTEUR_PAS),
+    )
+    if (cible !== hauteur) surHauteur(cle, cible)
+  }
+
+  const finir = () => {
+    depart.current = null
+  }
+
+  return (
+    <button
+      ref={poignee}
+      type="button"
+      className="mdl__poignee-bas"
+      onPointerDown={commencer}
+      onPointerMove={glisser}
+      onPointerUp={finir}
+      onPointerCancel={finir}
+      onKeyDown={(evenement) => {
+        const base = hauteur ?? 620
+        if (evenement.key === 'ArrowUp') {
+          evenement.preventDefault()
+          surHauteur(cle, Math.max(HAUTEUR_MIN, base - HAUTEUR_PAS))
+        }
+        if (evenement.key === 'ArrowDown') {
+          evenement.preventDefault()
+          surHauteur(cle, Math.min(HAUTEUR_MAX, base + HAUTEUR_PAS))
+        }
+      }}
+      aria-label={`Hauteur : ${hauteur ?? 'automatique'}. Flèches haut et bas pour ajuster.`}
+      title="Tirer pour changer la hauteur"
+    >
+      <span className="mdl__poignee-barre" aria-hidden="true" />
+    </button>
+  )
+}
+
+/**
  * Grille d'une page : emplacements du modèle et blocs ajoutés, dans l'ordre,
  * sur les mêmes 12 colonnes.
  *
@@ -129,6 +224,7 @@ function RenduGrille({
   emp,
   surImage,
   surRedimensionner,
+  surHauteur,
   lecteurVideo,
 }: PropsModele) {
   const edition = emp !== undefined
@@ -146,15 +242,25 @@ function RenduGrille({
     colonnes: number,
     classe: string,
     enfant: React.ReactNode,
+    type: string,
+    hauteur: number | undefined,
   ) => (
     <div
       key={cle}
       className={`mdl__cellule${classe ? ` ${classe}` : ''}`}
-      style={{ gridColumn: `span ${colonnes}` }}
+      style={{
+        gridColumn: `span ${colonnes}`,
+        // Variable lue par le rendu : plafond de l'image, hauteur de la
+        // galerie. Absente, chacun garde sa valeur d'origine.
+        ...(hauteur === undefined ? {} : { ['--hauteur-bloc' as string]: `${hauteur}px` }),
+      }}
     >
       {enfant}
       {surRedimensionner ? (
         <PoigneeLargeur cle={cle} colonnes={colonnes} surRedimensionner={surRedimensionner} />
+      ) : null}
+      {surHauteur && hauteurReglable(type) ? (
+        <PoigneeHauteur cle={cle} hauteur={hauteur} surHauteur={surHauteur} />
       ) : null}
     </div>
   )
@@ -171,6 +277,8 @@ function RenduGrille({
           colonnes,
           def.type === 'galerie' ? 'mdl__cellule--galerie' : '',
           renduEmplacement(nom, def.type, { contenu, media, surImage, lecteurVideo }, env),
+          def.type,
+          hauteurEmplacement(contenu, nom),
         ),
       )
     }
@@ -189,6 +297,8 @@ function RenduGrille({
               ? 'mdl__cellule--video'
               : '',
           renduBlocLibre(bloc, { contenu, media, surImage, lecteurVideo }, env),
+          bloc.valeur.type,
+          hauteurDe(bloc),
         ),
       )
     }

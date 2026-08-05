@@ -1,4 +1,4 @@
-import { COLONNES_GRILLE, COLONNES_MIN } from './types.js'
+import { COLONNES_GRILLE, COLONNES_MIN, HAUTEUR_MAX, HAUTEUR_MIN } from './types.js'
 import type {
   BlocLibre,
   ContenuPage,
@@ -109,6 +109,26 @@ export function colonnesEmplacement(
   const choisie = contenu.largeurs?.[nom]
   const brute = typeof choisie === 'number' ? choisie : (parDefaut ?? COLONNES_GRILLE)
   return Math.min(COLONNES_GRILLE, Math.max(COLONNES_MIN, Math.round(brute)))
+}
+
+/** Un bloc dont la hauteur est réglable : image ou galerie seulement. */
+export function hauteurReglable(type: string): boolean {
+  return type === 'image' || type === 'galerie'
+}
+
+function borneHauteur(valeur: number | undefined): number | undefined {
+  if (typeof valeur !== 'number' || !Number.isFinite(valeur)) return undefined
+  return Math.min(HAUTEUR_MAX, Math.max(HAUTEUR_MIN, Math.round(valeur)))
+}
+
+/** Hauteur imposée à un bloc ajouté, ou « undefined » pour la hauteur d'origine. */
+export function hauteurDe(bloc: BlocLibre): number | undefined {
+  return hauteurReglable(bloc.valeur.type) ? borneHauteur(bloc.hauteur) : undefined
+}
+
+/** Hauteur imposée à un emplacement du modèle, ou « undefined ». */
+export function hauteurEmplacement(contenu: ContenuPage, nom: string): number | undefined {
+  return borneHauteur(contenu.hauteurs?.[nom])
 }
 
 /** Tous les identifiants de médias référencés par une page (index d'usage, §9.4). */

@@ -161,6 +161,14 @@ export const COLONNES_GRILLE = 12
 /** En dessous d'un quart de largeur, un bloc n'est plus lisible sur la borne. */
 export const COLONNES_MIN = 3
 
+/* Hauteur réglable, en pixels de toile (référence 1920 × 1080).
+ * Ne concerne que les images et les galeries : la hauteur d'un texte découle
+ * de son contenu, celle d'une vidéo de ses proportions. */
+export const HAUTEUR_MIN = 160
+export const HAUTEUR_MAX = 1400
+/** Pas d'aimantation : assez fin pour ajuster, assez gros pour ne pas trembler. */
+export const HAUTEUR_PAS = 20
+
 export const BLOC_LIBRE_TEXTE_MAX_SIGNES = 2000
 export const BLOC_LIBRE_GALERIE_MAX = 12
 
@@ -207,6 +215,14 @@ export interface BlocLibre {
    * Absent : déduit de « largeur » (moitie = 6, sinon 12).
    */
   colonnes?: number
+  /**
+   * Hauteur imposée au bloc, en pixels de toile. Images et galeries seulement.
+   *
+   * Absent : hauteur d'origine (une image s'arrête à 620 px de haut, une
+   * galerie fait 260 px). C'est ce plafond qui empêchait une photo d'occuper
+   * toute la largeur d'une cellule large — le régler le lève.
+   */
+  hauteur?: number
   valeur: ValeurTexte | ValeurImage | ValeurGalerie | ValeurVideo | ValeurQuiz | ValeurFrise
 }
 
@@ -238,6 +254,8 @@ export interface ContenuPage {
    * jamais été retouchée garde exactement la mise en page de son modèle.
    */
   largeurs?: Record<string, number>
+  /** Hauteurs des emplacements image et galerie, en pixels de toile. */
+  hauteurs?: Record<string, number>
 }
 
 // ── Contrôles avant publication ──────────────────────────────────────────────

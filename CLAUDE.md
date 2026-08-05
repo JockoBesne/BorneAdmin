@@ -114,6 +114,11 @@ de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
   - **Le modèle 3 fait exception** : sa composition vidéo est déclarée
     indivisible (une seule section), ses emplacements ne passent pas par la
     grille. Ses blocs ajoutés, si.
+  - **Hauteur** : seules les images et galeries en ont une réglable (poignée
+    basse), la hauteur d'un texte découlant de son contenu. Stockée dans
+    `hauteur` (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de
+    toile, et lue par le rendu via la variable CSS `--hauteur-bloc`. Absente,
+    l'image garde son plafond de 620 px et la galerie ses 260 px.
   - L'ancien champ `largeur` ('pleine'/'moitie') n'est plus écrit mais reste lu :
     les contenus antérieurs restent valides.
 - **Toile** (`ToileBorne`) = conteneur de référence **1920 px de large**, mis à

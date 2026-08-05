@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-05T08:57:35.966Z",
+  "genereLe": "2026-08-05T14:05:36.936Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
@@ -19,8 +19,11 @@
       "contenu": {
         "modele": "t1",
         "largeurs": {
-          "image": 8,
-          "texte": 10
+          "image": 12,
+          "texte": 11
+        },
+        "hauteurs": {
+          "image": 1120
         },
         "emplacements": {
           "titre": {
@@ -195,6 +198,36 @@
           "encartTexte": {
             "type": "texte",
             "valeur": "test test ets tetst \n"
+          }
+        }
+      }
+    },
+    {
+      "id": "page-28dc9673-2829-49b7-9edb-395435d46526",
+      "titre": "Sans titre",
+      "modele": "t1",
+      "ordre": 4,
+      "vignette": null,
+      "contenu": {
+        "modele": "t1",
+        "largeurs": {
+          "image": 10,
+          "texte": 9,
+          "titre": 12
+        },
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": ""
+          },
+          "image": {
+            "type": "image",
+            "mediaId": null,
+            "legende": ""
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": ""
           }
         }
       }
