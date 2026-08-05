@@ -26,7 +26,9 @@ F11/Échap), l'accès admin caché, l'éditeur complet (textes, images, vidéos,
 galeries, quiz, frises), l'import de médias depuis l'ordinateur, les couleurs
 réglables, le glisser-déposer des blocs.
 
-**Reste à faire, par ordre d'importance :**
+**Reste à faire, par ordre d'importance.** L'étiquette indique la taille : une
+tâche **longue** demande des essais, des échecs et des reprises — ne pas la
+commencer si le budget de la session est court, on s'arrêterait au milieu.
 
 1. **Empaquetage `.exe`** (electron-builder), démarrage automatique, plein écran
    par défaut. **Seule grande étape restante** — c'est ce qui rend l'installation
