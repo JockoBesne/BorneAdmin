@@ -275,10 +275,22 @@ avec les flèches ▲▼ (`deplacerBloc`), on choisit la largeur avec le bouton 
   et pouvoir placer un bloc **entre les blocs du modèle** — la logique de
   `deplacerBloc` (regroupement par section puis remise à plat) est le point de
   départ, pas à jeter.
-- Le côte à côte est aujourd'hui **implicite** : deux blocs `largeur: 'moitie'`
-  *consécutifs* forment une rangée (`RenduSuite`). Un dépôt sur le flanc doit
-  donc à la fois régler `largeur` **et** garantir que les deux blocs sont voisins
-  dans la liste.
+- **Le côte à côte passe par la grille de 12 colonnes** (mis à jour le
+  2026-08-05, après le commit « dimension largeur fait avec grille en 12 »).
+  Chaque bloc porte `colonnes` (3 à 12, `COLONNES_GRILLE` / `COLONNES_MIN` dans
+  `types.ts`, lu par `colonnesDe()`), et les blocs s'enchaînent en passant à la
+  ligne quand la rangée est pleine. Deux blocs sont donc côte à côte dès que la
+  somme de leurs colonnes tient dans 12 **et** qu'ils sont voisins.
+  Un dépôt sur le flanc doit donc : **placer le bloc à côté de la cible** et
+  **répartir les colonnes** pour que les deux tiennent sur une rangée (6 + 6 par
+  défaut ; si la cible est déjà étroite, compléter avec la place restante). Ce
+  n'est plus un drapeau à basculer.
+  L'ancien champ `largeur: 'pleine' | 'moitie'` n'est plus écrit mais **reste
+  lu** pour les contenus anciens : ne pas le supprimer.
+- Une **poignée de redimensionnement** existe déjà dans l'aperçu
+  (`PoigneeLargeur`, `Modeles.tsx`) et utilise elle aussi `pointerdown` +
+  `clientX`. Le glissement de bloc ne doit pas se déclencher quand l'appui
+  commence **sur cette poignée** (tester la cible de l'événement).
 - Prévoir un **repère visuel de dépôt** (trait d'insertion, surbrillance du
   flanc) : sans lui, l'utilisateur ne sait pas où le bloc va tomber.
 - L'enregistrement automatique existant s'en charge : ne pas ajouter de bouton.

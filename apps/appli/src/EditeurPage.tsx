@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   COLONNES_GRILLE,
   COLONNES_MIN,
@@ -65,6 +65,12 @@ export function EditeurPage({
   const [ajoutOuvert, setAjoutOuvert] = useState(false)
   const [retraitEnCours, setRetraitEnCours] = useState<string | null>(null)
   const [couleursOuvertes, setCouleursOuvertes] = useState(false)
+  // Glisser-déposer sur l'aperçu : bloc en cours de déplacement, et endroit visé.
+  const [glisseId, setGlisseId] = useState<string | null>(null)
+  const [depot, setDepot] = useState<{
+    cle: string
+    ou: 'avant' | 'apres' | 'gauche' | 'droite'
+  } | null>(null)
 
   // Le manifeste est validé au chargement : le contenu a la forme attendue.
   const contenu = page.contenu as ContenuPage
@@ -330,6 +336,168 @@ export function EditeurPage({
     return modele.emplacements[nom]
   }
 
+  // ── Glisser-déposer d'un bloc sur l'aperçu ─────────────────────────────────
+  //
+  // On attrape un bloc ajouté et on le lâche sur un autre : au centre pour
+  // l'insérer avant/après, sur un flanc pour les mettre côte à côte.
+  //
+  // Événements pointeur, jamais l'API « drag and drop » HTML5 : celle-ci ne
+  // fonctionne pas au doigt, et la borne est un écran tactile.
+
+  /** Où le bloc va tomber, tel que le pointeur le désigne. */
+  type Depot = { cle: string; ou: 'avant' | 'apres' | 'gauche' | 'droite' }
+
+  const depart = useRef<{ x: number; y: number; id: string; actif: boolean } | null>(null)
+  const vientDeGlisser = useRef(false)
+
+  /**
+   * Cellule visée par le pointeur, et à quel endroit d'icelle.
+   *
+   * Les coordonnées n'ont pas besoin d'être converties malgré la mise à
+   * l'échelle de l'aperçu : la toile utilise « zoom », qui recalcule vraiment la
+   * mise en page — les rectangles renvoyés sont donc déjà dans le même repère
+   * que « clientX / clientY ». (Ce ne serait pas vrai avec « transform ».)
+   */
+  const depotDepuisPoint = (x: number, y: number, idGlisse: string): Depot | null => {
+    const dessous = document.elementFromPoint(x, y) as HTMLElement | null
+    const emplacement = dessous?.closest('.emp[data-nom]') as HTMLElement | null
+    const cle = emplacement?.dataset['nom']
+    if (!emplacement || !cle || cle === `suite:${idGlisse}`) return null
+
+    const cadre = emplacement.getBoundingClientRect()
+    const fractionX = (x - cadre.left) / cadre.width
+    if (fractionX < 0.28) return { cle, ou: 'gauche' }
+    if (fractionX > 0.72) return { cle, ou: 'droite' }
+    return { cle, ou: (y - cadre.top) / cadre.height < 0.5 ? 'avant' : 'apres' }
+  }
+
+  /** Applique le dépôt : déplace le bloc, et répartit les colonnes si côte à côte. */
+  const deposerBloc = (idGlisse: string, depot: Depot) => {
+    surModification((precedente) => {
+      const contenuPage = precedente.contenu as ContenuPage
+      const noms = modele.sections.map((section) => section.nom)
+      const groupes = noms.map((nom) => ({ nom, blocs: [] as BlocLibre[] }))
+      const dernier = groupes[groupes.length - 1]
+      if (!dernier) return precedente
+
+      for (const bloc of lireSuite(contenuPage)) {
+        const position = positionBloc(bloc, noms)
+        ;(groupes.find((groupe) => groupe.nom === position) ?? dernier).blocs.push(bloc)
+      }
+
+      // Retirer le bloc déplacé avant de choisir sa nouvelle place, sinon
+      // l'index calculé serait décalé d'un cran.
+      let deplace: BlocLibre | undefined
+      for (const groupe of groupes) {
+        const index = groupe.blocs.findIndex((bloc) => bloc.id === idGlisse)
+        if (index >= 0) {
+          deplace = groupe.blocs.splice(index, 1)[0]
+          break
+        }
+      }
+      if (!deplace) return precedente
+
+      let groupeCible = dernier
+      let index = groupeCible.blocs.length
+      let idVoisin: string | null = null
+
+      if (depot.cle.startsWith('suite:')) {
+        const idCible = depot.cle.slice('suite:'.length)
+        const groupe = groupes.find((candidat) =>
+          candidat.blocs.some((bloc) => bloc.id === idCible),
+        )
+        if (groupe) {
+          groupeCible = groupe
+          const position = groupe.blocs.findIndex((bloc) => bloc.id === idCible)
+          index = depot.ou === 'avant' || depot.ou === 'gauche' ? position : position + 1
+          if (depot.ou === 'gauche' || depot.ou === 'droite') idVoisin = idCible
+        }
+      } else {
+        // Déposé sur un emplacement du modèle : un bloc ne peut s'ancrer
+        // qu'*après* une section entière (champ « apres »), jamais entre deux
+        // emplacements d'une même section. On le place donc en tête des blocs
+        // de cette section.
+        const section = modele.sections.find((candidate) =>
+          candidate.emplacements.includes(depot.cle),
+        )
+        const groupe = section
+          ? groupes.find((candidat) => candidat.nom === section.nom)
+          : undefined
+        if (groupe) {
+          groupeCible = groupe
+          index = 0
+        }
+      }
+
+      groupeCible.blocs.splice(index, 0, deplace)
+      let suiteFinale = groupes.flatMap((groupe) =>
+        groupe.blocs.map((bloc) => ({ ...bloc, apres: groupe.nom })),
+      )
+
+      // Côte à côte : les deux blocs doivent tenir sur les mêmes 12 colonnes.
+      // Si le voisin est trop large pour laisser la place minimale, on partage
+      // en deux moitiés ; sinon il garde sa largeur et le nouveau prend le reste.
+      if (idVoisin) {
+        const voisin = suiteFinale.find((bloc) => bloc.id === idVoisin)
+        const largeurVoisin = voisin ? colonnesDe(voisin) : COLONNES_GRILLE
+        const partage = largeurVoisin > COLONNES_GRILLE - COLONNES_MIN
+        const colonnesVoisin = partage ? COLONNES_GRILLE / 2 : largeurVoisin
+        const colonnesGlisse = COLONNES_GRILLE - colonnesVoisin
+        suiteFinale = suiteFinale.map((bloc) => {
+          if (bloc.id === idGlisse) return { ...bloc, colonnes: colonnesGlisse }
+          if (bloc.id === idVoisin) return { ...bloc, colonnes: colonnesVoisin }
+          return bloc
+        })
+      }
+
+      return { ...precedente, contenu: { ...contenuPage, suite: suiteFinale } }
+    })
+  }
+
+  const auPointeurDescendu = (evenement: React.PointerEvent<HTMLDivElement>, nom: string) => {
+    if (!nom.startsWith('suite:')) return
+    // La poignée de largeur a son propre glissement : ne pas le lui voler.
+    if ((evenement.target as HTMLElement).closest('.mdl__poignee')) return
+    depart.current = {
+      x: evenement.clientX,
+      y: evenement.clientY,
+      id: nom.slice('suite:'.length),
+      actif: false,
+    }
+  }
+
+  const auPointeurDeplace = (evenement: React.PointerEvent<HTMLDivElement>) => {
+    const debut = depart.current
+    if (!debut) return
+
+    // Seuil : en deçà, c'est un clic (sélection), pas un glissement.
+    if (!debut.actif) {
+      if (Math.hypot(evenement.clientX - debut.x, evenement.clientY - debut.y) < 8) return
+      debut.actif = true
+      try {
+        evenement.currentTarget.setPointerCapture(evenement.pointerId)
+      } catch {
+        /* capture refusée : le glissement reste utilisable, simplement moins tolérant */
+      }
+      setGlisseId(debut.id)
+    }
+
+    setDepot(depotDepuisPoint(evenement.clientX, evenement.clientY, debut.id))
+  }
+
+  const auPointeurRelache = () => {
+    const debut = depart.current
+    depart.current = null
+    if (debut?.actif) {
+      if (depot) deposerBloc(debut.id, depot)
+      // Empêche le clic qui suit de re-sélectionner : un glissement n'est pas
+      // un clic.
+      vientDeGlisser.current = true
+    }
+    setGlisseId(null)
+    setDepot(null)
+  }
+
   // Enveloppe des blocs dans l'aperçu : un liseré au survol, une étiquette avec
   // le nom du bloc, et un clic qui le sélectionne dans le panneau de droite.
   const enveloppe: EnveloppeEmplacement = (info, defaut) => {
@@ -341,14 +509,30 @@ export function EditeurPage({
       (probleme) => probleme.emplacement === info.nom && probleme.gravite === 'bloquant',
     )
 
+    const estAjoute = info.nom.startsWith('suite:')
+    const enGlissement = estAjoute && glisseId === info.nom.slice('suite:'.length)
+    const vise = depot?.cle === info.nom ? ` emp--depot-${depot.ou}` : ''
+
     return (
       <div
-        className={`emp${actif ? ' emp--actif' : ''}${enProbleme ? ' emp--probleme' : ''}`}
+        className={`emp${actif ? ' emp--actif' : ''}${enProbleme ? ' emp--probleme' : ''}${
+          enGlissement ? ' emp--glisse' : ''
+        }${vise}${estAjoute ? ' emp--deplacable' : ''}`}
+        data-nom={info.nom}
         role="button"
         tabIndex={0}
         aria-label={`Modifier : ${def.libelle}`}
+        onPointerDown={(evenement) => auPointeurDescendu(evenement, info.nom)}
+        onPointerMove={auPointeurDeplace}
+        onPointerUp={auPointeurRelache}
+        onPointerCancel={auPointeurRelache}
         onClick={(evenement) => {
           evenement.stopPropagation()
+          // Un glissement vient de se terminer : ne pas le traiter comme un clic.
+          if (vientDeGlisser.current) {
+            vientDeGlisser.current = false
+            return
+          }
           setSelection(info.nom)
         }}
         onKeyDown={(evenement) => {
