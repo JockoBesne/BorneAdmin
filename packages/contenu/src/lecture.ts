@@ -1,3 +1,4 @@
+import { COLONNES_GRILLE, COLONNES_MIN } from './types.js'
 import type {
   BlocLibre,
   ContenuPage,
@@ -78,6 +79,36 @@ export function estBlocLibreVide(bloc: BlocLibre): boolean {
     case 'frise':
       return bloc.valeur.evenements.filter((evenement) => evenement.libelle.trim() !== '').length < 3
   }
+}
+
+/**
+ * Largeur d'un bloc en colonnes, sur la grille de 12.
+ *
+ * Un contenu écrit avant la poignée n'a pas de « colonnes » : on retombe alors
+ * sur l'ancien champ « largeur ». Les bornes sont appliquées ici plutôt qu'à
+ * l'écriture — un contenu.json retouché à la main ne doit pas pouvoir produire
+ * un bloc de deux pixels de large sur la borne.
+ */
+export function colonnesDe(bloc: BlocLibre): number {
+  if (typeof bloc.colonnes === 'number' && Number.isFinite(bloc.colonnes)) {
+    return Math.min(COLONNES_GRILLE, Math.max(COLONNES_MIN, Math.round(bloc.colonnes)))
+  }
+  return bloc.largeur === 'moitie' ? COLONNES_GRILLE / 2 : COLONNES_GRILLE
+}
+
+/**
+ * Largeur d'un emplacement du modèle, en colonnes.
+ * Priorité : le réglage de la page, puis la valeur par défaut du modèle, puis
+ * la pleine largeur.
+ */
+export function colonnesEmplacement(
+  contenu: ContenuPage,
+  nom: string,
+  parDefaut: number | undefined,
+): number {
+  const choisie = contenu.largeurs?.[nom]
+  const brute = typeof choisie === 'number' ? choisie : (parDefaut ?? COLONNES_GRILLE)
+  return Math.min(COLONNES_GRILLE, Math.max(COLONNES_MIN, Math.round(brute)))
 }
 
 /** Tous les identifiants de médias référencés par une page (index d'usage, §9.4). */

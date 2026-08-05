@@ -64,12 +64,16 @@ export const modele2 = definirModele({
     image: {
       type: 'image',
       libelle: 'Image de gauche',
+      // 5 colonnes sur 12 : reprend la proportion de l'ancienne colonne fixe
+      // de 760 px, mais devient réglable à la poignée.
+      colonnes: 5,
       requis: true,
       largeurMin: 1024,
     },
     texte: {
       type: 'texte',
       libelle: 'Texte de droite',
+      colonnes: 7,
       requis: true,
       maxSignes: 1400,
       conseil: 'Vous pouvez utiliser du gras, de l’italique et des listes.',

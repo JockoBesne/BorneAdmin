@@ -95,6 +95,27 @@ de code (voir `CONTEXTE.md`) mais ne sont plus installés ni construits.
 - **Bloc ajouté** / **suite** = blocs libres qu'on ajoute à une page, en plus des
   emplacements du modèle. Un bloc mémorise `apres` (la section après laquelle il
   s'affiche) : les flèches ▲▼ le déplacent, y compris entre les emplacements.
+- **Grille de 12 colonnes** (`COLONNES_GRILLE`) = la mise en page de **toute la
+  page**. Emplacements du modèle et blocs ajoutés sont des cellules de même
+  nature (`RenduGrille` dans `rendu/Modeles.tsx`), chacune d'une largeur de 3 à
+  12 colonnes réglée à la **poignée** sur son bord droit. Les cellules passent à
+  la ligne d'elles-mêmes : une page ne peut donc ni se trouer ni faire se
+  chevaucher deux blocs — c'est ce qui distingue cette grille d'un
+  positionnement libre. Le bouton ◧/▭ du panneau fait la même chose au clavier
+  (le glissement ne doit jamais être le seul moyen).
+  - Où est stockée la largeur : un bloc ajouté porte `colonnes` ; un emplacement
+    du modèle passe par `contenu.largeurs[nom]` (on ne réécrit pas la
+    déclaration du modèle). La poignée distingue les deux par sa clé —
+    `suite:<id>` ou le nom de l'emplacement.
+  - Largeur de départ : `colonnes` dans la déclaration de l'emplacement
+    (`modeles/index.ts`). C'est ce qui donne au modèle sa mise en page d'origine
+    — le modèle 2 a ainsi image 5 / texte 7, l'équivalent de son ancienne
+    colonne fixe de 760 px.
+  - **Le modèle 3 fait exception** : sa composition vidéo est déclarée
+    indivisible (une seule section), ses emplacements ne passent pas par la
+    grille. Ses blocs ajoutés, si.
+  - L'ancien champ `largeur` ('pleine'/'moitie') n'est plus écrit mais reste lu :
+    les contenus antérieurs restent valides.
 - **Toile** (`ToileBorne`) = conteneur de référence **1920 px de large**, mis à
   l'échelle sur la largeur du parent (`zoom`). Une page **défile** si elle est
   plus haute qu'un écran (les images ne sont plus jamais rognées).

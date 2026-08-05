@@ -1,5 +1,8 @@
 import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import {
+  COLONNES_GRILLE,
+  COLONNES_MIN,
+  colonnesDe,
   controlerContenu,
   DEFS_BLOCS_LIBRES,
   lireSuite,
@@ -184,23 +187,61 @@ export function EditeurPage({
   const couleursPage = couleursEffectives(manifeste.reglages, page)
   const pagePersonnalisee = page.couleurFond !== undefined || page.couleurTexte !== undefined
 
-  // Bascule un bloc entre pleine largeur et demi-largeur (côte à côte). Deux
-  // blocs « demi » consécutifs se placeront alors sur une même rangée.
-  const basculerLargeur = (id: string) => {
+  // Règle la largeur d'un bloc, en colonnes sur la grille de 12. Appelé par la
+  // poignée de l'aperçu (glissement) comme par le bouton du panneau (clavier).
+  const redimensionnerBloc = (cle: string, colonnes: number) => {
+    const borne = Math.min(COLONNES_GRILLE, Math.max(COLONNES_MIN, Math.round(colonnes)))
     surModification((precedente) => {
       const contenuPage = precedente.contenu as ContenuPage
+
+      // Un bloc ajouté porte sa largeur ; un emplacement du modèle la range
+      // dans « largeurs », parce qu'on ne réécrit pas la déclaration du modèle.
+      if (cle.startsWith('suite:')) {
+        const id = cle.slice('suite:'.length)
+        return {
+          ...precedente,
+          contenu: {
+            ...contenuPage,
+            suite: lireSuite(contenuPage).map((bloc) =>
+              // « largeur » est laissé de côté : « colonnes » l'emporte à la
+              // lecture, et garder l'ancien champ permet d'ouvrir le contenu
+              // avec une version précédente de l'application sans tout perdre.
+              bloc.id === id ? { ...bloc, colonnes: borne } : bloc,
+            ),
+          },
+        }
+      }
+
       return {
         ...precedente,
         contenu: {
           ...contenuPage,
-          suite: lireSuite(contenuPage).map((bloc) =>
-            bloc.id === id
-              ? { ...bloc, largeur: bloc.largeur === 'moitie' ? 'pleine' : 'moitie' }
-              : bloc,
-          ),
+          largeurs: { ...(contenuPage.largeurs ?? {}), [cle]: borne },
         },
       }
     })
+  }
+
+  /** Largeurs proposées au bouton : les fractions qui tombent juste sur 12. */
+  const PALIERS = [COLONNES_GRILLE, 9, 8, 6, 4, 3]
+
+  const libelleLargeur = (colonnes: number): string => {
+    switch (colonnes) {
+      case 12:
+        return 'Pleine largeur'
+      case 9:
+        return 'Trois quarts'
+      case 8:
+        return 'Deux tiers'
+      case 6:
+        return 'Moitié'
+      case 4:
+        return 'Un tiers'
+      case 3:
+        return 'Un quart'
+      default:
+        return `${colonnes} colonnes sur ${COLONNES_GRILLE}`
+    }
   }
 
   /**
@@ -348,7 +389,12 @@ export function EditeurPage({
         onClick={() => setSelection(null)}
       >
         <ToileBorne>
-          <RenduPage contenu={contenu} media={resoudre} emp={enveloppe} />
+          <RenduPage
+            contenu={contenu}
+            media={resoudre}
+            emp={enveloppe}
+            surRedimensionner={redimensionnerBloc}
+          />
         </ToileBorne>
       </div>
 
@@ -475,20 +521,28 @@ export function EditeurPage({
                         >
                           ▼
                         </button>
+                        {/* Équivalent au clavier de la poignée de l'aperçu :
+                            passe d'une largeur courante à la suivante. Le
+                            glissement ne doit jamais être le seul moyen. */}
                         <button
                           type="button"
-                          className={`abtn abtn--mini${bloc.largeur === 'moitie' ? ' abtn--actif' : ''}`}
-                          aria-label={
-                            bloc.largeur === 'moitie'
-                              ? 'Repasser en pleine largeur'
-                              : 'Mettre à côté d’un autre bloc (demi-largeur)'
-                          }
-                          title={
-                            bloc.largeur === 'moitie' ? 'Demi-largeur' : 'Pleine largeur'
-                          }
-                          onClick={() => basculerLargeur(bloc.id)}
+                          className={`abtn abtn--mini${
+                            colonnesDe(bloc) < COLONNES_GRILLE ? ' abtn--actif' : ''
+                          }`}
+                          aria-label={`Largeur : ${libelleLargeur(colonnesDe(bloc))}. Changer.`}
+                          title={`Largeur : ${libelleLargeur(colonnesDe(bloc))}`}
+                          onClick={() => {
+                            const actuelle = colonnesDe(bloc)
+                            const rang = PALIERS.indexOf(actuelle)
+                            const suivante =
+                              PALIERS[(rang === -1 ? 0 : rang + 1) % PALIERS.length]!
+                            // Même clé que la poignée de l'aperçu : sans le
+                            // préfixe, la largeur partirait dans « largeurs »
+                            // (réservé aux emplacements) au lieu du bloc.
+                            redimensionnerBloc(`suite:${bloc.id}`, suivante)
+                          }}
                         >
-                          {bloc.largeur === 'moitie' ? '◧' : '▭'}
+                          {colonnesDe(bloc) === COLONNES_GRILLE ? '▭' : '◧'}
                         </button>
                         <button
                           type="button"
