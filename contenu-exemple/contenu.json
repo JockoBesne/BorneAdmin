@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-04T13:21:03.168Z",
+  "genereLe": "2026-08-05T08:57:35.966Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
@@ -18,6 +18,10 @@
       "vignette": null,
       "contenu": {
         "modele": "t1",
+        "largeurs": {
+          "image": 8,
+          "texte": 10
+        },
         "emplacements": {
           "titre": {
             "type": "titre",
@@ -26,7 +30,7 @@
           "image": {
             "type": "image",
             "mediaId": "media-onde",
-            "legende": "Représentation d'une liaison radio de campagne."
+            "legende": "mlkjhgfdsq"
           },
           "texte": {
             "type": "texte",
@@ -37,6 +41,7 @@
           {
             "id": "02599879-2b9d-4877-8127-7085f256c8ea",
             "largeur": "pleine",
+            "colonnes": 12,
             "valeur": {
               "type": "quiz",
               "question": "Ce poste servait à… (plusieurs réponses possibles)",
@@ -101,6 +106,15 @@
                 }
               ]
             }
+          },
+          {
+            "id": "b5e719f6-16ce-4978-b305-70f470d49cfd",
+            "apres": "texte",
+            "valeur": {
+              "type": "video",
+              "mediaId": null,
+              "legende": ""
+            }
           }
         ]
       }
@@ -113,6 +127,11 @@
       "vignette": null,
       "contenu": {
         "modele": "t2",
+        "largeurs": {
+          "galerie": 12,
+          "image": 11,
+          "texte": 3
+        },
         "emplacements": {
           "titre": {
             "type": "titre",
@@ -148,8 +167,8 @@
       }
     },
     {
-      "id": "page-exemple-3",
-      "titre": "Témoignage d'opérateur",
+      "id": "page-abcb2f20-6a74-4659-8dea-1ddfaa10b34c",
+      "titre": "Test",
       "modele": "t3",
       "ordre": 3,
       "vignette": null,
@@ -158,24 +177,24 @@
         "emplacements": {
           "titre": {
             "type": "titre",
-            "valeur": "Témoignage : opérateur radio en 1962"
+            "valeur": "Test"
           },
           "video": {
             "type": "video",
             "mediaId": "media-video",
-            "legende": "Entretien filmé, 6 secondes (extrait de test)."
+            "legende": "Vidéo de test"
           },
           "texte": {
             "type": "texte",
-            "valeur": "« On travaillait à l'oreille. Une liaison qui grésille, c'est une liaison qu'on perd dans dix minutes — il fallait le sentir avant que ça arrive. »"
+            "valeur": "test test test "
           },
           "encartTitre": {
             "type": "titre",
-            "valeur": "Séance de projection"
+            "valeur": "Test"
           },
           "encartTexte": {
             "type": "texte",
-            "valeur": "Le film complet, d'une durée de 22 minutes, est projeté en salle 3 tous les jours à 15 h."
+            "valeur": "test test ets tetst \n"
           }
         }
       }

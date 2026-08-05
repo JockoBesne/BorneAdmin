@@ -324,93 +324,104 @@
 
 /* ── Modèle 1 — Une image, un texte ──────────────────────────────────────── */
 
-.mdl-1__entete {
-  flex: none;
-}
-
 /* L'image et le texte prennent chacun la hauteur qu'il leur faut : ils ne se
    la disputent plus, la page s'allonge. */
-.mdl-1__image {
-  flex: none;
-}
-
-.mdl-1__texte {
-  flex: none;
-}
-
 /* ── Modèle 2 — Image et texte côte à côte ───────────────────────────────── */
-
-.mdl-2__entete {
-  flex: none;
-}
 
 /* « flex: 1 » sans « min-height: 0 » : les colonnes occupent la place restante
    quand la page est courte, mais ne se réduisent jamais en deçà de leur
    contenu — c'est cette réduction qui coupait la dernière ligne du texte. */
-.mdl-2__colonnes {
-  flex: 1;
+/* ── Blocs ajoutés à la suite d'une page ─────────────────────────────────── */
+
+/* Grille de mise en page d'une page : 12 colonnes.
+ *
+ * Emplacements du modèle et blocs ajoutés y sont des cellules de même nature,
+ * chacune d'une largeur réglable à la poignée. Les cellules s'enchaînent et
+ * passent à la ligne quand la rangée est pleine : une page ne peut donc ni se
+ * trouer ni faire se chevaucher deux blocs — c'est ce qui distingue cette
+ * grille d'un positionnement libre. */
+.mdl__grille {
   display: grid;
-  grid-template-columns: 760px 1fr;
-  gap: 56px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 40px;
+  align-items: start;
+  width: 100%;
 }
 
-.mdl-2__image,
-.mdl-2__texte {
+/* La cellule porte sa largeur (grid-column, posé en style) et sert de repère à
+   la poignée, qui se place sur son bord droit. */
+.mdl__cellule {
+  position: relative;
   min-width: 0;
 }
 
-.mdl-2__galerie {
-  flex: none;
+/* Une galerie n'a pas de hauteur propre : sans plafond, elle prendrait la
+   taille naturelle des photos et déborderait de la page. */
+.mdl__cellule--galerie {
   height: 260px;
 }
 
-.mdl-2__galerie--vide {
-  height: 150px;
+/* Une vidéo ajoutée prend un cadre 16/9 : sa hauteur découle de sa largeur et
+   suit donc la poignée. */
+.mdl__cellule--video {
+  aspect-ratio: 16 / 9;
 }
 
-/* ── Blocs ajoutés à la suite d'une page ─────────────────────────────────── */
+/* ── Poignée de largeur (éditeur seulement) ─────────────────────────────── */
 
-.suite {
+.mdl__poignee {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* À cheval sur le bord droit : on l'attrape sans viser au pixel près. */
+  right: -26px;
+  width: 52px;
   display: flex;
-  flex-direction: column;
-  gap: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+  /* Sinon le navigateur interprète le glissement comme un défilement de page
+     et la poignée ne suit pas le doigt sur l'écran tactile. */
+  touch-action: none;
+  /* Visible en permanence, mais en retrait : une poignée qui n'apparaît qu'au
+     survol est introuvable pour qui ne sait pas qu'elle existe — et sur un
+     écran tactile, il n'y a pas de survol du tout. */
+  opacity: 0.4;
+  transition: opacity 160ms ease;
 }
 
-/* Une rangée de la suite : un bloc pleine largeur, ou deux blocs côte à côte. */
-.suite__rang {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
-  align-items: start;
+.mdl__cellule:hover .mdl__poignee,
+.mdl__poignee:focus-visible,
+.mdl__poignee:active {
+  opacity: 1;
 }
 
-.suite__rang--paire {
-  grid-template-columns: 1fr 1fr;
+.mdl__poignee-barre {
+  width: 8px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--b-accent);
+  box-shadow: 0 0 0 3px rgba(14, 34, 55, 0.55);
 }
 
-/* Un bloc « demi-largeur » resté seul sur sa rangée : deux colonnes dont une
-   vide, pour qu'il garde bien sa demi-largeur (aligné à gauche). */
-.suite__rang--moitie {
-  grid-template-columns: 1fr 1fr;
+.mdl__poignee:active .mdl__poignee-barre {
+  height: 100%;
+  border-radius: 6px;
 }
 
-.suite__bloc {
-  flex: none;
-  min-width: 0;
+@media (prefers-reduced-motion: reduce) {
+  .mdl__poignee {
+    transition: none;
+  }
 }
 
 /* Une galerie en flux a besoin d'une hauteur : mêmes proportions que la
    galerie du modèle 2. */
-.suite__galerie {
-  height: 260px;
-}
-
 /* Une vidéo ajoutée prend un cadre 16/9 : sa hauteur découle de sa largeur, et
    suit donc automatiquement une disposition pleine largeur ou demi-largeur. */
-.suite__video {
-  aspect-ratio: 16 / 9;
-}
-
 /* ── Modèle 3 — Vidéo en avant ───────────────────────────────────────────── */
 
 .mdl-3 {
@@ -429,11 +440,7 @@
 }
 
 /* Les blocs ajoutés retrouvent les marges ordinaires d'une page. */
-.mdl-3 .suite {
-  padding: 72px 96px;
-}
-
-.mdl-3__video {
+.mdl-3 .mdl-3__video {
   position: absolute;
   inset: 0;
 }
@@ -503,10 +510,6 @@
  *
  * Les cibles font au moins 96 px de haut sur la toile de 1920 px : à l'écran
  * réel, c'est un doigt entier, très au-delà du minimum de 48 px. */
-
-.suite__atelier {
-  width: 100%;
-}
 
 .atl {
   display: flex;
