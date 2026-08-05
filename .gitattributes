@@ -1,0 +1,4 @@
+# Fins de ligne : LF dans le dépôt, fin de ligne du système dans les fichiers.
+# Sans cette règle, un fichier écrit sous Windows apparaît entièrement modifié
+# dans l'historique Git, qui devient illisible.
+* text=auto

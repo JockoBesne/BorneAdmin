@@ -38,8 +38,7 @@ commencer si le budget de la session est court, on s'arrêterait au milieu.
 3. **Glisser depuis le menu d'ajout** vers une position choisie (le seul point
    non fait du glisser-déposer ; peu urgent, on ajoute puis on glisse).
 4. Confort, sans urgence : redimensionner les images à l'import ; image de
-   couverture pour une vidéo importée (sinon écran sombre) ; réordonner les
-   photos dans une galerie ; fins de ligne CRLF/LF ; supprimer `arborescence.txt`.
+   couverture pour une vidéo importée (sinon écran sombre).
 
 **Sans objet** : l'ancienne « étape 3 — dossier partagé ». Il n'y a **qu'un seul
 ordinateur**, voir ci-dessous.
@@ -163,7 +162,10 @@ Ce qu'il faut savoir avant d'y toucher :
   défilement automatique, sans lequel une cible hors écran est inatteignable.
 - La **poignée de largeur** (`.mdl__poignee`) a son propre glissement : ne pas le
   lui voler (tester la cible de l'événement).
-- Sortir un bloc d'une paire laisse l'autre en demi-largeur, seul sur sa rangée.
+- Sortir un bloc d'une paire (déplacement ou retrait) remet **automatiquement**
+  l'autre en pleine largeur — `recollerOrphelins` dans `EditeurPage.tsx`. Un bloc
+  déjà seul n'est pas touché : sa largeur a été choisie exprès. La poignée de
+  largeur ne déclenche pas cette règle (sinon elle sauterait pendant le geste).
 
 ## Méthode de test de la fenêtre
 

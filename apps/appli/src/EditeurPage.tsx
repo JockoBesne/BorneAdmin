@@ -387,6 +387,52 @@ export function EditeurPage({
   }
 
   /**
+   * Rangées de la page : les cellules se suivent sur les 12 colonnes et passent
+   * à la ligne dès qu'il n'y a plus la place — la règle même de la grille de
+   * l'aperçu, refaite ici pour savoir qui partage sa rangée avec qui.
+   */
+  const rangeesDe = (contenuPage: ContenuPage): string[][] => {
+    const rangees: string[][] = []
+    let reste = 0
+    for (const cle of ordreCellules(contenuPage, modele)) {
+      const colonnes = colonnesDeCle(contenuPage, cle)
+      const derniere = rangees[rangees.length - 1]
+      if (derniere && colonnes <= reste) {
+        derniere.push(cle)
+        reste -= colonnes
+      } else {
+        rangees.push([cle])
+        reste = COLONNES_GRILLE - colonnes
+      }
+    }
+    return rangees
+  }
+
+  /**
+   * Un bloc qui vient de perdre le voisin avec lequel il partageait sa rangée
+   * reprend toute la largeur. Sans cela, sortir un bloc d'une paire laisse
+   * l'autre en demi-largeur, seul, avec un grand vide à côté de lui — ce que
+   * personne ne demande jamais. Un bloc qui était **déjà** seul n'est pas
+   * touché : sa largeur a été réglée exprès, à la poignée ou au bouton.
+   */
+  const recollerOrphelins = (avant: ContenuPage, apres: ContenuPage): ContenuPage => {
+    const accompagnes = new Set(
+      rangeesDe(avant)
+        .filter((rangee) => rangee.length > 1)
+        .flat(),
+    )
+    let resultat = apres
+    for (const rangee of rangeesDe(apres)) {
+      const [cle] = rangee
+      if (rangee.length !== 1 || !cle || !accompagnes.has(cle)) continue
+      if (colonnesDeCle(resultat, cle) < COLONNES_GRILLE) {
+        resultat = avecLargeur(resultat, cle, COLONNES_GRILLE)
+      }
+    }
+    return resultat
+  }
+
+  /**
    * Applique le dépôt : déplace la cellule dans l'ordre de la page, et répartit
    * les colonnes quand on la pose sur un flanc.
    *
@@ -395,7 +441,8 @@ export function EditeurPage({
    */
   const deposerCellule = (cleGlisse: string, depot: Depot) => {
     surModification((precedente) => {
-      let contenuPage = precedente.contenu as ContenuPage
+      const avant = precedente.contenu as ContenuPage
+      let contenuPage = avant
       const ordre = ordreCellules(contenuPage, modele)
 
       const depuis = ordre.indexOf(cleGlisse)
@@ -427,7 +474,7 @@ export function EditeurPage({
         contenuPage = avecLargeur(contenuPage, cleGlisse, COLONNES_GRILLE)
       }
 
-      return { ...precedente, contenu: contenuPage }
+      return { ...precedente, contenu: recollerOrphelins(avant, contenuPage) }
     })
   }
 
@@ -478,7 +525,10 @@ export function EditeurPage({
       // Vers le bas, on se pose après la cible ; vers le haut, avant : le bloc
       // atterrit ainsi là où le trait d'insertion l'annonçait.
       reste.splice(depuis < vers ? position + 1 : position, 0, cleGlisse)
-      return { ...precedente, contenu: { ...contenuPage, ordre: reste } }
+      return {
+        ...precedente,
+        contenu: recollerOrphelins(contenuPage, { ...contenuPage, ordre: reste }),
+      }
     })
   }
 
@@ -493,7 +543,10 @@ export function EditeurPage({
       const [retiree] = ordreActuel.splice(depuis, 1)
       if (!retiree) return precedente
       ordreActuel.splice(vers, 0, retiree)
-      return { ...precedente, contenu: { ...contenuPage, ordre: ordreActuel } }
+      return {
+        ...precedente,
+        contenu: recollerOrphelins(contenuPage, { ...contenuPage, ordre: ordreActuel }),
+      }
     })
   }
 
@@ -506,18 +559,16 @@ export function EditeurPage({
     surModification((precedente) => {
       const contenuPage = precedente.contenu as ContenuPage
       const ordre = ordreCellules(contenuPage, modele).filter((autre) => autre !== cle)
-      if (cle.startsWith('suite:')) {
-        const id = cle.slice('suite:'.length)
-        return {
-          ...precedente,
-          contenu: {
+      const apres: ContenuPage = cle.startsWith('suite:')
+        ? {
             ...contenuPage,
             ordre,
-            suite: lireSuite(contenuPage).filter((bloc) => bloc.id !== id),
-          },
-        }
-      }
-      return { ...precedente, contenu: { ...contenuPage, ordre } }
+            suite: lireSuite(contenuPage).filter(
+              (bloc) => bloc.id !== cle.slice('suite:'.length),
+            ),
+          }
+        : { ...contenuPage, ordre }
+      return { ...precedente, contenu: recollerOrphelins(contenuPage, apres) }
     })
     setRetraitEnCours(null)
     if (selection === cle) setSelection(null)
@@ -1137,6 +1188,20 @@ function FormulaireBloc({
   }
 
   if (def.type === 'galerie' && valeur.type === 'galerie') {
+    // Échange une photo avec sa voisine : l'ordre de la liste est celui du
+    // diaporama sur la borne, il doit pouvoir se changer après coup.
+    const deplacerPhoto = (index: number, sens: -1 | 1) =>
+      surChangement((v) => {
+        if (v.type !== 'galerie') return v
+        const elements = [...v.elements]
+        const photo = elements[index]
+        const voisine = elements[index + sens]
+        if (!photo || !voisine) return v
+        elements[index] = voisine
+        elements[index + sens] = photo
+        return { ...v, elements }
+      })
+
     return (
       <div className="pan__formulaire">
         {valeur.elements.length === 0 ? (
@@ -1174,6 +1239,24 @@ function FormulaireBloc({
                       )
                     }
                   />
+                  <button
+                    type="button"
+                    className="abtn abtn--mini"
+                    aria-label="Monter cette photo"
+                    disabled={index === 0}
+                    onClick={() => deplacerPhoto(index, -1)}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    className="abtn abtn--mini"
+                    aria-label="Descendre cette photo"
+                    disabled={index === valeur.elements.length - 1}
+                    onClick={() => deplacerPhoto(index, 1)}
+                  >
+                    ▼
+                  </button>
                   <button
                     type="button"
                     className="abtn abtn--discret"

@@ -742,6 +742,11 @@ button {
   gap: 10px;
 }
 
+/* La légende prend la place qui reste ; les commandes ▲ ▼ ✕ gardent la leur. */
+.galerie-el input {
+  min-width: 0;
+}
+
 .galerie-el__vignette {
   flex: none;
   width: 64px;
