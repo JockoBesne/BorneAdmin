@@ -1,9 +1,11 @@
-import { COLONNES_GRILLE, COLONNES_MIN } from './types.js'
+import { COLONNES_GRILLE, COLONNES_MIN, HAUTEUR_MAX, HAUTEUR_MIN } from './types.js'
 import type {
   BlocLibre,
   ContenuPage,
   ElementGalerie,
+  StyleBloc,
   ValeurImage,
+  ValeurTexte,
   ValeurVideo,
 } from './types.js'
 
@@ -17,6 +19,16 @@ export function lireTexte(contenu: ContenuPage, nom: string): string {
     return valeur.valeur
   }
   return ''
+}
+
+/**
+ * Le texte d'un emplacement, mise en forme comprise. `lireTexte` ne rend que
+ * les caractères ; c'est celle-ci qu'il faut pour afficher un texte.
+ */
+export function lireValeurTexte(contenu: ContenuPage, nom: string): ValeurTexte {
+  const valeur = contenu.emplacements[nom]
+  if (valeur && valeur.type === 'texte') return valeur
+  return { type: 'texte', valeur: '' }
 }
 
 export function lireImage(contenu: ContenuPage, nom: string): ValeurImage {
@@ -40,6 +52,31 @@ export function lireGalerie(contenu: ContenuPage, nom: string): ElementGalerie[]
 /** Blocs ajoutés à la suite de la page. Toujours un tableau, jamais undefined. */
 export function lireSuite(contenu: ContenuPage): BlocLibre[] {
   return contenu.suite ?? []
+}
+
+/**
+ * Habillage d'un bloc (fond, mise en forme du texte), par son nom : celui de
+ * l'emplacement pour un bloc du modèle, « suite:<identifiant> » pour un bloc
+ * ajouté. Absent = le bloc s'affiche sans habillage.
+ */
+export function lireStyle(contenu: ContenuPage, nom: string): StyleBloc | undefined {
+  return contenu.styles?.[nom]
+}
+
+/**
+ * Un habillage dont plus rien n'est réglé. On ne le garde pas dans le contenu :
+ * remettre un bloc à zéro doit laisser le fichier tel qu'il était avant qu'on y
+ * touche, sans habillage vide qui traîne.
+ */
+export function estStyleVide(style: StyleBloc): boolean {
+  return (
+    style.fond === undefined &&
+    style.couleur === undefined &&
+    !style.gras &&
+    !style.italique &&
+    !style.souligne &&
+    (style.alignement === undefined || style.alignement === 'gauche')
+  )
 }
 
 /**
@@ -166,6 +203,26 @@ export function ordreCellules(
     }
   }
   return cles
+}
+
+/** Un bloc dont la hauteur est réglable : image ou galerie seulement. */
+export function hauteurReglable(type: string): boolean {
+  return type === 'image' || type === 'galerie'
+}
+
+function borneHauteur(valeur: number | undefined): number | undefined {
+  if (typeof valeur !== 'number' || !Number.isFinite(valeur)) return undefined
+  return Math.min(HAUTEUR_MAX, Math.max(HAUTEUR_MIN, Math.round(valeur)))
+}
+
+/** Hauteur imposée à un bloc ajouté, ou « undefined » pour la hauteur d'origine. */
+export function hauteurDe(bloc: BlocLibre): number | undefined {
+  return hauteurReglable(bloc.valeur.type) ? borneHauteur(bloc.hauteur) : undefined
+}
+
+/** Hauteur imposée à un emplacement du modèle, ou « undefined ». */
+export function hauteurEmplacement(contenu: ContenuPage, nom: string): number | undefined {
+  return borneHauteur(contenu.hauteurs?.[nom])
 }
 
 /** Tous les identifiants de médias référencés par une page (index d'usage, §9.4). */

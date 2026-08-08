@@ -27,9 +27,11 @@ galeries, quiz, frises), l'import de médias depuis l'ordinateur (avec **image d
 couverture** pour les vidéos), les couleurs réglables, le glisser-déposer des
 blocs — **complet** depuis le 2026-08-05, menu d'ajout compris.
 
-**Reste à faire, par ordre d'importance.** L'étiquette indique la taille : une
-tâche **longue** demande des essais, des échecs et des reprises — ne pas la
-commencer si le budget de la session est court, on s'arrêterait au milieu.
+**Reste à faire, par ordre d'importance.** Le détail chiffré est dans
+**`A-FAIRE.md`** (liste de travail, estimations en demi-journées) — le résumé
+ci-dessous en donne l'essentiel. L'étiquette indique la taille : une tâche
+**longue** demande des essais, des échecs et des reprises — ne pas la commencer
+si le budget de la session est court, on s'arrêterait au milieu.
 
 1. **Empaquetage `.exe`** (electron-builder), démarrage automatique, plein écran
    par défaut. **Seule grande étape restante** — c'est ce qui rend l'installation
@@ -83,8 +85,12 @@ ordinateur**, voir ci-dessous.
   - `src/Visiteur.tsx` — borne : **sommaire d'accueil** (`.hub`) puis les pages.
   - `src/AccesAdmin.tsx` — accès caché (coin, appui 5 s, code PIN).
   - `src/Admin.tsx` — liste des pages, panneau « Apparence », enregistrement auto.
-  - `src/EditeurPage.tsx` — **le gros fichier** (~1300 lignes) : aperçu fidèle à
-    gauche, panneau des blocs à droite, glisser-déposer, formulaires.
+  - `src/EditeurPage.tsx` — **le gros fichier** : aperçu fidèle à gauche,
+    panneau des blocs à droite, glisser-déposer, formulaires. Cliquer un bloc
+    déplie **sous lui** son panneau (`PanneauBloc`) : contenu puis
+    personnalisation. Rien en bas de la colonne.
+  - `src/ChampTexteRiche.tsx` — saisie du texte mis en forme (gras, italique,
+    souligné, listes) sans jamais stocker de HTML.
   - `src/RoueCouleur.tsx`, `src/couleurs.ts` — disque de couleur et conversions.
   - `src/contenu.ts` — chargement / enregistrement / import de médias.
 - **`packages/contenu/`** — cœur du produit, partagé.
@@ -112,6 +118,27 @@ ordinateur**, voir ci-dessous.
   page figée.
 - **Emplacement** = un bloc venu du modèle (`titre`, `image`, `texte`…).
   **Bloc ajouté** (`suite`) = un bloc libre ajouté à la page.
+- **Texte enrichi** (`ValeurTexte`) = un texte se range sous deux angles :
+  `valeur`, le texte **sans** mise en forme (c'est lui qu'on compte, qu'on
+  contrôle, et qui dit si le bloc est vide), et `lignes`, la mise en forme.
+  `lignes` est **facultatif** : absent, la mise en forme est relue de l'ancienne
+  écriture (`**gras**`, `_italique_`, « - » en tête) rangée dans `valeur`. Outils
+  dans `packages/contenu/src/texte.ts`. **Jamais de HTML stocké** : la saisie
+  (`src/ChampTexteRiche.tsx`) relit le champ nœud par nœud, un collage arrive en
+  texte brut.
+- **Champ mis en forme** (`ChampMisEnForme`) = un champ texte **et** sa barre
+  d'outils, en un seul composant. Pas de champ texte, pas de barre : la galerie,
+  le quiz, la frise et un média pas encore choisi n'en ont donc aucune.
+  Piège : ne **jamais** envelopper ce champ dans un `<label>` — le libellé
+  désignerait un bouton de la barre, et cliquer dessus écrirait un alignement
+  sur le disque (constaté).
+- **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond, et mise
+  en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
+  clé que partout ailleurs (`titre`, `suite:<id>`). Appliqué par `Habillage`
+  dans `rendu/Modeles.tsx`, par où passent tous les blocs. Un bloc sans
+  habillage n'est pas enveloppé du tout, et un habillage remis à zéro est retiré
+  du fichier (`estStyleVide`, `sansStylesVides`) — il part aussi avec son bloc
+  quand on le retire.
 - **`ordre`** = **la** liste des cellules d'une page, de haut en bas,
   emplacements du modèle et blocs ajoutés **mélangés** (`titre`, `suite:<id>`…).
   Elle décide de l'**ordre** et de la **présence** : un emplacement absent de la
@@ -129,6 +156,11 @@ ordinateur**, voir ci-dessous.
     par la clé (`suite:<id>` ou le nom).
   - L'ancien champ `largeur: 'pleine' | 'moitie'` n'est plus écrit mais **reste
     lu** : ne pas le supprimer.
+  - **Hauteur** : seules les images et galeries en ont une réglable (poignée
+    basse) — la hauteur d'un texte découle de son contenu. Rangée dans `hauteur`
+    (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de toile, lue par
+    le rendu via la variable CSS `--hauteur-bloc`. Absente, l'image garde son
+    plafond de 620 px et la galerie ses 260 px.
   - **Le modèle 3 fait exception** : sa composition vidéo est indivisible, ses
     emplacements ne passent pas par la grille. Ses blocs ajoutés, si.
 - **Toile** (`ToileBorne`) = conteneur de référence **1920 px de large**, mis à
@@ -202,11 +234,25 @@ Ce qu'il faut savoir avant d'y toucher :
   largeur et l'appui simple sur un type du menu (le bloc se pose en bas) doublent
   toujours le glissement.
 
+## Pièges d'affichage déjà rencontrés
+
+- **`box-sizing: border-box` est posé sur tout** dans `appli.css`, comme dans
+  `modeles.css`. Sans lui, un champ en `width: 100 %` dépasse son conteneur de
+  26 px — c'est ce qui faisait sortir les champs du quiz et de la frise du
+  panneau.
+- **Barre de défilement des champs texte** : habillée par `::-webkit-scrollbar`,
+  ce qui **retire les boutons par défaut** — les flèches sont redessinées en
+  SVG, et `:single-button` évite qu'une paire apparaisse à chaque bout.
+- **`.roue__hex` est nommé à part** dans la règle des champs : le disque de
+  couleur sert aussi hors du panneau, où le champ garderait sinon le fond blanc
+  du navigateur.
+
 ## Méthode de test de la fenêtre
 
 Sans écran tactile, piloter l'application par le protocole CDP :
 
 - lancer avec `electron . --remote-debugging-port=9222` ;
+- **sous Linux**, ajouter `--ozone-platform=x11` (voir « Installation ») ;
 - Node intègre un client WebSocket — aucun paquet à installer.
 
 Trois pièges déjà rencontrés :
@@ -242,6 +288,15 @@ s'ouvre pas alors que `npm install` semblait passer. Remèdes, dans l'ordre :
    l'installation a réussi.
 
 **Ne jamais versionner `node_modules/`** : le binaire dépend du système.
+
+**Plantage au démarrage sous Linux (`SIGSEGV`).** Sur un bureau moderne
+l'affichage passe par Wayland, où Electron 43 s'écrase au lancement sur les
+systèmes un peu anciens : aucune fenêtre, message `exited with signal SIGSEGV`.
+Les scripts du dépôt passent donc `--ozone-platform=x11` (voir
+`apps/appli/package.json`). En lançant Electron à la main, il faut le répéter.
+Le régler depuis le code (`app.commandLine.appendSwitch`) **ne marche pas** : le
+mode d'affichage est choisi avant que `principal.cjs` soit lu. Sans objet sous
+Windows, le système du poste de la salle.
 
 ## Git
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-05T10:33:02.480Z",
+  "genereLe": "2026-08-05T14:16:28.627Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
@@ -19,8 +19,11 @@
       "contenu": {
         "modele": "t1",
         "largeurs": {
-          "image": 8,
-          "texte": 10
+          "image": 12,
+          "texte": 4
+        },
+        "hauteurs": {
+          "image": 1140
         },
         "emplacements": {
           "titre": {
@@ -34,7 +37,77 @@
           },
           "texte": {
             "type": "texte",
-            "valeur": "Le **poste ER 40** équipait les unités de transmission à partir des années 1950. Conçu pour la liaison en phonie sur de courtes distances, il tenait dans un sac à dos et fonctionnait sur pile sèche.\n\nSa robustesse en a fait un matériel de référence pendant près de vingt ans.\n\n- Portée utile : 5 à 8 kilomètres\n- Masse en ordre de marche : 11 kilogrammes\n- Alimentation : pile sèche de 90 volts\n\nL'exemplaire présenté ici a été remis en état par l'_atelier de restauration du musée_ en 2019."
+            "valeur": "Le poste ER 40 équipait les unités de transmission à partir des années 1950. Conçu pour la liaison en phonie sur de courtes distances, il tenait dans un sac à dos et fonctionnait sur pile sèche.\n\nSa robustesse en a fait un matériel de référence pendant près de vingt ans.\n\n- Portée utile : 5 à 8 kilomètres\n- Masse en ordre de marche : 11 kilogrammes\n- Alimentation : pile sèche de 90 volts\n\nL'exemplaire présenté ici a été remis en état par l'atelier de restauration du musée en 2019.",
+            "lignes": [
+              {
+                "morceaux": [
+                  {
+                    "texte": "Le "
+                  },
+                  {
+                    "gras": true,
+                    "texte": "poste ER 40"
+                  },
+                  {
+                    "texte": " équipait les unités de transmission à partir des années 1950. Conçu pour la liaison en phonie sur de courtes distances, il tenait dans un sac à dos et fonctionnait sur pile sèche."
+                  }
+                ]
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": [
+                  {
+                    "texte": "Sa robustesse en a fait un matériel de référence pendant près de vingt ans."
+                  }
+                ]
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "puce": true,
+                "morceaux": [
+                  {
+                    "texte": "Portée utile : 5 à 8 kilomètres"
+                  }
+                ]
+              },
+              {
+                "puce": true,
+                "morceaux": [
+                  {
+                    "texte": "Masse en ordre de marche : 11 kilogrammes"
+                  }
+                ]
+              },
+              {
+                "puce": true,
+                "morceaux": [
+                  {
+                    "texte": "Alimentation : pile sèche de 90 volts"
+                  }
+                ]
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": [
+                  {
+                    "texte": "L'exemplaire présenté ici a été remis en état par l'"
+                  },
+                  {
+                    "italique": true,
+                    "texte": "atelier de restauration du musée"
+                  },
+                  {
+                    "texte": " en 2019."
+                  }
+                ]
+              }
+            ]
           }
         },
         "suite": [
@@ -200,7 +273,7 @@
       }
     },
     {
-      "id": "page-0fc3fa92-57fd-46b3-bf11-b7e856f6c395",
+      "id": "page-28dc9673-2829-49b7-9edb-395435d46526",
       "titre": "Sans titre",
       "modele": "t1",
       "ordre": 4,
@@ -208,8 +281,8 @@
       "contenu": {
         "modele": "t1",
         "largeurs": {
-          "image": 6,
-          "texte": 6,
+          "image": 10,
+          "texte": 9,
           "titre": 12
         },
         "emplacements": {
@@ -226,59 +299,7 @@
             "type": "texte",
             "valeur": ""
           }
-        },
-        "suite": [
-          {
-            "id": "82aae51b-0aea-40cd-88b5-139df2a09b0f",
-            "apres": "texte",
-            "colonnes": 6,
-            "valeur": {
-              "type": "image",
-              "mediaId": null,
-              "legende": ""
-            }
-          },
-          {
-            "id": "57d003ad-3d57-45fb-b954-ca7f7762206f",
-            "apres": "texte",
-            "colonnes": 12,
-            "valeur": {
-              "type": "quiz",
-              "question": "",
-              "reponses": [
-                {
-                  "id": "b79ec77c-ced2-4532-bc23-8ba3bbbba483",
-                  "texte": "",
-                  "correcte": true,
-                  "explication": ""
-                },
-                {
-                  "id": "3ce9f3f6-85b6-4fd8-b553-aae31bd2a5e6",
-                  "texte": "",
-                  "correcte": false,
-                  "explication": ""
-                }
-              ]
-            }
-          },
-          {
-            "id": "0099f12b-6e91-4643-99ad-541dc13b6164",
-            "apres": "texte",
-            "colonnes": 6,
-            "valeur": {
-              "type": "texte",
-              "valeur": ""
-            }
-          }
-        ],
-        "ordre": [
-          "titre",
-          "suite:57d003ad-3d57-45fb-b954-ca7f7762206f",
-          "texte",
-          "suite:82aae51b-0aea-40cd-88b5-139df2a09b0f",
-          "suite:0099f12b-6e91-4643-99ad-541dc13b6164",
-          "image"
-        ]
+        }
       }
     }
   ],

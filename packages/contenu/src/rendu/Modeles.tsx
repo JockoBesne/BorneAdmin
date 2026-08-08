@@ -1,17 +1,33 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import {
   colonnesDe,
   colonnesEmplacement,
   estBlocLibreVide,
+  hauteurDe,
+  hauteurEmplacement,
+  hauteurReglable,
   lireGalerie,
   lireImage,
+  lireStyle,
   lireSuite,
   lireTexte,
+  lireValeurTexte,
   lireVideo,
   ordreCellules,
 } from '../lecture.js'
 import { modelePar } from '../modeles/index.js'
-import { COLONNES_GRILLE, COLONNES_MIN, type BlocLibre } from '../types.js'
+import { lignesDeTexte } from '../texte.js'
+import {
+  COLONNES_GRILLE,
+  COLONNES_MIN,
+  HAUTEUR_MAX,
+  HAUTEUR_MIN,
+  HAUTEUR_PAS,
+  type BlocLibre,
+  type ContenuPage,
+  type StyleBloc,
+  type ValeurTexte,
+} from '../types.js'
 import { AtelierFrise, AtelierQuiz } from './ateliers.jsx'
 import { BlocGalerie, BlocImage, BlocVideo } from './blocs.jsx'
 import { TexteEnrichi } from './TexteEnrichi.jsx'
@@ -23,14 +39,54 @@ import type { EnveloppeEmplacement, PropsModele } from './types.js'
 
 const SANS_ENVELOPPE: EnveloppeEmplacement = (_info, defaut) => defaut
 
+/**
+ * Habillage d'un bloc : son fond et la mise en forme de son texte.
+ *
+ * Un bloc sans habillage n'est pas enveloppé du tout — le rendu des pages
+ * écrites avant ce réglage est inchangé, au nœud près. Les classes font le
+ * travail (voir « modeles.css ») : elles doivent l'emporter sur la couleur et
+ * la graisse que chaque bloc se donne lui-même (`.b-h1`, `.b-corps`…), ce qu'un
+ * simple style hérité ne ferait pas.
+ */
+function Habillage({ style, children }: { style: StyleBloc | undefined; children: ReactNode }) {
+  if (!style) return <>{children}</>
+
+  const classes = ['b-hab']
+  if (style.fond) classes.push('b-hab--fond')
+  if (style.couleur) classes.push('b-hab--couleur')
+  if (style.gras) classes.push('b-hab--gras')
+  if (style.italique) classes.push('b-hab--italique')
+  if (style.souligne) classes.push('b-hab--souligne')
+  if (style.alignement === 'centre') classes.push('b-hab--centre')
+  if (style.alignement === 'droite') classes.push('b-hab--droite')
+  if (classes.length === 1) return <>{children}</>
+
+  return (
+    <div className={classes.join(' ')} style={{ background: style.fond, color: style.couleur }}>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * L'enveloppe des blocs, habillage compris. Elle passe par un seul point : la
+ * borne et l'éditeur habillent donc les blocs exactement pareil, et l'aperçu
+ * reste fidèle sans que rien ne soit à tenir en double.
+ */
+function habiller(contenu: ContenuPage, emp?: EnveloppeEmplacement): EnveloppeEmplacement {
+  const base = emp ?? SANS_ENVELOPPE
+  return (info, defaut) =>
+    base(info, <Habillage style={lireStyle(contenu, info.nom)}>{defaut}</Habillage>)
+}
+
 function TitreOuVide({ texte, secours }: { texte: string; secours: string }) {
   if (texte.trim() === '') return <span className="b-attente">{secours}</span>
   return <>{texte}</>
 }
 
-function TexteOuVide({ texte, secours }: { texte: string; secours: string }) {
-  if (texte.trim() === '') return <span className="b-attente">{secours}</span>
-  return <TexteEnrichi texte={texte} />
+function TexteOuVide({ valeur, secours }: { valeur: ValeurTexte; secours: string }) {
+  if (valeur.valeur.trim() === '') return <span className="b-attente">{secours}</span>
+  return <TexteEnrichi lignes={lignesDeTexte(valeur)} />
 }
 
 
@@ -114,6 +170,91 @@ function PoigneeLargeur({
 }
 
 /**
+ * Poignée de hauteur, sur le bord bas — images et galeries seulement.
+ *
+ * Une image est plafonnée en hauteur (620 px par défaut) : sur une cellule
+ * large, c'est ce plafond, et non la largeur, qui l'empêche de grandir.
+ * Le relever la laisse occuper toute la place disponible.
+ */
+function PoigneeHauteur({
+  cle,
+  hauteur,
+  surHauteur,
+}: {
+  cle: string
+  /** Hauteur courante, ou « undefined » tant qu'elle n'a jamais été réglée. */
+  hauteur: number | undefined
+  surHauteur: (cle: string, hauteur: number) => void
+}) {
+  const poignee = useRef<HTMLButtonElement>(null)
+  const depart = useRef<{ y: number; hauteur: number; echelle: number } | null>(null)
+
+  const commencer = (evenement: React.PointerEvent<HTMLButtonElement>) => {
+    const cellule = poignee.current?.parentElement
+    const page = poignee.current?.closest('.mdl')
+    if (!cellule || !page) return
+    // L'aperçu est réduit : un déplacement de N pixels à l'écran vaut N/échelle
+    // pixels de toile. Sans cette conversion, la hauteur suivrait deux fois
+    // plus vite que le doigt.
+    const echelle = page.getBoundingClientRect().width / 1920
+    if (echelle <= 0) return
+    depart.current = {
+      y: evenement.clientY,
+      hauteur: hauteur ?? cellule.getBoundingClientRect().height / echelle,
+      echelle,
+    }
+    try {
+      evenement.currentTarget.setPointerCapture(evenement.pointerId)
+    } catch {
+      /* capture indisponible : le glissement reste possible sans elle */
+    }
+  }
+
+  const glisser = (evenement: React.PointerEvent<HTMLButtonElement>) => {
+    const debut = depart.current
+    if (!debut) return
+    const ecart = (evenement.clientY - debut.y) / debut.echelle
+    const brute = debut.hauteur + ecart
+    const cible = Math.min(
+      HAUTEUR_MAX,
+      Math.max(HAUTEUR_MIN, Math.round(brute / HAUTEUR_PAS) * HAUTEUR_PAS),
+    )
+    if (cible !== hauteur) surHauteur(cle, cible)
+  }
+
+  const finir = () => {
+    depart.current = null
+  }
+
+  return (
+    <button
+      ref={poignee}
+      type="button"
+      className="mdl__poignee-bas"
+      onPointerDown={commencer}
+      onPointerMove={glisser}
+      onPointerUp={finir}
+      onPointerCancel={finir}
+      onKeyDown={(evenement) => {
+        const base = hauteur ?? 620
+        if (evenement.key === 'ArrowUp') {
+          evenement.preventDefault()
+          surHauteur(cle, Math.max(HAUTEUR_MIN, base - HAUTEUR_PAS))
+        }
+        if (evenement.key === 'ArrowDown') {
+          evenement.preventDefault()
+          surHauteur(cle, Math.min(HAUTEUR_MAX, base + HAUTEUR_PAS))
+        }
+      }}
+      aria-label={`Hauteur : ${hauteur ?? 'automatique'}. Flèches haut et bas pour ajuster.`}
+      title="Tirer pour changer la hauteur"
+    >
+      <span className="mdl__poignee-barre" aria-hidden="true" />
+    </button>
+  )
+}
+
+/**
  * Grille d'une page : emplacements du modèle et blocs ajoutés, dans l'ordre,
  * sur les mêmes 12 colonnes.
  *
@@ -129,31 +270,42 @@ function RenduGrille({
   emp,
   surImage,
   surRedimensionner,
+  surHauteur,
   lecteurVideo,
 }: PropsModele) {
   const edition = emp !== undefined
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   const modele = modelePar(contenu.modele)
   if (!modele) return null
 
   const suite = lireSuite(contenu)
 
-  const cellules: React.ReactNode[] = []
+  const cellules: ReactNode[] = []
 
   const enveloppeCellule = (
     cle: string,
     colonnes: number,
     classe: string,
     enfant: React.ReactNode,
+    type: string,
+    hauteur: number | undefined,
   ) => (
     <div
       key={cle}
       className={`mdl__cellule${classe ? ` ${classe}` : ''}`}
-      style={{ gridColumn: `span ${colonnes}` }}
+      style={{
+        gridColumn: `span ${colonnes}`,
+        // Variable lue par le rendu : plafond de l'image, hauteur de la
+        // galerie. Absente, chacun garde sa valeur d'origine.
+        ...(hauteur === undefined ? {} : { ['--hauteur-bloc' as string]: `${hauteur}px` }),
+      }}
     >
       {enfant}
       {surRedimensionner ? (
         <PoigneeLargeur cle={cle} colonnes={colonnes} surRedimensionner={surRedimensionner} />
+      ) : null}
+      {surHauteur && hauteurReglable(type) ? (
+        <PoigneeHauteur cle={cle} hauteur={hauteur} surHauteur={surHauteur} />
       ) : null}
     </div>
   )
@@ -177,6 +329,8 @@ function RenduGrille({
               ? 'mdl__cellule--video'
               : '',
           renduBlocLibre(bloc, { contenu, media, surImage, lecteurVideo }, env),
+          bloc.valeur.type,
+          hauteurDe(bloc),
         ),
       )
       continue
@@ -190,6 +344,8 @@ function RenduGrille({
         colonnesEmplacement(contenu, cle, def.colonnes),
         def.type === 'galerie' ? 'mdl__cellule--galerie' : '',
         renduEmplacement(cle, def.type, { contenu, media, surImage, lecteurVideo }, env),
+        def.type,
+        hauteurEmplacement(contenu, cle),
       ),
     )
   }
@@ -203,7 +359,7 @@ function renduEmplacement(
   type: string,
   ctx: Pick<PropsModele, 'contenu' | 'media' | 'surImage' | 'lecteurVideo'>,
   env: EnveloppeEmplacement,
-): React.ReactNode {
+): ReactNode {
   const { contenu, media, surImage, lecteurVideo } = ctx
   switch (type) {
     case 'titre':
@@ -217,7 +373,7 @@ function renduEmplacement(
       return env(
         { nom, type: 'texte', classe: 'b-corps' },
         <div className="b-corps">
-          <TexteOuVide texte={lireTexte(contenu, nom)} secours="Texte de la page" />
+          <TexteOuVide valeur={lireValeurTexte(contenu, nom)} secours="Texte de la page" />
         </div>,
       )
     case 'image':
@@ -268,7 +424,7 @@ function renduBlocLibre(
   bloc: BlocLibre,
   ctx: Pick<PropsModele, 'contenu' | 'media' | 'surImage' | 'lecteurVideo'>,
   env: EnveloppeEmplacement,
-): React.ReactNode {
+): ReactNode {
   const { media, surImage, lecteurVideo } = ctx
   const nom = `suite:${bloc.id}`
   // Éditeur : les vidéos et les ateliers sont affichés mais inertes, sinon
@@ -280,7 +436,7 @@ function renduBlocLibre(
       return env(
         { nom, type: 'texte', classe: 'b-corps' },
         <div className="b-corps">
-          <TexteOuVide texte={bloc.valeur.valeur} secours="Texte ajouté (vide)" />
+          <TexteOuVide valeur={bloc.valeur} secours="Texte ajouté (vide)" />
         </div>,
       )
     case 'image':
@@ -363,7 +519,7 @@ function GrilleBlocsAjoutes({
   lecteurVideo,
 }: PropsModele) {
   const edition = emp !== undefined
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   const sections = (modelePar(contenu.modele)?.sections ?? []).map((s) => s.nom)
   const blocs = lireSuite(contenu).filter((bloc) => edition || !estBlocLibreVide(bloc))
   if (blocs.length === 0) return null
@@ -410,7 +566,7 @@ export function Modele3({
   surRedimensionner,
   lecteurVideo = false,
 }: PropsModele) {
-  const env = emp ?? SANS_ENVELOPPE
+  const env = habiller(contenu, emp)
   const encartTitre = lireTexte(contenu, 'encartTitre')
   const encartTexte = lireTexte(contenu, 'encartTexte')
   const encartVide = encartTitre.trim() === '' && encartTexte.trim() === ''
@@ -454,7 +610,7 @@ export function Modele3({
               { nom: 'texte', type: 'texte', classe: 'b-corps' },
               <div className="b-corps b-corps--clair">
                 <TexteOuVide
-                  texte={lireTexte(contenu, 'texte')}
+                  valeur={lireValeurTexte(contenu, 'texte')}
                   secours="Texte superposé (court)"
                 />
               </div>,
@@ -471,7 +627,10 @@ export function Modele3({
             {env(
               { nom: 'encartTexte', type: 'texte', classe: 'b-petit' },
               <div className="b-petit">
-                <TexteOuVide texte={encartTexte} secours="Information pratique" />
+                <TexteOuVide
+                  valeur={lireValeurTexte(contenu, 'encartTexte')}
+                  secours="Information pratique"
+                />
               </div>,
             )}
           </aside>

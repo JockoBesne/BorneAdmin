@@ -4,6 +4,8 @@ import {
   BLOC_LIBRE_TEXTE_MAX_SIGNES,
   COLONNES_GRILLE,
   COLONNES_MIN,
+  HAUTEUR_MAX,
+  HAUTEUR_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
   FRISE_DETAIL_MAX_SIGNES,
   FRISE_EVENEMENTS_MAX,
@@ -52,6 +54,22 @@ const LEGENDE_MAX = 200
  * le schéma supprime les champs qu'il ne connaît pas, et sans cette
  * déclaration la suite serait effacée à chaque enregistrement.
  */
+/**
+ * Une ligne de texte mis en forme. Facultative partout : un texte sans mise en
+ * forme, ou écrit avant l'introduction de ce champ, n'en a pas.
+ */
+export const schemaLigneTexte = z.object({
+  puce: z.boolean().optional(),
+  morceaux: z.array(
+    z.object({
+      texte: z.string(),
+      gras: z.boolean().optional(),
+      italique: z.boolean().optional(),
+      souligne: z.boolean().optional(),
+    }),
+  ),
+})
+
 export const schemaBlocLibre = z.object({
   id: z.string(),
   // Section du modèle après laquelle le bloc s'affiche ; absent = bas de page.
@@ -60,10 +78,12 @@ export const schemaBlocLibre = z.object({
   // Largeur en colonnes réglée à la poignée. Bornée ici aussi : un contenu
   // modifié à la main ne doit pas pouvoir produire un bloc illisible.
   colonnes: z.number().int().min(COLONNES_MIN).max(COLONNES_GRILLE).optional(),
+  hauteur: z.number().int().min(HAUTEUR_MIN).max(HAUTEUR_MAX).optional(),
   valeur: z.discriminatedUnion('type', [
     z.object({
       type: z.literal('texte'),
       valeur: z.string().max(BLOC_LIBRE_TEXTE_MAX_SIGNES),
+      lignes: z.array(schemaLigneTexte).optional(),
     }),
     z.object({
       type: z.literal('image'),
@@ -115,6 +135,21 @@ export const schemaBlocLibre = z.object({
   ]),
 })
 
+/**
+ * Habillage d'un bloc : fond et mise en forme du texte. Tous les champs sont
+ * facultatifs, donc une page écrite avant l'introduction de ce réglage reste
+ * valide — et, comme pour la suite, il faut le déclarer ici, sinon le schéma
+ * effacerait l'habillage à chaque enregistrement.
+ */
+export const schemaStyleBloc = z.object({
+  fond: z.string().regex(COULEUR).optional(),
+  couleur: z.string().regex(COULEUR).optional(),
+  gras: z.boolean().optional(),
+  italique: z.boolean().optional(),
+  souligne: z.boolean().optional(),
+  alignement: z.enum(['gauche', 'centre', 'droite']).optional(),
+})
+
 export const schemaPageManifeste = z.object({
   id: z.string(),
   titre: z.string(),
@@ -132,6 +167,9 @@ export const schemaPageManifeste = z.object({
     largeurs: z
       .record(z.string(), z.number().int().min(COLONNES_MIN).max(COLONNES_GRILLE))
       .optional(),
+    hauteurs: z
+      .record(z.string(), z.number().int().min(HAUTEUR_MIN).max(HAUTEUR_MAX))
+      .optional(),
     emplacements: z.record(z.string(), z.unknown()),
     // Facultative : les contenus écrits avant l'introduction des blocs libres
     // restent valides sans conversion, et une page sans blocs ajoutés n'écrit
@@ -140,6 +178,9 @@ export const schemaPageManifeste = z.object({
     // Ordre libre des cellules (emplacements du modèle et blocs ajoutés
     // mélangés). Facultatif : absent, l'ordre du modèle s'applique.
     ordre: z.array(z.string()).optional(),
+    // Habillage des blocs, rangé par nom de bloc. Facultatif : absent tant
+    // qu'aucun bloc de la page n'est personnalisé.
+    styles: z.record(z.string(), schemaStyleBloc).optional(),
   }),
 })
 

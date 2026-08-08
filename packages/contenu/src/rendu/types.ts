@@ -45,4 +45,10 @@ export interface PropsModele {
    * l'éditeur, sans dupliquer le rendu.
    */
   surRedimensionner?: (idBloc: string, colonnes: number) => void
+  /**
+   * Administration : règle la hauteur d'une image ou d'une galerie, en pixels
+   * de toile. Seuls ces deux types en ont une réglable — la hauteur d'un texte
+   * découle de son contenu, celle d'une vidéo de ses proportions.
+   */
+  surHauteur?: (cle: string, hauteur: number) => void
 }
