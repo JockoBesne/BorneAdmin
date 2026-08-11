@@ -44,11 +44,15 @@ protocol.registerSchemesAsPrivileged([
       // Indispensable pour la vidéo : le lecteur réclame des morceaux de
       // fichier, pas le fichier entier.
       stream: true,
+      // Autorise l'interface à *lire* un média avec « fetch » (et pas seulement
+      // à l'afficher) : c'est ainsi qu'on capture l'image de couverture d'une
+      // vidéo à l'import. Sans cela, la lecture est refusée.
+      corsEnabled: true,
     },
   },
 ])
 
-function servirMedia(requete) {
+async function servirMedia(requete) {
   let relatif
   try {
     relatif = decodeURIComponent(new URL(requete.url).pathname).replace(/^\/+/, '')
@@ -64,7 +68,18 @@ function servirMedia(requete) {
     return new Response('chemin refusé', { status: 403 })
   }
 
-  return net.fetch(pathToFileURL(cible).toString())
+  const reponse = await net.fetch(pathToFileURL(cible).toString())
+
+  // Le corps est transmis tel quel — la vidéo continue d'arriver par morceaux —
+  // avec un en-tête de plus qui autorise la page à lire le fichier, et pas
+  // seulement à l'afficher. Le protocole ne sert que notre dossier de médias.
+  const entetes = new Headers(reponse.headers)
+  entetes.set('Access-Control-Allow-Origin', '*')
+  return new Response(reponse.body, {
+    status: reponse.status,
+    statusText: reponse.statusText,
+    headers: entetes,
+  })
 }
 
 // ── Lecture du contenu ───────────────────────────────────────────────────────
@@ -139,6 +154,34 @@ async function importerMedia(evenement, type) {
   }
 }
 
+/**
+ * Enregistre dans medias/ une image fabriquée par l'interface — aujourd'hui
+ * l'image de couverture d'une vidéo, capturée au canvas.
+ *
+ * L'interface n'écrit jamais elle-même sur le disque : elle envoie des octets
+ * et un nom souhaité. Le nom est **refait ici** à partir de sa seule dernière
+ * partie, sans point ni séparateur : un nom venu de l'interface ne doit pas
+ * pouvoir désigner un fichier hors du dossier des médias.
+ */
+function enregistrerImage(nomSouhaite, donneesBase64) {
+  const radical =
+    path
+      .basename(String(nomSouhaite ?? ''))
+      .replace(/\.[^.]+$/, '')
+      .replace(/[^a-zA-Z0-9_-]+/g, '-')
+      .slice(0, 60) || 'couverture'
+
+  let nom = `${radical}.jpg`
+  for (let n = 2; fs.existsSync(path.join(DOSSIER_MEDIAS, nom)); n += 1) {
+    nom = `${radical}-${n}.jpg`
+  }
+
+  const octets = Buffer.from(String(donneesBase64 ?? ''), 'base64')
+  if (octets.length === 0) return null
+  fs.writeFileSync(path.join(DOSSIER_MEDIAS, nom), octets)
+  return { chemin: nom, octets: octets.length }
+}
+
 // ── Fenêtre ──────────────────────────────────────────────────────────────────
 
 function creerFenetre() {
@@ -183,6 +226,9 @@ app.whenReady().then(() => {
   ipcMain.handle('contenu:ecrire', (_evenement, manifeste) => ecrireContenu(manifeste))
   ipcMain.handle('medias:importer', (evenement, type) =>
     importerMedia(evenement, type === 'video' ? 'video' : 'image'),
+  )
+  ipcMain.handle('medias:enregistrer-image', (_evenement, nom, donneesBase64) =>
+    enregistrerImage(nom, donneesBase64),
   )
   creerFenetre()
 

@@ -193,10 +193,13 @@ function LecteurVideo({
       <video
         ref={lecteur}
         className="b-video__lecteur"
-        src={resolu.url('origine')}
+        // Sans image de couverture (vidéo importée avant que l'application
+        // sache en fabriquer une), on demande au lecteur de se placer à la
+        // première seconde : il affiche cette image au lieu d'un écran noir.
+        src={resolu.poster ? resolu.url('origine') : `${resolu.url('origine')}#t=1`}
         poster={resolu.poster ?? undefined}
         playsInline
-        preload="none"
+        preload={resolu.poster ? 'none' : 'metadata'}
         onPlay={() => {
           setEnPause(false)
           surLecture?.(true)

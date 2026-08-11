@@ -1,5 +1,4 @@
 import {
-  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -13,6 +12,8 @@ import {
   HAUTEUR_MAX,
   HAUTEUR_MIN,
   colonnesDe,
+  colonnesEmplacement,
+  ordreCellules,
   controlerContenu,
   DEFS_BLOCS_LIBRES,
   estStyleVide,
@@ -20,7 +21,6 @@ import {
   lireStyle,
   lireSuite,
   modelePar,
-  positionBloc,
   sansMiseEnForme,
   texteBrut,
   FRISE_CONSIGNE_MAX_SIGNES,
@@ -84,6 +84,12 @@ export function EditeurPage({
   const [ajoutOuvert, setAjoutOuvert] = useState(false)
   const [retraitEnCours, setRetraitEnCours] = useState<string | null>(null)
   const [couleursOuvertes, setCouleursOuvertes] = useState(false)
+  // Glisser-déposer sur l'aperçu : bloc en cours de déplacement, et endroit visé.
+  const [glisseId, setGlisseId] = useState<string | null>(null)
+  const [depot, setDepot] = useState<{
+    cle: string
+    ou: 'avant' | 'apres' | 'gauche' | 'droite'
+  } | null>(null)
 
   // Le manifeste est validé au chargement : le contenu a la forme attendue.
   const contenu = page.contenu as ContenuPage
@@ -155,42 +161,10 @@ export function EditeurPage({
 
   // ── Blocs ajoutés : ajout, retrait, déplacement ────────────────────────────
 
-  const ajouterBloc = (type: TypeBlocLibre) => {
-    const bloc: BlocLibre = {
-      id: crypto.randomUUID(),
-      // Un nouveau bloc naît en bas de page ; les flèches le remontent ensuite,
-      // y compris entre les blocs du modèle.
-      apres: modele?.sections[modele.sections.length - 1]?.nom,
-      valeur: valeurNeuve(type),
-    }
-    surModification((precedente) => {
-      const contenuPage = precedente.contenu as ContenuPage
-      return {
-        ...precedente,
-        contenu: { ...contenuPage, suite: [...lireSuite(contenuPage), bloc] },
-      }
-    })
-    setAjoutOuvert(false)
-    setSelection(`suite:${bloc.id}`)
-  }
-
-  const retirerBloc = (id: string) => {
-    surModification((precedente) => {
-      const contenuPage = precedente.contenu as ContenuPage
-      return {
-        ...precedente,
-        contenu: sansStylesVides({
-          ...contenuPage,
-          suite: lireSuite(contenuPage).filter((bloc) => bloc.id !== id),
-          // L'habillage du bloc part avec lui : sans cela il resterait dans le
-          // fichier sans plus rien à habiller.
-          styles: sansEntree(contenuPage.styles, `suite:${id}`),
-        }),
-      }
-    })
-    setRetraitEnCours(null)
-    if (selection === `suite:${id}`) setSelection(null)
-  }
+  // L'ajout et le retrait d'un bloc ont déménagé plus bas, avec le
+  // glisser-déposer : « ajouterBloc » sait désormais poser le bloc à l'endroit
+  // visé, et « retirerCellule » retire aussi bien un bloc ajouté qu'un
+  // emplacement du modèle.
 
   // ── Habillage d'un bloc : fond, mise en forme du texte ─────────────────────
 
@@ -313,48 +287,6 @@ export function EditeurPage({
     }
   }
 
-  /**
-   * Déplace un bloc dans l'ordre réel de la page : d'abord au sein de son
-   * groupe, puis — arrivé au bord — il saute dans la section voisine,
-   * par-dessus le bloc du modèle. Les groupes sont ensuite remis à plat, avec
-   * l'ancre « apres » de chaque bloc normalisée.
-   */
-  const deplacerBloc = (id: string, sens: -1 | 1) => {
-    surModification((precedente) => {
-      const contenuPage = precedente.contenu as ContenuPage
-      const noms = (modele?.sections ?? []).map((section) => section.nom)
-      const groupes = noms.map((nom) => ({ nom, blocs: [] as BlocLibre[] }))
-      const dernier = groupes[groupes.length - 1]
-      if (!dernier) return precedente
-
-      for (const bloc of lireSuite(contenuPage)) {
-        const position = positionBloc(bloc, noms)
-        ;(groupes.find((groupe) => groupe.nom === position) ?? dernier).blocs.push(bloc)
-      }
-
-      const indexGroupe = groupes.findIndex((groupe) =>
-        groupe.blocs.some((bloc) => bloc.id === id),
-      )
-      const groupe = groupes[indexGroupe]
-      if (!groupe) return precedente
-      const indexBloc = groupe.blocs.findIndex((bloc) => bloc.id === id)
-      const [bloc] = groupe.blocs.splice(indexBloc, 1)
-      if (!bloc) return precedente
-
-      if (sens === -1) {
-        if (indexBloc > 0) groupe.blocs.splice(indexBloc - 1, 0, bloc)
-        else if (indexGroupe > 0) groupes[indexGroupe - 1]?.blocs.push(bloc)
-        else groupe.blocs.splice(indexBloc, 0, bloc)
-      } else {
-        if (indexBloc < groupe.blocs.length) groupe.blocs.splice(indexBloc + 1, 0, bloc)
-        else if (indexGroupe < groupes.length - 1) groupes[indexGroupe + 1]?.blocs.unshift(bloc)
-        else groupe.blocs.push(bloc)
-      }
-
-      const suite = groupes.flatMap((g) => g.blocs.map((b) => ({ ...b, apres: g.nom })))
-      return { ...precedente, contenu: { ...contenuPage, suite } }
-    })
-  }
 
   const choisirMedia = (nom: string, media: MediaManifeste) => {
     modifierEmplacement(nom, (valeur) => {
@@ -399,6 +331,400 @@ export function EditeurPage({
     return modele.emplacements[nom]
   }
 
+  // ── Glisser-déposer d'un bloc sur l'aperçu ─────────────────────────────────
+  //
+  // On attrape un bloc ajouté et on le lâche sur un autre : au centre pour
+  // l'insérer avant/après, sur un flanc pour les mettre côte à côte.
+  //
+  // Événements pointeur, jamais l'API « drag and drop » HTML5 : celle-ci ne
+  // fonctionne pas au doigt, et la borne est un écran tactile.
+
+  /** Où le bloc va tomber, tel que le pointeur le désigne. */
+  type Depot = { cle: string; ou: 'avant' | 'apres' | 'gauche' | 'droite' }
+
+  const depart = useRef<{ x: number; y: number; id: string; actif: boolean } | null>(null)
+  const vientDeGlisser = useRef(false)
+  /** Dernière position connue du pointeur, relue par le défilement automatique. */
+  const dernierPoint = useRef<{ x: number; y: number } | null>(null)
+  const minuterieDefilement = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const arreterDefilement = () => {
+    if (minuterieDefilement.current !== null) {
+      clearInterval(minuterieDefilement.current)
+      minuterieDefilement.current = null
+    }
+  }
+
+  // L'éditeur peut être quitté en plein glissement : sans ce nettoyage, la
+  // minuterie continuerait de tourner dans le vide.
+  useEffect(() => arreterDefilement, [])
+
+  /**
+   * Défilement automatique de l'aperçu quand on approche du haut ou du bas.
+   *
+   * Indispensable : un quiz ou une frise occupe presque tout l'écran, la cible
+   * est donc souvent hors de vue au moment où l'on saisit le bloc. Le doigt
+   * peut rester immobile au bord — c'est une minuterie qui fait défiler, pas le
+   * mouvement du pointeur.
+   */
+  const lancerDefilement = () => {
+    if (minuterieDefilement.current !== null) return
+    minuterieDefilement.current = setInterval(() => {
+      const point = dernierPoint.current
+      const glisse = depart.current
+      const toile = document.querySelector('.edit__apercu .toile') as HTMLElement | null
+      if (!point || !glisse?.actif || !toile) return
+
+      const cadre = toile.getBoundingClientRect()
+      const marge = 90
+      const pas = point.y < cadre.top + marge ? -18 : point.y > cadre.bottom - marge ? 18 : 0
+      if (pas === 0) return
+
+      const avant = toile.scrollTop
+      toile.scrollTop += pas
+      // La page a bougé sous le pointeur : la cible visée n'est plus la même.
+      if (toile.scrollTop !== avant) setDepot(depotDepuisPoint(point.x, point.y, glisse.id))
+    }, 16)
+  }
+
+  /**
+   * Cellule visée par le pointeur, et à quel endroit d'icelle.
+   *
+   * Les coordonnées n'ont pas besoin d'être converties malgré la mise à
+   * l'échelle de l'aperçu : la toile utilise « zoom », qui recalcule vraiment la
+   * mise en page — les rectangles renvoyés sont donc déjà dans le même repère
+   * que « clientX / clientY ». (Ce ne serait pas vrai avec « transform ».)
+   */
+  const depotDepuisPoint = (x: number, y: number, cleGlisse: string): Depot | null => {
+    const dessous = document.elementFromPoint(x, y) as HTMLElement | null
+    const emplacement = dessous?.closest('.emp[data-nom]') as HTMLElement | null
+    const cle = emplacement?.dataset['nom']
+    if (!emplacement || !cle || cle === cleGlisse) return null
+
+    const cadre = emplacement.getBoundingClientRect()
+    const fractionX = (x - cadre.left) / cadre.width
+    if (fractionX < 0.28) return { cle, ou: 'gauche' }
+    if (fractionX > 0.72) return { cle, ou: 'droite' }
+    return { cle, ou: (y - cadre.top) / cadre.height < 0.5 ? 'avant' : 'apres' }
+  }
+
+  /** Largeur actuelle d'une cellule, qu'elle vienne du modèle ou de la suite. */
+  const colonnesDeCle = (contenuPage: ContenuPage, cle: string): number => {
+    if (cle.startsWith('suite:')) {
+      const bloc = lireSuite(contenuPage).find(
+        (candidat) => `suite:${candidat.id}` === cle,
+      )
+      return bloc ? colonnesDe(bloc) : COLONNES_GRILLE
+    }
+    return colonnesEmplacement(contenuPage, cle, modele.emplacements[cle]?.colonnes)
+  }
+
+  /** Fixe la largeur d'une cellule, au bon endroit selon sa nature. */
+  const avecLargeur = (contenuPage: ContenuPage, cle: string, colonnes: number): ContenuPage => {
+    const borne = Math.min(COLONNES_GRILLE, Math.max(COLONNES_MIN, Math.round(colonnes)))
+    if (cle.startsWith('suite:')) {
+      const id = cle.slice('suite:'.length)
+      return {
+        ...contenuPage,
+        suite: lireSuite(contenuPage).map((bloc) =>
+          bloc.id === id ? { ...bloc, colonnes: borne } : bloc,
+        ),
+      }
+    }
+    return {
+      ...contenuPage,
+      largeurs: { ...(contenuPage.largeurs ?? {}), [cle]: borne },
+    }
+  }
+
+  /**
+   * Rangées de la page : les cellules se suivent sur les 12 colonnes et passent
+   * à la ligne dès qu'il n'y a plus la place — la règle même de la grille de
+   * l'aperçu, refaite ici pour savoir qui partage sa rangée avec qui.
+   */
+  const rangeesDe = (contenuPage: ContenuPage): string[][] => {
+    const rangees: string[][] = []
+    let reste = 0
+    for (const cle of ordreCellules(contenuPage, modele)) {
+      const colonnes = colonnesDeCle(contenuPage, cle)
+      const derniere = rangees[rangees.length - 1]
+      if (derniere && colonnes <= reste) {
+        derniere.push(cle)
+        reste -= colonnes
+      } else {
+        rangees.push([cle])
+        reste = COLONNES_GRILLE - colonnes
+      }
+    }
+    return rangees
+  }
+
+  /**
+   * Un bloc qui vient de perdre le voisin avec lequel il partageait sa rangée
+   * reprend toute la largeur. Sans cela, sortir un bloc d'une paire laisse
+   * l'autre en demi-largeur, seul, avec un grand vide à côté de lui — ce que
+   * personne ne demande jamais. Un bloc qui était **déjà** seul n'est pas
+   * touché : sa largeur a été réglée exprès, à la poignée ou au bouton.
+   */
+  const recollerOrphelins = (avant: ContenuPage, apres: ContenuPage): ContenuPage => {
+    const accompagnes = new Set(
+      rangeesDe(avant)
+        .filter((rangee) => rangee.length > 1)
+        .flat(),
+    )
+    let resultat = apres
+    for (const rangee of rangeesDe(apres)) {
+      const [cle] = rangee
+      if (rangee.length !== 1 || !cle || !accompagnes.has(cle)) continue
+      if (colonnesDeCle(resultat, cle) < COLONNES_GRILLE) {
+        resultat = avecLargeur(resultat, cle, COLONNES_GRILLE)
+      }
+    }
+    return resultat
+  }
+
+  /**
+   * Place une cellule à l'endroit désigné par le dépôt : rang dans l'ordre de
+   * la page, et répartition des colonnes quand on la pose sur un flanc.
+   *
+   * Tout passe par « ordre », la liste unique des cellules : un emplacement du
+   * modèle et un bloc ajouté s'y déplacent exactement pareil. Sert au
+   * déplacement d'un bloc existant **comme** à l'arrivée d'un bloc tout neuf
+   * glissé depuis le menu d'ajout.
+   */
+  const placerCellule = (
+    contenuPage: ContenuPage,
+    cleGlisse: string,
+    depot: Depot,
+  ): ContenuPage | null => {
+    const reste = ordreCellules(contenuPage, modele).filter((cle) => cle !== cleGlisse)
+
+    let vers = reste.indexOf(depot.cle)
+    if (vers < 0) return null
+    if (depot.ou === 'apres' || depot.ou === 'droite') vers += 1
+    reste.splice(vers, 0, cleGlisse)
+
+    let resultat: ContenuPage = { ...contenuPage, ordre: reste }
+
+    if (depot.ou === 'gauche' || depot.ou === 'droite') {
+      // Côte à côte : les deux cellules doivent tenir sur les mêmes 12
+      // colonnes. Si le voisin est trop large pour laisser la place minimale,
+      // on partage en deux moitiés ; sinon il garde sa largeur et l'autre
+      // prend le reste.
+      const largeurVoisin = colonnesDeCle(resultat, depot.cle)
+      const partage = largeurVoisin > COLONNES_GRILLE - COLONNES_MIN
+      const colonnesVoisin = partage ? COLONNES_GRILLE / 2 : largeurVoisin
+      resultat = avecLargeur(resultat, depot.cle, colonnesVoisin)
+      resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE - colonnesVoisin)
+    } else {
+      // Déposé au-dessus ou en dessous : le bloc prend **toute la largeur**,
+      // il occupe donc une rangée à lui seul. C'est ce que le geste annonce —
+      // un trait horizontal pleine largeur — et cela évite qu'un bloc resté
+      // en demi-largeur se glisse à côté du voisin sans qu'on l'ait demandé.
+      resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE)
+    }
+
+    return resultat
+  }
+
+  /** Déplace une cellule existante à l'endroit désigné par le dépôt. */
+  const deposerCellule = (cleGlisse: string, depot: Depot) => {
+    surModification((precedente) => {
+      const avant = precedente.contenu as ContenuPage
+      if (cleGlisse === depot.cle) return precedente
+      if (!ordreCellules(avant, modele).includes(cleGlisse)) return precedente
+
+      const apres = placerCellule(avant, cleGlisse, depot)
+      if (!apres) return precedente
+      return { ...precedente, contenu: recollerOrphelins(avant, apres) }
+    })
+  }
+
+  /**
+   * Crée un bloc et le pose à l'endroit visé : c'est le glissement depuis le
+   * menu d'ajout. Sans dépôt — simple clic sur le type — le bloc naît en bas de
+   * page, comme avant, et les flèches ▲▼ le remontent.
+   */
+  const ajouterBloc = (type: TypeBlocLibre, depot: Depot | null = null) => {
+    const bloc: BlocLibre = {
+      id: crypto.randomUUID(),
+      apres: modele.sections[modele.sections.length - 1]?.nom,
+      valeur: valeurNeuve(type),
+    }
+    const cle = `suite:${bloc.id}`
+
+    surModification((precedente) => {
+      const avant = precedente.contenu as ContenuPage
+      const avecBloc: ContenuPage = { ...avant, suite: [...lireSuite(avant), bloc] }
+      const place = depot ? placerCellule(avecBloc, cle, depot) : null
+      return { ...precedente, contenu: place ?? avecBloc }
+    })
+
+    setAjoutOuvert(false)
+    setSelection(cle)
+  }
+
+  /** Remet en bas de page un emplacement du modèle qui en avait été retiré. */
+  const remettreEmplacement = (nom: string) => {
+    surModification((precedente) => {
+      const contenuPage = precedente.contenu as ContenuPage
+      const ordreActuel = ordreCellules(contenuPage, modele)
+      if (ordreActuel.includes(nom)) return precedente
+      return { ...precedente, contenu: { ...contenuPage, ordre: [...ordreActuel, nom] } }
+    })
+    setSelection(nom)
+  }
+
+  // ── Glisser-déposer dans la liste du panneau ───────────────────────────────
+  //
+  // Second chemin, volontairement plus simple que celui de l'aperçu : les
+  // lignes sont compactes et toutes visibles, donc le geste reste praticable
+  // même quand les blocs sont hauts. Il ne fait que réordonner (haut/bas) ; la
+  // mise côte à côte reste l'affaire de l'aperçu et du bouton de largeur.
+
+  const departListe = useRef<{ y: number; cle: string; actif: boolean } | null>(null)
+  const [cibleListe, setCibleListe] = useState<string | null>(null)
+
+  /** Ligne du panneau visée par le pointeur, et de quel côté l'insérer. */
+  const cibleListeDepuisY = (y: number, cleGlisse: string): string | null => {
+    const lignes = [...document.querySelectorAll<HTMLElement>('.pan__ligne[data-cle]')]
+    for (const ligne of lignes) {
+      const cle = ligne.dataset['cle']
+      if (!cle || cle === cleGlisse) continue
+      const cadre = ligne.getBoundingClientRect()
+      if (y >= cadre.top && y <= cadre.bottom) return cle
+    }
+    return null
+  }
+
+  /** Place la cellule glissée juste avant celle visée. */
+  const deposerDansListe = (cleGlisse: string, cleCible: string) => {
+    surModification((precedente) => {
+      const contenuPage = precedente.contenu as ContenuPage
+      const ordreActuel = ordreCellules(contenuPage, modele)
+      const depuis = ordreActuel.indexOf(cleGlisse)
+      const vers = ordreActuel.indexOf(cleCible)
+      if (depuis < 0 || vers < 0 || depuis === vers) return precedente
+
+      const reste = ordreActuel.filter((cle) => cle !== cleGlisse)
+      const position = reste.indexOf(cleCible)
+      // Vers le bas, on se pose après la cible ; vers le haut, avant : le bloc
+      // atterrit ainsi là où le trait d'insertion l'annonçait.
+      reste.splice(depuis < vers ? position + 1 : position, 0, cleGlisse)
+      return {
+        ...precedente,
+        contenu: recollerOrphelins(contenuPage, { ...contenuPage, ordre: reste }),
+      }
+    })
+  }
+
+  /** Monte ou descend une cellule d'un cran dans l'ordre de la page. */
+  const deplacerCellule = (cle: string, sens: -1 | 1) => {
+    surModification((precedente) => {
+      const contenuPage = precedente.contenu as ContenuPage
+      const ordreActuel = [...ordreCellules(contenuPage, modele)]
+      const depuis = ordreActuel.indexOf(cle)
+      const vers = depuis + sens
+      if (depuis < 0 || vers < 0 || vers >= ordreActuel.length) return precedente
+      const [retiree] = ordreActuel.splice(depuis, 1)
+      if (!retiree) return precedente
+      ordreActuel.splice(vers, 0, retiree)
+      return {
+        ...precedente,
+        contenu: recollerOrphelins(contenuPage, { ...contenuPage, ordre: ordreActuel }),
+      }
+    })
+  }
+
+  /**
+   * Retire une cellule de la page. Un bloc ajouté est supprimé pour de bon ; un
+   * emplacement du modèle est seulement retiré de l'ordre — sa valeur reste
+   * dans le contenu, donc le remettre plus tard le retrouve intact.
+   */
+  const retirerCellule = (cle: string) => {
+    surModification((precedente) => {
+      const contenuPage = precedente.contenu as ContenuPage
+      const ordre = ordreCellules(contenuPage, modele).filter((autre) => autre !== cle)
+      const apres: ContenuPage = cle.startsWith('suite:')
+        ? // L'habillage du bloc part avec lui : sans cela il resterait dans le
+          // fichier sans plus rien à habiller.
+          sansStylesVides({
+            ...contenuPage,
+            ordre,
+            suite: lireSuite(contenuPage).filter(
+              (bloc) => bloc.id !== cle.slice('suite:'.length),
+            ),
+            styles: sansEntree(contenuPage.styles, cle),
+          })
+        : { ...contenuPage, ordre }
+      return { ...precedente, contenu: recollerOrphelins(contenuPage, apres) }
+    })
+    setRetraitEnCours(null)
+    if (selection === cle) setSelection(null)
+  }
+
+  /**
+   * Clé d'un bloc qui n'existe pas encore : le geste part du menu d'ajout, la
+   * cellule sera créée au moment du dépôt. Le préfixe suffit à la reconnaître —
+   * aucune cellule réelle ne s'appelle ainsi.
+   */
+  const PREFIXE_NEUF = 'nouveau:'
+
+  const auPointeurDescendu = (evenement: React.PointerEvent<HTMLElement>, nom: string) => {
+    // La poignée de largeur a son propre glissement : ne pas le lui voler.
+    if ((evenement.target as HTMLElement).closest('.mdl__poignee')) return
+    depart.current = { x: evenement.clientX, y: evenement.clientY, id: nom, actif: false }
+  }
+
+  const auPointeurDeplace = (evenement: React.PointerEvent<HTMLElement>) => {
+    const debut = depart.current
+    if (!debut) return
+
+    // Seuil : en deçà, c'est un clic (sélection), pas un glissement.
+    if (!debut.actif) {
+      if (Math.hypot(evenement.clientX - debut.x, evenement.clientY - debut.y) < 8) return
+      debut.actif = true
+      try {
+        evenement.currentTarget.setPointerCapture(evenement.pointerId)
+      } catch {
+        /* capture refusée : le glissement reste utilisable, simplement moins tolérant */
+      }
+      setGlisseId(debut.id)
+      lancerDefilement()
+    }
+
+    dernierPoint.current = { x: evenement.clientX, y: evenement.clientY }
+    setDepot(depotDepuisPoint(evenement.clientX, evenement.clientY, debut.id))
+  }
+
+  const auPointeurRelache = () => {
+    const debut = depart.current
+    depart.current = null
+    arreterDefilement()
+    dernierPoint.current = null
+    if (debut?.actif) {
+      if (depot) {
+        if (debut.id.startsWith(PREFIXE_NEUF)) {
+          ajouterBloc(debut.id.slice(PREFIXE_NEUF.length) as TypeBlocLibre, depot)
+        } else {
+          deposerCellule(debut.id, depot)
+        }
+      }
+      // Empêche le clic qui suit de re-sélectionner (ou d'ajouter un second
+      // bloc en bas de page) : un glissement n'est pas un clic.
+      vientDeGlisser.current = true
+      // …mais le drapeau doit retomber tout de suite après. Le clic de fin de
+      // geste part avant la moindre minuterie ; s'il n'a pas lieu du tout (le
+      // menu d'ajout se referme au dépôt), sans cela le drapeau avalerait un
+      // vrai clic, plus tard.
+      setTimeout(() => {
+        vientDeGlisser.current = false
+      }, 0)
+    }
+    setGlisseId(null)
+    setDepot(null)
+  }
+
   // Enveloppe des blocs dans l'aperçu : un liseré au survol, une étiquette avec
   // le nom du bloc, et un clic qui le sélectionne dans le panneau de droite.
   const enveloppe: EnveloppeEmplacement = (info, defaut) => {
@@ -410,14 +736,29 @@ export function EditeurPage({
       (probleme) => probleme.emplacement === info.nom && probleme.gravite === 'bloquant',
     )
 
+    const enGlissement = glisseId === info.nom
+    const vise = depot?.cle === info.nom ? ` emp--depot-${depot.ou}` : ''
+
     return (
       <div
-        className={`emp${actif ? ' emp--actif' : ''}${enProbleme ? ' emp--probleme' : ''}`}
+        className={`emp emp--deplacable${actif ? ' emp--actif' : ''}${
+          enProbleme ? ' emp--probleme' : ''
+        }${enGlissement ? ' emp--glisse' : ''}${vise}`}
+        data-nom={info.nom}
         role="button"
         tabIndex={0}
         aria-label={`Modifier : ${def.libelle}`}
+        onPointerDown={(evenement) => auPointeurDescendu(evenement, info.nom)}
+        onPointerMove={auPointeurDeplace}
+        onPointerUp={auPointeurRelache}
+        onPointerCancel={auPointeurRelache}
         onClick={(evenement) => {
           evenement.stopPropagation()
+          // Un glissement vient de se terminer : ne pas le traiter comme un clic.
+          if (vientDeGlisser.current) {
+            vientDeGlisser.current = false
+            return
+          }
           setSelection(info.nom)
         }}
         onKeyDown={(evenement) => {
@@ -437,11 +778,12 @@ export function EditeurPage({
 
   // La page dans son ordre réel : chaque section du modèle, puis les blocs
   // ajoutés qui la suivent. C'est ce plan que le panneau affiche.
-  const nomsSections = modele.sections.map((section) => section.nom)
-  const groupes = modele.sections.map((section) => ({
-    section,
-    blocs: suite.filter((bloc) => positionBloc(bloc, nomsSections) === section.nom),
-  }))
+  // L'ordre réel de la page : emplacements du modèle et blocs ajoutés mêlés,
+  // du haut vers le bas. Même source que le rendu — le panneau montre donc
+  // exactement ce que le visiteur verra.
+  const ordre = ordreCellules(contenu, modele)
+  // Emplacements du modèle absents de la page : on doit pouvoir les remettre.
+  const retires = Object.keys(modele.emplacements).filter((nom) => !ordre.includes(nom))
 
   /**
    * Tout ce qui concerne un bloc s'ouvre **sous lui** : son contenu (le texte,
@@ -537,152 +879,204 @@ export function EditeurPage({
         <h2 className="pan__titre">Blocs de la page</h2>
 
         <ul className="pan__blocs">
-          {groupes.map(({ section, blocs }, indexGroupe) => (
-            <Fragment key={section.nom}>
-              {section.emplacements.map((nom) => {
-                const def = modele.emplacements[nom]
-                if (!def) return null
-                return (
-                  <li key={nom}>
+          {ordre.map((cle, index) => {
+            const def = defPour(cle)
+            if (!def) return null
+            const blocAjoute = suite.find((candidat) => `suite:${candidat.id}` === cle)
+            const valeur = blocAjoute ? blocAjoute.valeur : contenu.emplacements[cle]
+            const colonnes = colonnesDeCle(contenu, cle)
+
+            return (
+              <li key={cle} className={blocAjoute ? 'pan__ligne--ajoutee' : undefined}>
+                {/* La ligne elle-même porte la clé : c'est elle que vise le
+                    glissement dans le panneau. Le formulaire du bloc s'ouvre
+                    juste en dessous, dans le même <li>. */}
+                <div
+                  data-cle={cle}
+                  className={`pan__ligne${
+                    departListe.current?.cle === cle && departListe.current.actif
+                      ? ' pan__ligne--glisse'
+                      : ''
+                  }${cibleListe === cle ? ' pan__ligne--cible' : ''}`}
+                >
+                {retraitEnCours === cle ? (
+                  <>
+                    <span className="pan__retrait">
+                      {blocAjoute ? 'Retirer ce bloc ?' : 'Retirer de la page ?'}
+                    </span>
                     <button
                       type="button"
-                      className={`pan__bloc${selection === nom ? ' pan__bloc--actif' : ''}`}
-                      onClick={() => setSelection(selection === nom ? null : nom)}
+                      className="abtn abtn--danger"
+                      onClick={() => retirerCellule(cle)}
+                    >
+                      Retirer
+                    </button>
+                    <button
+                      type="button"
+                      className="abtn abtn--discret"
+                      onClick={() => setRetraitEnCours(null)}
+                    >
+                      Annuler
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* Poignée de saisie : on attrape ici, jamais sur le bloc
+                        lui-même — sans quoi le clic de sélection deviendrait
+                        imprévisible. */}
+                    <button
+                      type="button"
+                      className="pan__poignee"
+                      aria-label={`Déplacer : ${def.libelle}`}
+                      title="Glisser pour déplacer"
+                      onPointerDown={(evenement) => {
+                        departListe.current = { y: evenement.clientY, cle, actif: false }
+                      }}
+                      onPointerMove={(evenement) => {
+                        const debut = departListe.current
+                        if (!debut) return
+                        if (!debut.actif) {
+                          if (Math.abs(evenement.clientY - debut.y) < 8) return
+                          debut.actif = true
+                          try {
+                            evenement.currentTarget.setPointerCapture(evenement.pointerId)
+                          } catch {
+                            /* capture refusée : le glissement reste utilisable */
+                          }
+                        }
+                        setCibleListe(cibleListeDepuisY(evenement.clientY, debut.cle))
+                      }}
+                      onPointerUp={() => {
+                        const debut = departListe.current
+                        departListe.current = null
+                        if (debut?.actif && cibleListe) deposerDansListe(debut.cle, cibleListe)
+                        setCibleListe(null)
+                      }}
+                      onPointerCancel={() => {
+                        departListe.current = null
+                        setCibleListe(null)
+                      }}
+                    >
+                      ⠿
+                    </button>
+                    <button
+                      type="button"
+                      className={`pan__bloc${selection === cle ? ' pan__bloc--actif' : ''}`}
+                      onClick={() => setSelection(selection === cle ? null : cle)}
                     >
                       <span className="pan__bloc-libelle">{def.libelle}</span>
-                      <span className="pan__bloc-resume">
-                        {resumeBloc(contenu.emplacements[nom])}
-                      </span>
+                      <span className="pan__bloc-resume">{resumeBloc(valeur)}</span>
                     </button>
-                    {editionDuBloc(nom)}
-                  </li>
-                )
-              })}
-              {blocs.map((bloc, indexBloc) => {
-                const nom = `suite:${bloc.id}`
-                return (
-                  <li key={bloc.id} className="pan__ligne--ajoutee">
-                    <div className="pan__ligne">
-                    {retraitEnCours === bloc.id ? (
-                      <>
-                        <span className="pan__retrait">Retirer ce bloc ?</span>
-                        <button
-                          type="button"
-                          className="abtn abtn--danger"
-                          onClick={() => retirerBloc(bloc.id)}
-                        >
-                          Retirer
-                        </button>
-                        <button
-                          type="button"
-                          className="abtn abtn--discret"
-                          onClick={() => setRetraitEnCours(null)}
-                        >
-                          Annuler
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          className={`pan__bloc${selection === nom ? ' pan__bloc--actif' : ''}`}
-                          onClick={() => setSelection(selection === nom ? null : nom)}
-                        >
-                          <span className="pan__bloc-libelle">
-                            {DEFS_BLOCS_LIBRES[bloc.valeur.type].libelle}
-                          </span>
-                          <span className="pan__bloc-resume">{resumeBloc(bloc.valeur)}</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="abtn abtn--mini"
-                          aria-label="Monter ce bloc"
-                          disabled={indexGroupe === 0 && indexBloc === 0}
-                          onClick={() => deplacerBloc(bloc.id, -1)}
-                        >
-                          ▲
-                        </button>
-                        <button
-                          type="button"
-                          className="abtn abtn--mini"
-                          aria-label="Descendre ce bloc"
-                          disabled={
-                            indexGroupe === groupes.length - 1 &&
-                            indexBloc === blocs.length - 1
-                          }
-                          onClick={() => deplacerBloc(bloc.id, 1)}
-                        >
-                          ▼
-                        </button>
-                        {/* Équivalent au clavier de la poignée de l'aperçu :
-                            passe d'une largeur courante à la suivante. Le
-                            glissement ne doit jamais être le seul moyen. */}
-                        <button
-                          type="button"
-                          className={`abtn abtn--mini${
-                            colonnesDe(bloc) < COLONNES_GRILLE ? ' abtn--actif' : ''
-                          }`}
-                          aria-label={`Largeur : ${libelleLargeur(colonnesDe(bloc))}. Changer.`}
-                          title={`Largeur : ${libelleLargeur(colonnesDe(bloc))}`}
-                          onClick={() => {
-                            const actuelle = colonnesDe(bloc)
-                            const rang = PALIERS.indexOf(actuelle)
-                            const suivante =
-                              PALIERS[(rang === -1 ? 0 : rang + 1) % PALIERS.length]!
-                            // Même clé que la poignée de l'aperçu : sans le
-                            // préfixe, la largeur partirait dans « largeurs »
-                            // (réservé aux emplacements) au lieu du bloc.
-                            redimensionnerBloc(`suite:${bloc.id}`, suivante)
-                          }}
-                        >
-                          {colonnesDe(bloc) === COLONNES_GRILLE ? '▭' : '◧'}
-                        </button>
-                        <button
-                          type="button"
-                          className="abtn abtn--mini abtn--danger"
-                          aria-label="Retirer ce bloc"
-                          onClick={() => setRetraitEnCours(bloc.id)}
-                        >
-                          ✕
-                        </button>
-                      </>
-                    )}
-                    </div>
-                    {editionDuBloc(nom)}
-                  </li>
-                )
-              })}
-            </Fragment>
-          ))}
+                    <button
+                      type="button"
+                      className="abtn abtn--mini"
+                      aria-label="Monter ce bloc"
+                      disabled={index === 0}
+                      onClick={() => deplacerCellule(cle, -1)}
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      className="abtn abtn--mini"
+                      aria-label="Descendre ce bloc"
+                      disabled={index === ordre.length - 1}
+                      onClick={() => deplacerCellule(cle, 1)}
+                    >
+                      ▼
+                    </button>
+                    {/* Équivalent au clavier de la poignée de l'aperçu : passe
+                        d'une largeur courante à la suivante. Le glissement ne
+                        doit jamais être le seul moyen. */}
+                    <button
+                      type="button"
+                      className={`abtn abtn--mini${colonnes < COLONNES_GRILLE ? ' abtn--actif' : ''}`}
+                      aria-label={`Largeur : ${libelleLargeur(colonnes)}. Changer.`}
+                      title={`Largeur : ${libelleLargeur(colonnes)}`}
+                      onClick={() => {
+                        const rang = PALIERS.indexOf(colonnes)
+                        const suivante = PALIERS[(rang === -1 ? 0 : rang + 1) % PALIERS.length]!
+                        redimensionnerBloc(cle, suivante)
+                      }}
+                    >
+                      {colonnes === COLONNES_GRILLE ? '▭' : '◧'}
+                    </button>
+                    <button
+                      type="button"
+                      className="abtn abtn--mini abtn--danger"
+                      aria-label="Retirer ce bloc de la page"
+                      onClick={() => setRetraitEnCours(cle)}
+                    >
+                      ✕
+                    </button>
+                  </>
+                )}
+                </div>
+                {editionDuBloc(cle)}
+              </li>
+            )
+          })}
         </ul>
 
         {suite.length === 0 ? (
           <p className="pan__aide">
-            Ajoutez du texte, une photo ou une galerie : le bloc se place en bas de page, puis
-            les flèches ▲▼ le déplacent — y compris entre les blocs du modèle.
+            Ajoutez du texte, une photo ou une galerie : touchez le type et le bloc se place en
+            bas de page, ou glissez-le directement à l'endroit voulu sur l'aperçu. Les flèches
+            ▲▼ le déplacent ensuite — y compris entre les blocs du modèle.
           </p>
+        ) : null}
+
+        {/* Emplacements du modèle retirés de la page. Leur contenu est conservé :
+            les remettre le retrouve intact. Sans cette liste, un retrait serait
+            sans retour. */}
+        {retires.length > 0 ? (
+          <div className="pan__retires">
+            <span className="champ__libelle">Retirés de cette page</span>
+            <div className="pan__actions">
+              {retires.map((nom) => (
+                <button
+                  key={nom}
+                  type="button"
+                  className="abtn abtn--discret"
+                  onClick={() => remettreEmplacement(nom)}
+                >
+                  + {modele.emplacements[nom]?.libelle ?? nom}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : null}
 
         {ajoutOuvert ? (
           <div className="pan__actions" role="group" aria-label="Type de bloc à ajouter">
-            <button type="button" className="abtn" onClick={() => ajouterBloc('texte')}>
-              Texte
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('image')}>
-              Photo
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('galerie')}>
-              Galerie
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('video')}>
-              Vidéo
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('quiz')}>
-              Quiz
-            </button>
-            <button type="button" className="abtn" onClick={() => ajouterBloc('frise')}>
-              Frise
-            </button>
+            {/* Chaque type s'ajoute de deux façons : on le touche (le bloc se
+                pose en bas de page) ou on le glisse jusqu'à l'endroit voulu sur
+                l'aperçu. Le glissement n'est jamais le seul moyen. */}
+            {TYPES_AJOUTABLES.map(({ type, libelle }) => (
+              <button
+                key={type}
+                type="button"
+                className="abtn"
+                title={`${libelle} — toucher pour l'ajouter en bas, ou glisser sur la page`}
+                onPointerDown={(evenement) =>
+                  auPointeurDescendu(evenement, `${PREFIXE_NEUF}${type}`)
+                }
+                onPointerMove={auPointeurDeplace}
+                onPointerUp={auPointeurRelache}
+                onPointerCancel={auPointeurRelache}
+                onClick={() => {
+                  // Le glissement vient de déposer le bloc : ne pas en ajouter
+                  // un second.
+                  if (vientDeGlisser.current) {
+                    vientDeGlisser.current = false
+                    return
+                  }
+                  ajouterBloc(type)
+                }}
+              >
+                {libelle}
+              </button>
+            ))}
             <button
               type="button"
               className="abtn abtn--discret"
@@ -850,6 +1244,16 @@ function resumeBloc(valeur: ValeurEmplacement | undefined): string {
     }
   }
 }
+
+/** Les types de blocs proposés par le menu d'ajout, dans l'ordre affiché. */
+const TYPES_AJOUTABLES: { type: TypeBlocLibre; libelle: string }[] = [
+  { type: 'texte', libelle: 'Texte' },
+  { type: 'image', libelle: 'Photo' },
+  { type: 'galerie', libelle: 'Galerie' },
+  { type: 'video', libelle: 'Vidéo' },
+  { type: 'quiz', libelle: 'Quiz' },
+  { type: 'frise', libelle: 'Frise' },
+]
 
 /**
  * Contenu d'un bloc qui vient d'être ajouté. Les ateliers naissent avec leurs
@@ -1350,6 +1754,20 @@ function FormulaireBloc({
   }
 
   if (def.type === 'galerie' && valeur.type === 'galerie') {
+    // Échange une photo avec sa voisine : l'ordre de la liste est celui du
+    // diaporama sur la borne, il doit pouvoir se changer après coup.
+    const deplacerPhoto = (index: number, sens: -1 | 1) =>
+      surChangement((v) => {
+        if (v.type !== 'galerie') return v
+        const elements = [...v.elements]
+        const photo = elements[index]
+        const voisine = elements[index + sens]
+        if (!photo || !voisine) return v
+        elements[index] = voisine
+        elements[index + sens] = photo
+        return { ...v, elements }
+      })
+
     return (
       <div className="pan__formulaire">
         {valeur.elements.length === 0 ? (
@@ -1387,6 +1805,24 @@ function FormulaireBloc({
                       )
                     }
                   />
+                  <button
+                    type="button"
+                    className="abtn abtn--mini"
+                    aria-label="Monter cette photo"
+                    disabled={index === 0}
+                    onClick={() => deplacerPhoto(index, -1)}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    className="abtn abtn--mini"
+                    aria-label="Descendre cette photo"
+                    disabled={index === valeur.elements.length - 1}
+                    onClick={() => deplacerPhoto(index, 1)}
+                  >
+                    ▼
+                  </button>
                   <button
                     type="button"
                     className="abtn abtn--discret"

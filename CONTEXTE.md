@@ -4,6 +4,17 @@
 
 ## Décision d'architecture du 03/08/2026 — à lire en premier
 
+> **Correction du 04/08/2026 — le point 1 ci-dessous était faux.** Il n'y a
+> **qu'un seul ordinateur** : celui de la salle, branché à l'écran tactile par
+> HDMI. Le contenu se prépare **sur ce même ordinateur**. L'écran tactile n'est
+> qu'un moniteur, sans stockage ni système.
+>
+> Conséquence : **il n'y a rien à synchroniser**, et l'**étape 3 (dossier
+> partagé, copie périodique, publication versionnée) devient sans objet** — voir
+> « Ce qui reste à faire — après ». Le choix de l'application Electron unique,
+> lui, reste le bon : il est même renforcé (un seul programme, un seul poste,
+> aucun service réseau).
+
 Le projet **abandonne l'architecture client/serveur** décrite dans `CONCEPTION.md` (API Fastify + SQLite + agent de synchronisation) au profit d'une **application Electron unique**, installée deux fois : en mode administration sur le PC du bureau, en mode visiteur plein écran sur le PC de la salle d'exposition.
 
 **Pourquoi.** Deux contraintes ont été confirmées avec l'utilisateur :
@@ -21,10 +32,16 @@ S'ajoute le fait que le code de `CONCEPTION.md` **n'avait jamais été exécuté
 
 ## Matériel confirmé
 
-- PC Windows 11 **en salle d'exposition**, relié à l'écran par HDMI.
-- Écran **tactile** (le tactile remonte par USB, en plus du HDMI).
-- PC de bureau séparé, sur le même réseau que le PC de la salle.
-- Résolution supposée 1920×1080 paysage — **non encore confirmée** avec le musée.
+*Mis à jour le 2026-08-04 : un seul ordinateur, résolution confirmée.*
+
+- **Un seul ordinateur** Windows 11, en salle d'exposition. C'est lui qui fait
+  tout : affichage visiteur **et** préparation du contenu.
+- L'**écran tactile n'est pas un appareil autonome** : c'est un simple moniteur,
+  HDMI pour l'image, USB pour le toucher. Il n'a ni stockage ni système.
+- Résolution **1920×1080 paysage — confirmée**. C'est bien l'hypothèse de la
+  toile de rendu (`ToileBorne`) et des trois modèles.
+- Pas de second PC : le personnel branche clavier et souris sur l'ordinateur de
+  la salle le temps de modifier, puis le laisse en mode visiteur.
 
 ## Stack
 
@@ -81,9 +98,15 @@ BorneAdmin/
 
 ## Ce qui reste à faire — après
 
-- **Étape 2** — mode administration dans la même application : reprendre les écrans de `apps/admin`, remplacer `api.ts` par des écritures disque via la passerelle.
-- **Étape 3** — dossier partagé : réglage du chemin, copie locale au démarrage et périodique, publication versionnée (garder les N derniers dossiers datés).
-- **Étape 4** — empaquetage `.exe` (electron-builder), démarrage automatique, mode plein écran par défaut sur le poste de la salle.
+- **Étape 2** — ~~mode administration dans la même application~~ — **FAITE**
+  (accès caché, éditeur en place, gestion des pages, import de médias).
+- **Étape 3** — ~~dossier partagé~~ — **SANS OBJET depuis le 04/08/2026.** Il n'y
+  a qu'un seul ordinateur : le contenu est créé et affiché au même endroit, il
+  n'y a donc rien à synchroniser ni à publier vers un autre poste. *Ce qui
+  reste utile de cette étape, mais pour une autre raison :* une **sauvegarde**
+  du contenu (copie datée sur clé USB ou dossier réseau), pour se prémunir d'une
+  panne de disque ou d'une fausse manœuvre — pas pour transporter le contenu.
+- **Étape 4** — empaquetage `.exe` (electron-builder), démarrage automatique, mode plein écran par défaut sur le poste de la salle. **C'est désormais la seule grande étape restante.**
 - Redimensionnement des images à l'import **via le canvas du navigateur**, pour ne pas réintroduire `sharp` (dernier module natif).
 
 ## Dette à traiter
@@ -101,7 +124,13 @@ Restent pleinement valables : **1** (vision produit), **2** (besoins), **3** (pe
 
 ## Questions ouvertes
 
-- Résolution et orientation exactes de l'écran de la salle (hypothèse : 1920×1080 paysage).
-- Emplacement précis du dossier partagé (partage sur le PC du bureau ? NAS ?) et politique de sauvegarde du musée.
+**Tranchées le 04/08/2026 :**
+
+- ~~Résolution et orientation de l'écran~~ → **1920×1080 paysage, confirmé.**
+- ~~Emplacement du dossier partagé~~ → **sans objet, un seul ordinateur.** Reste
+  à définir avec le musée la **politique de sauvegarde** du contenu (copie datée
+  sur clé USB ou dossier réseau), qui est un besoin différent.
+
+**Encore ouvertes :**
 - Faut-il conserver le format `Manifeste` actuel (hérité de l'API : `version`, `genereLe`, `empreinte`, plusieurs profils par média) ou le simplifier maintenant qu'il n'y a plus de serveur ? Il a été conservé tel quel à l'étape 1 pour réutiliser la validation Zod et le résolveur de médias existants.
 - Faut-il supprimer `apps/api` du disque, ou le garder en référence ?

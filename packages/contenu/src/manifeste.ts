@@ -175,6 +175,9 @@ export const schemaPageManifeste = z.object({
     // restent valides sans conversion, et une page sans blocs ajoutés n'écrit
     // rien de plus dans le fichier.
     suite: z.array(schemaBlocLibre).optional(),
+    // Ordre libre des cellules (emplacements du modèle et blocs ajoutés
+    // mélangés). Facultatif : absent, l'ordre du modèle s'applique.
+    ordre: z.array(z.string()).optional(),
     // Habillage des blocs, rangé par nom de bloc. Facultatif : absent tant
     // qu'aucun bloc de la page n'est personnalisé.
     styles: z.record(z.string(), schemaStyleBloc).optional(),

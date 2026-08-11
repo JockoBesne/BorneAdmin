@@ -13,7 +13,7 @@ import {
   lireTexte,
   lireValeurTexte,
   lireVideo,
-  positionBloc,
+  ordreCellules,
 } from '../lecture.js'
 import { modelePar } from '../modeles/index.js'
 import { lignesDeTexte } from '../texte.js'
@@ -278,7 +278,6 @@ function RenduGrille({
   const modele = modelePar(contenu.modele)
   if (!modele) return null
 
-  const sections = modele.sections.map((section) => section.nom)
   const suite = lireSuite(contenu)
 
   const cellules: ReactNode[] = []
@@ -311,31 +310,18 @@ function RenduGrille({
     </div>
   )
 
-  for (const section of modele.sections) {
-    // 1. Les emplacements de la section, dans l'ordre déclaré par le modèle.
-    for (const nom of section.emplacements) {
-      const def = modele.emplacements[nom]
-      if (!def) continue
-      const colonnes = colonnesEmplacement(contenu, nom, def.colonnes)
-      cellules.push(
-        enveloppeCellule(
-          nom,
-          colonnes,
-          def.type === 'galerie' ? 'mdl__cellule--galerie' : '',
-          renduEmplacement(nom, def.type, { contenu, media, surImage, lecteurVideo }, env),
-          def.type,
-          hauteurEmplacement(contenu, nom),
-        ),
-      )
-    }
-
-    // 2. Puis les blocs ajoutés ancrés après cette section.
-    for (const bloc of suite) {
-      if (positionBloc(bloc, sections) !== section.nom) continue
+  // L'ordre des cellules vient du contenu (« ordre »), pas du modèle : un
+  // emplacement du modèle et un bloc ajouté se déplacent et se mélangent
+  // librement. Sans « ordre », on retrouve l'ordre du modèle — voir
+  // `ordreCellules`.
+  for (const cle of ordreCellules(contenu, modele)) {
+    if (cle.startsWith('suite:')) {
+      const bloc = suite.find((candidat) => `suite:${candidat.id}` === cle)
+      if (!bloc) continue
       if (!edition && estBlocLibreVide(bloc)) continue
       cellules.push(
         enveloppeCellule(
-          `suite:${bloc.id}`,
+          cle,
           colonnesDe(bloc),
           bloc.valeur.type === 'galerie'
             ? 'mdl__cellule--galerie'
@@ -347,7 +333,21 @@ function RenduGrille({
           hauteurDe(bloc),
         ),
       )
+      continue
     }
+
+    const def = modele.emplacements[cle]
+    if (!def) continue
+    cellules.push(
+      enveloppeCellule(
+        cle,
+        colonnesEmplacement(contenu, cle, def.colonnes),
+        def.type === 'galerie' ? 'mdl__cellule--galerie' : '',
+        renduEmplacement(cle, def.type, { contenu, media, surImage, lecteurVideo }, env),
+        def.type,
+        hauteurEmplacement(contenu, cle),
+      ),
+    )
   }
 
   return <div className="mdl__grille">{cellules}</div>

@@ -555,6 +555,34 @@ button {
   margin-left: 14px;
 }
 
+/* Poignée de saisie d'une ligne du panneau. « touch-action: none » empêche la
+   dalle tactile de faire défiler le panneau au lieu de déplacer la ligne. */
+.pan__poignee {
+  flex: none;
+  width: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--b-texte-doux);
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+}
+
+.pan__poignee:hover {
+  color: var(--b-accent);
+}
+
+.pan__ligne--glisse {
+  opacity: 0.4;
+}
+
+/* Trait d'insertion : la ligne glissée se posera à cet endroit. */
+.pan__ligne--cible {
+  box-shadow: 0 -3px 0 0 var(--b-accent);
+}
+
 .pan__ligne--ajoutee .pan__bloc {
   border-style: dashed;
 }
@@ -962,6 +990,11 @@ button {
   gap: 10px;
 }
 
+/* La légende prend la place qui reste ; les commandes ▲ ▼ ✕ gardent la leur. */
+.galerie-el input {
+  min-width: 0;
+}
+
 .galerie-el__vignette {
   flex: none;
   width: 64px;
@@ -999,6 +1032,72 @@ button {
 
 .emp--actif {
   outline: 4px solid var(--b-accent);
+}
+
+/* ── Glisser-déposer d'un bloc sur l'aperçu ──────────────────────────────── */
+
+/* Un bloc ajouté s'attrape ; « touch-action: none » empêche la dalle tactile
+   de faire défiler la page au lieu de déplacer le bloc. */
+.emp--deplacable {
+  cursor: grab;
+  touch-action: none;
+}
+
+/* Le bloc en cours de déplacement s'efface : on suit la cible, pas l'origine. */
+.emp--glisse {
+  opacity: 0.35;
+  cursor: grabbing;
+}
+
+/* Repère de dépôt : un trait épais sur le bord visé. Sans lui, on ne sait pas
+   où le bloc va tomber. Les traits horizontaux insèrent avant/après, les
+   verticaux mettent côte à côte. */
+.emp--depot-avant,
+.emp--depot-apres,
+.emp--depot-gauche,
+.emp--depot-droite {
+  position: relative;
+}
+
+.emp--depot-avant::after,
+.emp--depot-apres::after,
+.emp--depot-gauche::after,
+.emp--depot-droite::after {
+  content: '';
+  position: absolute;
+  z-index: 5;
+  background: var(--b-accent);
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(233, 180, 76, 0.8);
+  pointer-events: none;
+}
+
+.emp--depot-avant::after,
+.emp--depot-apres::after {
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+
+.emp--depot-avant::after {
+  top: -10px;
+}
+.emp--depot-apres::after {
+  bottom: -10px;
+}
+
+.emp--depot-gauche::after,
+.emp--depot-droite::after {
+  top: 0;
+  bottom: 0;
+  width: 8px;
+}
+
+.emp--depot-gauche::after {
+  left: -10px;
+}
+.emp--depot-droite::after {
+  right: -10px;
 }
 
 .emp--probleme {

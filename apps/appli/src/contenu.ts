@@ -45,19 +45,76 @@ function mesurerImage(url: string): Promise<{ largeur: number | null; hauteur: n
   })
 }
 
-function mesurerVideo(
-  url: string,
-): Promise<{ largeur: number | null; hauteur: number | null; dureeSecondes: number | null }> {
+/** Largeur maximale d'une image de couverture : de quoi remplir la borne. */
+const COUVERTURE_LARGEUR_MAX = 1280
+
+/** Au-delà, on n'essaie pas de fabriquer une couverture (voir importerMedia). */
+const COUVERTURE_TAILLE_MAX = 400 * 1024 * 1024
+
+/**
+ * Capture l'image affichée par une vidéo, en JPEG.
+ *
+ * C'est le moteur de la fenêtre qui décode et un canvas qui dessine : aucun
+ * module natif, conformément à la règle du projet.
+ */
+function capturerCouverture(video: HTMLVideoElement): string | null {
+  if (!video.videoWidth || !video.videoHeight) return null
+  const largeur = Math.min(video.videoWidth, COUVERTURE_LARGEUR_MAX)
+  const hauteur = Math.round((video.videoHeight / video.videoWidth) * largeur)
+
+  const toile = document.createElement('canvas')
+  toile.width = largeur
+  toile.height = hauteur
+  const pinceau = toile.getContext('2d')
+  if (!pinceau) return null
+
+  try {
+    pinceau.drawImage(video, 0, 0, largeur, hauteur)
+    return toile.toDataURL('image/jpeg', 0.8)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Mesure une vidéo et en rapporte une image de couverture.
+ *
+ * La couverture est prise **une seconde après le début** : une vidéo commence
+ * très souvent par une image noire, qui ne montrerait rien. Si la lecture ne
+ * répond pas (format exotique, décodeur absent), on abandonne au bout de
+ * quelques secondes : l'import doit aboutir même sans couverture.
+ */
+function mesurerVideo(url: string): Promise<{
+  largeur: number | null
+  hauteur: number | null
+  dureeSecondes: number | null
+  couverture: string | null
+}> {
   return new Promise((resoudre) => {
     const video = document.createElement('video')
     video.preload = 'metadata'
-    video.onloadedmetadata = () =>
+    video.muted = true
+
+    let repondu = false
+    const finir = (couverture: string | null) => {
+      if (repondu) return
+      repondu = true
+      clearTimeout(garde)
       resoudre({
         largeur: video.videoWidth || null,
         hauteur: video.videoHeight || null,
         dureeSecondes: Number.isFinite(video.duration) ? Math.round(video.duration) : null,
+        couverture,
       })
-    video.onerror = () => resoudre({ largeur: null, hauteur: null, dureeSecondes: null })
+    }
+
+    const garde = setTimeout(() => finir(null), 5000)
+
+    video.onloadedmetadata = () => {
+      video.onseeked = () => finir(capturerCouverture(video))
+      video.currentTime = Math.min(1, (video.duration || 2) / 2)
+    }
+    video.onerror = () => finir(null)
     video.src = url
   })
 }
@@ -75,10 +132,43 @@ export async function importerMedia(type: 'image' | 'video'): Promise<MediaManif
   if (!fichier) return null
 
   const url = PROTOCOLE_MEDIA + fichier.chemin
+
+  // Pour une vidéo, on relit les octets déjà copiés et on les rejoue **depuis
+  // la mémoire**. Détour nécessaire : servie par « media:// », la vidéo est vue
+  // comme venant d'un autre site, et le lecteur refuse alors de se déplacer
+  // dedans — on ne capturerait que l'image noire du tout début. Au-delà d'une
+  // certaine taille on renonce à la couverture plutôt que de charger un fichier
+  // énorme en mémoire.
+  let urlMesure = url
+  let liberer: (() => void) | null = null
+  if (type === 'video' && fichier.octets <= COUVERTURE_TAILLE_MAX) {
+    const blob = await fetch(url)
+      .then((reponse) => reponse.blob())
+      .catch(() => null)
+    if (blob) {
+      const adresse = URL.createObjectURL(blob)
+      urlMesure = adresse
+      liberer = () => URL.revokeObjectURL(adresse)
+    }
+  }
+
   const mesure =
     type === 'image'
-      ? { ...(await mesurerImage(url)), dureeSecondes: null }
-      : await mesurerVideo(url)
+      ? { ...(await mesurerImage(url)), dureeSecondes: null, couverture: null }
+      : await mesurerVideo(urlMesure)
+  liberer?.()
+
+  // L'image de couverture évite l'écran sombre avant la lecture, et sert de
+  // vignette dans l'administration. Elle est facultative : si l'écriture
+  // échoue, l'import se termine quand même, sans couverture.
+  let posterChemin: string | null = null
+  if (mesure.couverture) {
+    const donnees = mesure.couverture.split(',')[1] ?? ''
+    const ecrit = await window.borne
+      .enregistrerImage(`couverture-${fichier.chemin}`, donnees)
+      .catch(() => null)
+    posterChemin = ecrit?.chemin ?? null
+  }
 
   return {
     id: `media-${crypto.randomUUID()}`,
@@ -90,7 +180,7 @@ export async function importerMedia(type: 'image' | 'video'): Promise<MediaManif
     largeur: mesure.largeur,
     hauteur: mesure.hauteur,
     dureeSecondes: mesure.dureeSecondes,
-    posterChemin: null,
+    posterChemin,
     pointFocal: { x: 0.5, y: 0.5 },
     fichiers: [{ profil: 'origine', chemin: fichier.chemin, octets: fichier.octets }],
   }
