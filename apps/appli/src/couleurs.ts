@@ -87,6 +87,19 @@ export function couleursEffectives(
 }
 
 /**
+ * Couleurs de l'accueil : les siennes si le musée en a choisi, sinon celles de
+ * la borne. Même règle que « global + par page », un cran au-dessus.
+ */
+export function couleursHub(
+  reglages: Couleurs & { hubCouleurFond?: string; hubCouleurTexte?: string },
+): Couleurs {
+  return {
+    couleurFond: reglages.hubCouleurFond ?? reglages.couleurFond,
+    couleurTexte: reglages.hubCouleurTexte ?? reglages.couleurTexte,
+  }
+}
+
+/**
  * Variables CSS à poser sur le conteneur du rendu de la borne. On dérive le
  * texte « doux » (légendes, textes secondaires) de la couleur de texte choisie,
  * pour qu'il reste lisible quel que soit le réglage — sinon un texte sombre sur

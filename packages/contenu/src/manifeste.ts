@@ -193,6 +193,18 @@ export const schemaReglages = z.object({
   couleurFond: z.string().regex(COULEUR).default('#0e2237'),
   couleurTexte: z.string().regex(COULEUR).default('#f5f7fa'),
   /**
+   * Couleurs de l'**accueil** seulement (le « hub »). Facultatives : absentes,
+   * l'accueil prend les couleurs de la borne ci-dessus — un contenu écrit avant
+   * reste donc valide et inchangé.
+   */
+  hubCouleurFond: z.string().regex(COULEUR).optional(),
+  hubCouleurTexte: z.string().regex(COULEUR).optional(),
+  /**
+   * Image de fond de l'accueil (identifiant d'un média). Facultative : absente,
+   * l'accueil garde son aplat de couleur.
+   */
+  hubImage: z.string().optional(),
+  /**
    * Code d'accès à l'administration, quatre chiffres.
    *
    * Une valeur par défaut plutôt qu'un champ requis : les contenus déjà écrits

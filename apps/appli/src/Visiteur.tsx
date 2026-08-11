@@ -1,14 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  mediasReferences,
-  REGLAGES_DEFAUT,
-  type ContenuPage,
-  type Manifeste,
-  type PageManifeste,
-} from '@borne/contenu'
-import { RenduPage, ToileBorne, type ResoudreMedia } from '@borne/contenu/rendu'
+import { REGLAGES_DEFAUT, type ContenuPage, type Manifeste } from '@borne/contenu'
+import { RenduPage, ToileBorne } from '@borne/contenu/rendu'
+import { Accueil } from './Accueil.jsx'
 import { chargerContenu, resolveurMedias } from './contenu.js'
-import { couleursEffectives, stylesCouleurs } from './couleurs.js'
+import { couleursEffectives, couleursHub, stylesCouleurs } from './couleurs.js'
 
 /**
  * Mode visiteur.
@@ -55,8 +50,9 @@ export function Visiteur() {
   const page = pages.find((candidate) => candidate.id === ouverte)
 
   // Couleurs : celles de la page ouverte si elle en a, sinon le thème global.
+  // Hors d'une page (l'accueil), celles propres à l'accueil s'il en a.
   const reglages = manifeste?.reglages ?? REGLAGES_DEFAUT
-  const style = stylesCouleurs(page ? couleursEffectives(reglages, page) : reglages)
+  const style = stylesCouleurs(page ? couleursEffectives(reglages, page) : couleursHub(reglages))
 
   let contenu
   if (erreur) {
@@ -96,7 +92,14 @@ export function Visiteur() {
       </div>
     )
   } else {
-    contenu = <Accueil manifeste={manifeste} media={media} surOuvrir={setOuverte} />
+    // Même toile que les pages : l'accueil est dessiné pour 1920 × 1080 et mis
+    // à l'échelle de la fenêtre. C'est ce qui permet à l'administration d'en
+    // montrer un aperçu fidèle, en petit, sans redessiner quoi que ce soit.
+    contenu = (
+      <ToileBorne className="toile--accueil">
+        <Accueil manifeste={manifeste} media={media} surOuvrir={setOuverte} />
+      </ToileBorne>
+    )
   }
 
   return (
@@ -104,72 +107,4 @@ export function Visiteur() {
       {contenu}
     </div>
   )
-}
-
-/**
- * Accueil : une carte par page. La carte porte la première image de la page —
- * pas une vignette à téléverser en plus, que le personnel oublierait de
- * remplacer le jour où il change la photo de la page.
- */
-function Accueil({
-  manifeste,
-  media,
-  surOuvrir,
-}: {
-  manifeste: Manifeste
-  media: ResoudreMedia
-  surOuvrir: (id: string) => void
-}) {
-  return (
-    <div className="hub">
-      <header className="hub__entete">
-        <h1 className="hub__titre">{manifeste.reglages.titreVeille}</h1>
-        <p className="hub__sous-titre">{manifeste.reglages.sousTitreVeille}</p>
-      </header>
-
-      <ul className="hub__grille">
-        {manifeste.pages.map((page, rang) => (
-          <li key={page.id}>
-            <button
-              type="button"
-              className="hub__carte"
-              onClick={() => surOuvrir(page.id)}
-              // Apparition en cascade : les cartes arrivent l'une après l'autre.
-              // Purement décoratif, et borné à 6 pour que la dernière carte
-              // n'attende jamais plus d'un tiers de seconde.
-              style={{ animationDelay: `${Math.min(rang, 6) * 55}ms` }}
-            >
-              <span className="hub__image">
-                <ApercuPage page={page} media={media} />
-              </span>
-              <span className="hub__nom">{page.titre}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-/** Première image de la page ; à défaut l'image de couverture d'une vidéo ;
- *  à défaut un aplat, pour que la grille reste régulière. */
-function ApercuPage({ page, media }: { page: PageManifeste; media: ResoudreMedia }) {
-  const adresse = useMemo(() => {
-    for (const id of mediasReferences(page.contenu as ContenuPage)) {
-      const resolu = media(id)
-      if (!resolu) continue
-      if (resolu.type === 'image') return resolu.url('moyen')
-      if (resolu.type === 'video' && resolu.poster) return resolu.poster
-    }
-    return null
-  }, [page, media])
-
-  if (!adresse) {
-    return (
-      <span className="hub__image--absente" aria-hidden="true">
-        ◈
-      </span>
-    )
-  }
-  return <img className="hub__vignette" src={adresse} alt="" draggable={false} />
 }
