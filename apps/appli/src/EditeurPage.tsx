@@ -71,11 +71,18 @@ import { RoueCouleur } from './RoueCouleur.jsx'
 export function EditeurPage({
   manifeste,
   page,
+  generation,
   surModification,
   surAjoutMedia,
 }: {
   manifeste: Manifeste
   page: PageManifeste
+  /**
+   * Change à chaque « Annuler » / « Rétablir ». Le champ de texte enrichi ne
+   * relit son contenu qu'au montage : ce compteur entre dans sa clé, ce qui le
+   * remonte à neuf — sans lui, un texte annulé resterait affiché.
+   */
+  generation: number
   surModification: (transformation: (page: PageManifeste) => PageManifeste) => void
   surAjoutMedia: (media: MediaManifeste) => void
 }) {
@@ -800,6 +807,9 @@ export function EditeurPage({
 
     return (
       <PanneauBloc
+        // « generation » change à chaque annulation : le panneau se remonte, et
+        // le champ de texte enrichi relit alors le contenu rétabli.
+        key={`${nom}-${generation}`}
         def={def}
         valeur={valeur}
         style={lireStyle(contenu, nom) ?? {}}

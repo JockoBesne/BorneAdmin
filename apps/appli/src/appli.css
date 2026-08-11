@@ -238,6 +238,29 @@ button {
   background: rgba(233, 180, 76, 0.14);
 }
 
+/* Annuler / Rétablir. Cibles larges : la salle n'a pas de clavier, ces deux
+   boutons sont le seul accès au retour arrière au doigt. */
+.admin__histoire {
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--b-trait);
+  border-radius: 10px;
+  background: rgba(245, 247, 250, 0.06);
+  color: var(--b-texte);
+  font-size: 15px;
+}
+
+.admin__histoire:hover:not(:disabled),
+.admin__histoire:focus-visible:not(:disabled) {
+  background: rgba(245, 247, 250, 0.14);
+}
+
+.admin__histoire:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .admin__corps {
   flex: 1;
   min-height: 0;
