@@ -184,13 +184,27 @@ function enregistrerImage(nomSouhaite, donneesBase64) {
 
 // ── Fenêtre ──────────────────────────────────────────────────────────────────
 
+// Une fermeture n'est légitime que si on l'a demandée : Alt+F4 et la croix de
+// la fenêtre ne doivent pas rendre le bureau au visiteur.
+let sortieAutorisee = false
+
+// Sortie de maintenance. Volontairement à quatre doigts : impossible à trouver
+// par hasard, impossible à faire sur un écran tactile sans clavier.
+// ponytail: une combinaison en dur suffit ; à passer derrière le code admin
+// le jour où quelqu'un d'autre que vous doit pouvoir fermer la borne.
+function estSortieMaintenance(entree) {
+  return entree.control && entree.alt && entree.shift && entree.key.toLowerCase() === 'q'
+}
+
 function creerFenetre() {
   const fenetre = new BrowserWindow({
     width: 1280,
     height: 780,
-    // Plein écran d'emblée : sur la borne il n'y a ni clavier ni souris pour
-    // agrandir la fenêtre. Échap / F11 en sortent (utile en développement).
-    fullscreen: true,
+    // Mode borne : plein écran sans échappatoire. « kiosk » couvre la barre des
+    // tâches et neutralise F11 ; « alwaysOnTop » fait revenir la fenêtre devant
+    // si Windows fait passer autre chose au premier plan.
+    kiosk: true,
+    alwaysOnTop: true,
     backgroundColor: '#0e2237',
     // Évite le flash blanc au démarrage : on montre la fenêtre une fois prête.
     show: false,
@@ -204,17 +218,34 @@ function creerFenetre() {
 
   fenetre.once('ready-to-show', () => fenetre.show())
 
-  // Plein écran à la demande. Sur le poste de la salle, ce sera l'état de
-  // départ ; pendant le développement, une fenêtre est plus commode.
+  // Aucune touche ne doit ramener au bureau. On laisse passer la frappe
+  // ordinaire — les champs de l'écran d'administration en ont besoin — et on
+  // bloque les seules touches qui sortent de l'application ou la rechargent.
   fenetre.webContents.on('before-input-event', (evenement, entree) => {
     if (entree.type !== 'keyDown') return
-    if (entree.key === 'F11') {
-      fenetre.setFullScreen(!fenetre.isFullScreen())
-      evenement.preventDefault()
-    } else if (entree.key === 'Escape' && fenetre.isFullScreen()) {
-      fenetre.setFullScreen(false)
-      evenement.preventDefault()
+
+    if (estSortieMaintenance(entree)) {
+      sortieAutorisee = true
+      app.quit()
+      return
     }
+
+    const touche = entree.key
+    const interdite =
+      touche === 'F11' ||
+      touche === 'F5' ||
+      touche === 'Escape' ||
+      (entree.alt && touche === 'F4') ||
+      (entree.control && ['r', 'w', 'n'].includes(touche.toLowerCase())) ||
+      (entree.control && entree.shift && ['i', 'j', 'c'].includes(touche.toLowerCase()))
+
+    if (interdite) evenement.preventDefault()
+  })
+
+  // Alt+F4 est parfois traité par Windows avant d'arriver à la page : le refus
+  // de fermeture est la garde qui tient dans tous les cas.
+  fenetre.on('close', (evenement) => {
+    if (!sortieAutorisee) evenement.preventDefault()
   })
 
   void fenetre.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
