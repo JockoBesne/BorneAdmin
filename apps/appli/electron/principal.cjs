@@ -145,6 +145,9 @@ function creerFenetre() {
   const fenetre = new BrowserWindow({
     width: 1280,
     height: 780,
+    // Plein écran d'emblée : sur la borne il n'y a ni clavier ni souris pour
+    // agrandir la fenêtre. Échap / F11 en sortent (utile en développement).
+    fullscreen: true,
     backgroundColor: '#0e2237',
     // Évite le flash blanc au démarrage : on montre la fenêtre une fois prête.
     show: false,
