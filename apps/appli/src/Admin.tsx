@@ -8,9 +8,11 @@ import {
   type Manifeste,
   type PageManifeste,
 } from '@borne/contenu'
-import { RenduPage, ToileBorne } from '@borne/contenu/rendu'
-import { chargerContenu, enregistrerContenu, resolveurMedias } from './contenu.js'
-import { stylesCouleurs } from './couleurs.js'
+import { RenduPage, ToileBorne, type ResoudreMedia } from '@borne/contenu/rendu'
+import { Accueil, ApercuPage } from './Accueil.jsx'
+import { ClavierTactile } from './ClavierTactile.jsx'
+import { chargerContenu, enregistrerContenu, importerMedia, resolveurMedias } from './contenu.js'
+import { couleursHub, stylesCouleurs } from './couleurs.js'
 import { EditeurPage } from './EditeurPage.jsx'
 import { RoueCouleur } from './RoueCouleur.jsx'
 
@@ -236,8 +238,18 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
     })
   }
 
-  const changerCouleur = (champ: 'couleurFond' | 'couleurTexte', hex: string) =>
-    modifier((m) => ({ ...m, reglages: { ...m.reglages, [champ]: hex } }))
+  const changerCouleur = (
+    champ: 'couleurFond' | 'couleurTexte' | 'hubCouleurFond' | 'hubCouleurTexte',
+    hex: string,
+  ) => modifier((m) => ({ ...m, reglages: { ...m.reglages, [champ]: hex } }))
+
+  // Retire les couleurs propres à l'accueil : il reprend alors celles de la
+  // borne. « undefined » disparaît du fichier à l'écriture.
+  const retablirCouleursHub = () =>
+    modifier((m) => ({
+      ...m,
+      reglages: { ...m.reglages, hubCouleurFond: undefined, hubCouleurTexte: undefined },
+    }))
 
   const retablirCouleurs = () =>
     modifier((m) => ({
@@ -249,6 +261,40 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
       },
     }))
 
+  // ── Images de l'accueil ────────────────────────────────────────────────────
+  // Le fichier est copié dans la bibliothèque de médias, puis rangé : en fond
+  // de l'accueil, ou comme image de présentation d'une page sur sa carte.
+
+  const choisirImageFond = () =>
+    void importerMedia('image').then((media) => {
+      if (!media) return
+      modifier((m) => ({
+        ...m,
+        medias: [...m.medias, media],
+        reglages: { ...m.reglages, hubImage: media.id },
+      }))
+    })
+
+  const retirerImageFond = () =>
+    modifier((m) => ({ ...m, reglages: { ...m.reglages, hubImage: undefined } }))
+
+  const choisirVignette = (id: string) =>
+    void importerMedia('image').then((media) => {
+      if (!media) return
+      modifier((m) => ({
+        ...m,
+        medias: [...m.medias, media],
+        pages: m.pages.map((p) => (p.id === id ? { ...p, vignette: media.id } : p)),
+      }))
+    })
+
+  /** Revient à l'image automatique : la première image de la page. */
+  const retirerVignette = (id: string) =>
+    modifier((m) => ({
+      ...m,
+      pages: m.pages.map((p) => (p.id === id ? { ...p, vignette: null } : p)),
+    }))
+
   // ── Rendu ──────────────────────────────────────────────────────────────────
 
   const page = manifeste?.pages.find((candidate) => candidate.id === pageOuverte) ?? null
@@ -256,7 +302,8 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
   // Page servant d'aperçu aux couleurs : la première s'il y en a une, sinon une
   // page vide du premier modèle — pour toujours montrer un vrai rendu.
   const pageApercu = manifeste?.pages[0]?.contenu ?? LISTE_MODELES[0]?.contenuVide()
-  const apercuMedia = manifeste ? resolveurMedias(manifeste) : () => null
+  const apercuMedia: ResoudreMedia = manifeste ? resolveurMedias(manifeste) : () => null
+  const imageFond = apercuMedia(manifeste?.reglages.hubImage ?? null)
 
   return (
     <div className="admin">
@@ -339,7 +386,7 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
             <p className="admin__message">
               {manifeste.pages.length === 0
                 ? 'Aucune page pour le moment.'
-                : `${manifeste.pages.length} page${manifeste.pages.length > 1 ? 's' : ''} — l'ordre ci-dessous est celui du parcours visiteur.`}
+                : `${manifeste.pages.length} page${manifeste.pages.length > 1 ? 's' : ''} — l'ordre ci-dessous est celui de l'écran d'accueil, de gauche à droite.`}
             </p>
             <div className="admin__entete-boutons">
               <button type="button" className="abtn" onClick={() => setApparenceOuverte(true)}>
@@ -397,20 +444,22 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                       <button
                         type="button"
                         className="abtn abtn--icone"
-                        aria-label="Monter cette page"
+                        aria-label="Déplacer cette page vers la gauche dans l'accueil"
+                        title="Vers la gauche dans l'accueil"
                         disabled={rang === 0}
                         onClick={() => deplacer(candidate.id, -1)}
                       >
-                        ▲
+                        ◀
                       </button>
                       <button
                         type="button"
                         className="abtn abtn--icone"
-                        aria-label="Descendre cette page"
+                        aria-label="Déplacer cette page vers la droite dans l'accueil"
+                        title="Vers la droite dans l'accueil"
                         disabled={rang === manifeste.pages.length - 1}
                         onClick={() => deplacer(candidate.id, 1)}
                       >
-                        ▼
+                        ▶
                       </button>
                       <button
                         type="button"
@@ -478,9 +527,9 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
       ) : null}
 
       {apparenceOuverte && manifeste ? (
-        <div className="voile" role="dialog" aria-modal="true" aria-label="Apparence de la borne">
+        <div className="voile" role="dialog" aria-modal="true" aria-label="Apparence généralisée">
           <div className="voile__boite voile__boite--large">
-            <h2 className="voile__titre">Apparence de la borne</h2>
+            <h2 className="voile__titre">Apparence généralisée</h2>
 
             <div className="apparence">
               <div className="apparence__reglages">
@@ -498,18 +547,120 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                     surChangement={(hex) => changerCouleur('couleurTexte', hex)}
                   />
                 </div>
-              </div>
 
-              {pageApercu ? (
-                <div className="apparence__apercu">
-                  <span className="apparence__etiquette">Aperçu</span>
-                  <div className="apparence__toile" style={stylesCouleurs(manifeste.reglages)}>
-                    <ToileBorne>
-                      <RenduPage contenu={pageApercu as ContenuPage} media={apercuMedia} />
-                    </ToileBorne>
+                {/* L'accueil à part : c'est le seul écran que tout visiteur
+                    voit, on peut vouloir le distinguer des pages. Tant qu'on
+                    n'y touche pas, il suit les couleurs ci-dessus. */}
+                <div className="apparence__encart">
+                  <h3 className="apparence__encart-titre">Écran d'accueil</h3>
+                  <p className="apparence__encart-note">
+                    {manifeste.reglages.hubCouleurFond || manifeste.reglages.hubCouleurTexte
+                      ? "Couleurs propres à l'accueil. Les pages ne changent pas."
+                      : "L'accueil suit les couleurs de la borne. Touchez une roue pour lui en donner d'autres."}
+                  </p>
+                  <div className="apparence__couleur">
+                    <span className="champ__libelle">Fond de l'accueil</span>
+                    <RoueCouleur
+                      valeur={manifeste.reglages.hubCouleurFond ?? manifeste.reglages.couleurFond}
+                      surChangement={(hex) => changerCouleur('hubCouleurFond', hex)}
+                    />
+                  </div>
+                  <div className="apparence__couleur">
+                    <span className="champ__libelle">Texte de l'accueil</span>
+                    <RoueCouleur
+                      valeur={manifeste.reglages.hubCouleurTexte ?? manifeste.reglages.couleurTexte}
+                      surChangement={(hex) => changerCouleur('hubCouleurTexte', hex)}
+                    />
+                  </div>
+                  <button type="button" className="abtn abtn--discret" onClick={retablirCouleursHub}>
+                    Remettre les couleurs de la borne
+                  </button>
+
+                  {/* Image de fond de tout l'écran d'accueil. */}
+                  <div className="apparence__couleur">
+                    <span className="champ__libelle">Image de fond</span>
+                    <div className="apparence__image">
+                      <span className="apparence__miniature">
+                        {imageFond ? (
+                          <img src={imageFond.url('moyen')} alt="" />
+                        ) : (
+                          <span aria-hidden="true">◈</span>
+                        )}
+                      </span>
+                      <button type="button" className="abtn" onClick={choisirImageFond}>
+                        {imageFond ? "Changer l'image" : 'Choisir une image'}
+                      </button>
+                      {imageFond ? (
+                        <button
+                          type="button"
+                          className="abtn abtn--discret"
+                          onClick={retirerImageFond}
+                        >
+                          Retirer
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Image de présentation de chaque page sur sa carte. Sans
+                      choix, c'est la première image de la page qui sert. */}
+                  <div className="apparence__couleur">
+                    <span className="champ__libelle">Image de chaque page</span>
+                    <ul className="apparence__vignettes">
+                      {manifeste.pages.map((candidate) => (
+                        <li key={candidate.id} className="apparence__image">
+                          <span className="apparence__miniature">
+                            <ApercuPage page={candidate} media={apercuMedia} />
+                          </span>
+                          <span className="apparence__image-nom">{candidate.titre}</span>
+                          <button
+                            type="button"
+                            className="abtn"
+                            onClick={() => choisirVignette(candidate.id)}
+                          >
+                            {candidate.vignette ? 'Changer' : 'Choisir'}
+                          </button>
+                          {candidate.vignette ? (
+                            <button
+                              type="button"
+                              className="abtn abtn--discret"
+                              onClick={() => retirerVignette(candidate.id)}
+                            >
+                              Automatique
+                            </button>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
-              ) : null}
+              </div>
+
+              {/* Aperçus vivants : ils suivent chaque réglage au fur et à
+                  mesure. Celui de l'accueil est le composant de la borne
+                  lui-même, mis à l'échelle — il ne peut donc pas mentir. */}
+              <div className="apparence__apercu">
+                <span className="apparence__etiquette">Aperçu de l'accueil</span>
+                <div
+                  className="apparence__toile apparence__toile--accueil"
+                  style={stylesCouleurs(couleursHub(manifeste.reglages))}
+                >
+                  <ToileBorne>
+                    <Accueil manifeste={manifeste} media={apercuMedia} />
+                  </ToileBorne>
+                </div>
+
+                {pageApercu ? (
+                  <>
+                    <span className="apparence__etiquette">Aperçu d'une page</span>
+                    <div className="apparence__toile" style={stylesCouleurs(manifeste.reglages)}>
+                      <ToileBorne>
+                        <RenduPage contenu={pageApercu as ContenuPage} media={apercuMedia} />
+                      </ToileBorne>
+                    </div>
+                  </>
+                ) : null}
+              </div>
             </div>
 
             <div className="pan__actions">
@@ -527,6 +678,11 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
           </div>
         </div>
       ) : null}
+
+      {/* Clavier à l'écran : la salle n'a pas de clavier physique. Monté une
+          seule fois ici, il sert tous les champs de l'administration — liste
+          des pages, éditeur, panneaux — sans que chacun ait à s'en occuper. */}
+      <ClavierTactile />
     </div>
   )
 }

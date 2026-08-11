@@ -1326,11 +1326,86 @@ button {
   gap: 10px;
 }
 
+/* Encart de l'écran d'accueil : visiblement à part, sinon on croirait régler
+   les couleurs de toute la borne une deuxième fois. */
+.apparence__encart {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--b-trait);
+  border-radius: 12px;
+}
+
+.apparence__encart-titre {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.apparence__encart-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--b-texte-doux);
+}
+
+/* Une ligne « miniature + nom + boutons ». */
+.apparence__image {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.apparence__miniature {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--b-trait);
+  border-radius: 8px;
+  background: #0b1a2b;
+  overflow: hidden;
+  color: rgba(233, 180, 76, 0.45);
+}
+
+.apparence__miniature img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.apparence__image-nom {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.apparence__vignettes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .apparence__apercu {
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  /* Les aperçus restent en vue pendant qu'on descend dans les réglages : c'est
+     tout leur intérêt — on règle en regardant le résultat, pas en faisant des
+     allers-retours. */
+  position: sticky;
+  top: 0;
+  align-self: start;
 }
 
 .apparence__etiquette {
@@ -1346,6 +1421,13 @@ button {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--b-trait);
+}
+
+/* L'accueil tient dans un écran entier : l'aperçu garde ses proportions, sinon
+   il montrerait une rangée coupée que le visiteur, lui, verra en entier. */
+.apparence__toile--accueil {
+  height: auto;
+  aspect-ratio: 16 / 9;
 }
 
 /* ── Disque de couleur ───────────────────────────────────────────────────── */
@@ -1509,17 +1591,45 @@ button {
  *
  * Un visiteur arrive devant une borne qu'un autre vient de quitter. L'accueil
  * lui montre d'emblée tout ce qui existe : il choisit, au lieu de tomber au
- * milieu du parcours de quelqu'un d'autre. */
+ * milieu du parcours de quelqu'un d'autre.
+ *
+ * Tout est ici en **pixels de la toile** (référence 1920 × 1080), comme les
+ * pages : c'est « ToileBorne » qui met l'ensemble à l'échelle de la fenêtre.
+ * Des unités d'écran (vw, vh) donneraient un aperçu faux dans l'administration,
+ * où l'accueil est montré en petit dans une fenêtre, pas en plein écran. */
+
+/* L'accueil tient toujours dans un écran : ni barre de défilement, ni page qui
+   dépasse — c'est une rangée, pas une liste. */
+.toile--accueil {
+  height: 100%;
+  overflow: hidden;
+}
 
 .hub {
-  height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3vh;
-  padding: 5vh 4vw;
-  background: var(--b-fond);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  gap: 32px;
+  padding: 54px 77px;
+  background: var(--b-fond) center / cover no-repeat;
+}
+
+/* Image de fond choisie dans l'administration : le titre reste lisible dessus
+   grâce au voile sombre, qui ne dépend d'aucune couleur réglable. */
+.hub--image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 11, 19, 0.45);
+  pointer-events: none;
+}
+
+.hub--image {
+  position: relative;
+}
+
+.hub--image > * {
+  position: relative;
 }
 
 .hub__entete {
@@ -1530,33 +1640,90 @@ button {
 .hub__titre {
   margin: 0;
   font-family: var(--b-titre-police);
-  font-size: clamp(32px, 3.6vw, 64px);
+  font-size: 64px;
   font-weight: 600;
   color: var(--b-texte);
 }
 
 .hub__sous-titre {
   margin: 10px 0 0;
-  font-size: clamp(15px, 1.3vw, 24px);
+  font-size: 24px;
   color: var(--b-accent);
 }
 
-.hub__grille {
+/* Rangée unique : les flèches encadrent la piste, elles ne la recouvrent pas —
+   un doigt qui vise la flèche ne doit pas ouvrir la carte du dessous. */
+.hub__defile {
   flex: 1;
   min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 29px;
+}
+
+/* Le chevron seul, sans cercle. La zone reste large : c'est un doigt qui vise,
+   pas une souris — seul le dessin a disparu, pas la cible. */
+.hub__fleche {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  border: none;
+  background: transparent;
+  /* La couleur du texte de l'accueil, réglable par le musée : blanche par
+     défaut, et toujours lisible si le fond est changé. */
+  color: var(--b-texte);
+  font-size: 72px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+
+.hub__fleche:hover:not(:disabled),
+.hub__fleche:focus-visible {
+  transform: scale(1.15);
+}
+
+/* Au bout de la rangée : la flèche reste en place (rien ne se décale) mais ne
+   répond plus. */
+.hub__fleche:disabled {
+  opacity: 0.22;
+  cursor: default;
+}
+
+.hub__piste {
+  flex: 1;
+  min-width: 0;
   display: grid;
-  /* Les cartes s'adaptent au nombre de pages sans réglage : trois par rangée
-     sur un écran de borne, moins sur une fenêtre étroite. */
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  /* Les rangées prennent la hauteur des cartes au lieu de se partager l'écran :
-     avec trois pages, on veut trois cartes de taille normale en haut, pas trois
-     colonnes étirées du haut en bas qui rognent les images. */
-  grid-auto-rows: auto;
-  align-content: start;
-  gap: 2.2vw;
+  grid-auto-flow: column;
+  /* Trois cartes par écran, quel que soit le nombre de pages. */
+  grid-auto-columns: calc((100% - 2 * 42px) / 3);
+  /* Les cartes valent leur image plus leur titre : sans cela elles s'étireraient
+     sur toute la hauteur de la rangée. */
+  align-items: start;
+  gap: 42px;
   margin: 0;
-  padding: 0;
+  /* De quoi laisser respirer l'ombre et le léger soulèvement d'une carte. */
+  padding: 8px 0;
   list-style: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Le défilement s'arrête sur une carte, jamais au milieu. */
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  /* Le doigt fait défiler horizontalement ; la barre de défilement, elle, n'a
+     rien à faire sur une borne. */
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+
+.hub__piste::-webkit-scrollbar {
+  display: none;
+}
+
+.hub__piste > li {
+  scroll-snap-align: start;
 }
 
 .hub__carte {
@@ -1601,10 +1768,14 @@ button {
 }
 
 .hub__image {
-  /* Toutes les vignettes au même format : la grille reste régulière quelles que
-     soient les photos, et le rognage reste léger. */
+  /* Toutes les vignettes au même format : la rangée reste régulière quelles que
+     soient les photos, et le rognage reste léger.
+     6/7 plutôt que 16/9 : la carte est plus haute que large, donc plus visible
+     de loin, sans s'élargir — la largeur, elle, est fixée par les trois par
+     écran. Le rognage est en revanche marqué : une photo paysage perd ses
+     côtés. */
   flex: none;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 6 / 7;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1627,9 +1798,9 @@ button {
   flex: none;
   display: flex;
   align-items: center;
-  min-height: 88px;
-  padding: 18px 24px;
-  font-size: clamp(16px, 1.35vw, 26px);
+  min-height: 116px;
+  padding: 24px;
+  font-size: 26px;
   font-weight: 600;
   line-height: 1.3;
   color: var(--b-texte);
@@ -1712,4 +1883,101 @@ button {
   .hub__carte:active {
     transform: none;
   }
+}
+
+/* ── Clavier à l'écran ─────────────────────────────────────────────────────
+ *
+ * La salle n'a pas de clavier physique : sans celui-ci, on ne peut rien écrire
+ * sur la borne. Il se pose en bas de l'écran, au-dessus de tout le reste — y
+ * compris des panneaux, qui sont eux-mêmes au-dessus de l'administration. */
+
+.clavier {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* Au-dessus des panneaux (90) et du pavé du code d'accès. */
+  z-index: 300;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 14px 12px;
+  background: #0b1a2b;
+  border-top: 1px solid var(--b-trait);
+  box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.45);
+  /* Le doigt tape, il ne fait pas glisser le clavier. */
+  touch-action: none;
+}
+
+.clavier__lettres {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.clavier__rangee {
+  display: flex;
+  gap: 6px;
+}
+
+/* Quatre rangées de trois, exactement la hauteur des lettres : le pavé ne
+   rallonge pas le clavier, il remplit le vide à droite. */
+.clavier__pave {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.clavier__touche--zero {
+  grid-column: span 2;
+}
+
+.clavier__touche {
+  min-width: 50px;
+  min-height: 50px;
+  padding: 0 10px;
+  border: 1px solid var(--b-trait);
+  border-radius: 10px;
+  background: var(--b-surface);
+  color: var(--b-texte);
+  font-family: inherit;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.clavier__touche:active {
+  background: var(--b-accent);
+  color: #0b1a2b;
+}
+
+/* Maj enfoncée : on doit voir que la prochaine lettre sera majuscule. */
+.clavier__touche--active {
+  background: var(--b-accent);
+  color: #0b1a2b;
+}
+
+.clavier__touche--large {
+  min-width: 88px;
+  font-size: 16px;
+}
+
+.clavier__touche--espace {
+  min-width: 250px;
+  font-size: 16px;
+}
+
+/* Dans le coin du pavé, à côté du zéro : ronde, pour ne pas se confondre avec
+   une touche qui écrit. */
+.clavier__fermer {
+  border-radius: 50%;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.clavier__fermer:active {
+  background: var(--b-accent);
+  color: #0b1a2b;
 }
