@@ -216,6 +216,11 @@ function creerFenetre() {
     },
   })
 
+  // « alwaysOnTop » seul passe sous la barre des tâches, qui remonte dès qu'on
+  // effleure le bas de l'écran. Le niveau « screen-saver » est le seul à passer
+  // devant elle ; il n'est pas réglable depuis le constructeur.
+  fenetre.setAlwaysOnTop(true, 'screen-saver')
+
   fenetre.once('ready-to-show', () => fenetre.show())
 
   // Aucune touche ne doit ramener au bureau. On laisse passer la frappe
