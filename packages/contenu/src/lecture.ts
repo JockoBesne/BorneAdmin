@@ -194,13 +194,24 @@ export function ordreCellules(
 
   const noms = modele.sections.map((section) => section.nom)
   const cles: string[] = []
+  const places = new Set<string>()
   for (const section of modele.sections) {
     for (const nom of section.emplacements) {
       if (existe(nom)) cles.push(nom)
     }
     for (const bloc of suite) {
-      if (positionBloc(bloc, noms) === section.nom) cles.push(`suite:${bloc.id}`)
+      if (positionBloc(bloc, noms) === section.nom) {
+        cles.push(`suite:${bloc.id}`)
+        places.add(`suite:${bloc.id}`)
+      }
     }
+  }
+  // Même garantie que plus haut : un bloc ajouté ne disparaît jamais en
+  // silence. Sans cela, une page **vierge** — un modèle sans aucune section —
+  // n'afficherait rien du tout, puisqu'il n'y a pas de section où accrocher ses
+  // blocs, et que l'ordre explicite n'est écrit qu'au premier déplacement.
+  for (const bloc of suite) {
+    if (!places.has(`suite:${bloc.id}`)) cles.push(`suite:${bloc.id}`)
   }
   return cles
 }

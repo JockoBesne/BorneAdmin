@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { mediasReferences, type ContenuPage, type Manifeste, type PageManifeste } from '@borne/contenu'
 import type { ResoudreMedia } from '@borne/contenu/rendu'
 
@@ -74,6 +74,14 @@ export function Accueil({
     ? { backgroundImage: `url("${fond.url('grand')}")` }
     : undefined
 
+  // Les cartes se partagent la largeur disponible : une seule page l'occupe
+  // entière, deux la coupent en deux, trois en trois. Au-delà de trois, on
+  // reste à trois — une quatrième carte serait trop étroite pour être lue de
+  // loin — et les suivantes attendent derrière : c'est là, et seulement là,
+  // que les flèches et le défilement ont une raison d'être.
+  const colonnes = Math.min(Math.max(manifeste.pages.length, 1), 3)
+  const defilable = manifeste.pages.length > colonnes
+
   return (
     <div className={`hub${fond ? ' hub--image' : ''}`} style={style}>
       <header className="hub__entete">
@@ -82,18 +90,21 @@ export function Accueil({
       </header>
 
       <div className="hub__defile">
-        <button
-          type="button"
-          className="hub__fleche"
-          aria-label="Voir les pages précédentes"
-          disabled={bords.debut}
-          onClick={() => defiler(-1)}
-        >
-          ‹
-        </button>
+        {defilable ? (
+          <button
+            type="button"
+            className="hub__fleche"
+            aria-label="Voir les pages précédentes"
+            disabled={bords.debut}
+            onClick={() => defiler(-1)}
+          >
+            ‹
+          </button>
+        ) : null}
 
         <ul
           className="hub__piste"
+          style={{ '--colonnes': colonnes } as CSSProperties}
           ref={piste}
           onScroll={mesurer}
           onPointerDown={(evenement) => {
@@ -139,15 +150,17 @@ export function Accueil({
           ))}
         </ul>
 
-        <button
-          type="button"
-          className="hub__fleche"
-          aria-label="Voir les pages suivantes"
-          disabled={bords.fin}
-          onClick={() => defiler(1)}
-        >
-          ›
-        </button>
+        {defilable ? (
+          <button
+            type="button"
+            className="hub__fleche"
+            aria-label="Voir les pages suivantes"
+            disabled={bords.fin}
+            onClick={() => defiler(1)}
+          >
+            ›
+          </button>
+        ) : null}
       </div>
     </div>
   )

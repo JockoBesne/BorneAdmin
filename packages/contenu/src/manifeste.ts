@@ -153,7 +153,7 @@ export const schemaStyleBloc = z.object({
 export const schemaPageManifeste = z.object({
   id: z.string(),
   titre: z.string(),
-  modele: z.enum(['t1', 't2', 't3']),
+  modele: z.enum(['t0', 't1', 't2', 't3']),
   ordre: z.number(),
   vignette: z.string().nullable(),
   // Couleurs propres à la page (facultatives). Absentes = la page suit le thème
@@ -161,7 +161,7 @@ export const schemaPageManifeste = z.object({
   couleurFond: z.string().regex(COULEUR).optional(),
   couleurTexte: z.string().regex(COULEUR).optional(),
   contenu: z.object({
-    modele: z.enum(['t1', 't2', 't3']),
+    modele: z.enum(['t0', 't1', 't2', 't3']),
     // Largeurs des emplacements réglées à la poignée. Déclaré ici sans quoi le
     // schéma les supprimerait à chaque enregistrement.
     largeurs: z

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Modele1, Modele2, Modele3 } from './Modeles.jsx'
+import { Modele0, Modele1, Modele2, Modele3 } from './Modeles.jsx'
 import type { PropsModele } from './types.js'
 
 /** Aiguillage vers le composant du modèle. Un modèle inconnu n'affiche rien
  *  plutôt que de faire tomber l'écran (§14.6). */
 export function RenduPage(props: PropsModele) {
   switch (props.contenu.modele) {
+    case 't0':
+      return <Modele0 {...props} />
     case 't1':
       return <Modele1 {...props} />
     case 't2':

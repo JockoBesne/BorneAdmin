@@ -1,6 +1,7 @@
 /* Types du modèle de contenu — partagés par l'API, l'administration et la borne. */
 
-export type IdModele = 't1' | 't2' | 't3'
+/** « t0 » est la page vierge : aucun emplacement imposé, tout est ajouté. */
+export type IdModele = 't0' | 't1' | 't2' | 't3'
 
 /** Déclinaisons produites à l'envoi d'une image (§15.3 de la conception). */
 export type ProfilImage = 'vignette' | 'moyen' | 'grand' | 'origine'
