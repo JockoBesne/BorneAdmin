@@ -485,6 +485,18 @@ function renduBlocLibre(
 
 // ── Modèle 1 — Une image, un texte ───────────────────────────────────────────
 
+/**
+ * Modèle 0 — page vierge. Rien d'imposé : la grille affiche les blocs ajoutés,
+ * et seulement eux. Même rendu que les autres, sans emplacement de départ.
+ */
+export function Modele0(props: PropsModele) {
+  return (
+    <article className="mdl mdl-0">
+      <RenduGrille {...props} />
+    </article>
+  )
+}
+
 export function Modele1(props: PropsModele) {
   return (
     <article className="mdl mdl-1">

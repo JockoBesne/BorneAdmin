@@ -2,6 +2,22 @@ import { definirModele, type Modele } from './definir-modele.js'
 import type { IdModele } from '../types.js'
 
 /**
+ * Modèle 0 — « Page vierge »
+ *
+ * Aucun emplacement, aucune section : la page part vide et se construit
+ * entièrement avec les blocs ajoutés (texte, image, galerie, vidéo, quiz,
+ * frise). C'est le modèle de celui qui sait déjà ce qu'il veut mettre et ne
+ * veut pas commencer par retirer ce qui ne lui sert pas.
+ */
+export const modele0 = definirModele({
+  id: 't0',
+  nom: 'Page vierge',
+  description: 'Page vide : on y ajoute soi-même les blocs, dans l’ordre voulu.',
+  sections: [],
+  emplacements: {},
+})
+
+/**
  * Modèle 1 — « Une image, un texte »
  * Grand titre, image principale, zone de texte.
  */
@@ -140,12 +156,15 @@ export const modele3 = definirModele({
 })
 
 export const MODELES: Record<IdModele, Modele> = {
+  t0: modele0,
   t1: modele1,
   t2: modele2,
   t3: modele3,
 }
 
-export const LISTE_MODELES: Modele[] = [modele1, modele2, modele3]
+// La page vierge en dernier : les trois mises en page guidées d'abord, elles
+// conviennent à la plupart des pages ; la page vide est l'autre solution.
+export const LISTE_MODELES: Modele[] = [modele1, modele2, modele3, modele0]
 
 export function modelePar(id: string): Modele | null {
   return id in MODELES ? MODELES[id as IdModele] : null

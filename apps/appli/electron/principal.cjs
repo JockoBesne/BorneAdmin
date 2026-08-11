@@ -201,6 +201,12 @@ function creerFenetre() {
 
   fenetre.once('ready-to-show', () => fenetre.show())
 
+  // En plein écran, on passe au-dessus de tout : sans cela la barre des tâches
+  // de Windows (masquage automatique) réapparaît par-dessus la borne dès qu'on
+  // glisse le doigt vers le bas de l'écran.
+  fenetre.on('enter-full-screen', () => fenetre.setAlwaysOnTop(true, 'screen-saver'))
+  fenetre.on('leave-full-screen', () => fenetre.setAlwaysOnTop(false))
+
   // Plein écran à la demande. Sur le poste de la salle, ce sera l'état de
   // départ ; pendant le développement, une fenêtre est plus commode.
   fenetre.webContents.on('before-input-event', (evenement, entree) => {
