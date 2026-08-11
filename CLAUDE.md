@@ -189,6 +189,18 @@ ordinateur**, voir ci-dessous.
     noir. Réimporter la vidéo lui en donne une vraie.
 - **Enregistrement automatique** : ~600 ms après la dernière frappe. Pas de
   bouton « Enregistrer » — ne pas en ajouter. Un indicateur d'état est en barre.
+- **Annuler / Rétablir** (`Admin.tsx`) : **Ctrl + Z**, **Ctrl + Y** (ou
+  Ctrl + Maj + Z), et deux boutons dans la barre — la salle n'a pas de clavier.
+  Un pas d'historique est le **manifeste entier** tel qu'il était : le contenu
+  tient en mémoire, rien ne peut se désynchroniser. Trois points à connaître :
+  - tout passe par `modifier()`, seul endroit qui écrit le contenu — c'est ce
+    qui rend l'historique complet sans le câbler action par action ;
+  - les modifications espacées de moins de 600 ms ne font **qu'un** pas :
+    sinon annuler une phrase demanderait autant d'appuis que de lettres ;
+  - dans un champ de saisie, le raccourci est laissé au navigateur (on annule
+    sa frappe, pas la dernière action de la page). Le compteur `generation`,
+    passé à `EditeurPage` et glissé dans la clé du panneau, remonte le champ de
+    texte enrichi : sans lui, un texte annulé resterait affiché à l'écran.
 - **Accès admin** : coin haut-droit invisible, appui **5 s**, puis code PIN
   (`reglages.pinAdmin`, défaut **1975**). Raccourci équivalent au clavier :
   **Ctrl + Alt + A**. Le code est **en clair** dans `contenu.json` : il écarte un
