@@ -113,9 +113,13 @@ function ecrireContenu(manifeste) {
 }
 
 /**
- * Import d'un média : fenêtre de choix de fichier, puis copie dans le dossier
- * des médias. Un nom déjà pris reçoit un suffixe numérique — on n'écrase
- * jamais un média existant, qui peut être utilisé par d'autres pages.
+ * Import de médias : fenêtre de choix de fichiers, puis copie dans le dossier
+ * des médias. **Plusieurs fichiers à la fois** (`multiSelections`) : préparer
+ * une galerie ne doit pas demander autant d'allers-retours que de photos. Un
+ * nom déjà pris reçoit un suffixe numérique — on n'écrase jamais un média
+ * existant, qui peut être utilisé par d'autres pages.
+ *
+ * Renvoie **la liste** des fichiers copiés, vide si l'utilisateur a annulé.
  *
  * Les dimensions et la durée sont mesurées par l'interface (moteur de la
  * fenêtre), pas ici : pas de module natif d'images (décision de CONTEXTE.md).
@@ -128,30 +132,31 @@ async function importerMedia(evenement, type) {
 
   const fenetre = BrowserWindow.fromWebContents(evenement.sender)
   const choix = await dialog.showOpenDialog(fenetre, {
-    title: type === 'video' ? 'Choisir une vidéo' : 'Choisir une photo',
-    properties: ['openFile'],
+    title: type === 'video' ? 'Choisir une ou plusieurs vidéos' : 'Choisir une ou plusieurs photos',
+    properties: ['openFile', 'multiSelections'],
     filters: filtres,
   })
 
-  const source = choix.filePaths[0]
-  if (choix.canceled || !source) return null
+  if (choix.canceled) return []
 
-  const extension = path.extname(source)
-  const radical = path.basename(source, extension)
-  let nom = radical + extension
-  for (let n = 2; fs.existsSync(path.join(DOSSIER_MEDIAS, nom)); n += 1) {
-    nom = `${radical}-${n}${extension}`
-  }
+  return choix.filePaths.map((source) => {
+    const extension = path.extname(source)
+    const radical = path.basename(source, extension)
+    let nom = radical + extension
+    for (let n = 2; fs.existsSync(path.join(DOSSIER_MEDIAS, nom)); n += 1) {
+      nom = `${radical}-${n}${extension}`
+    }
 
-  const cible = path.join(DOSSIER_MEDIAS, nom)
-  fs.copyFileSync(source, cible)
+    const cible = path.join(DOSSIER_MEDIAS, nom)
+    fs.copyFileSync(source, cible)
 
-  const octets = fs.readFileSync(cible)
-  return {
-    chemin: nom,
-    octets: octets.length,
-    empreinte: crypto.createHash('sha1').update(octets).digest('hex').slice(0, 12),
-  }
+    const octets = fs.readFileSync(cible)
+    return {
+      chemin: nom,
+      octets: octets.length,
+      empreinte: crypto.createHash('sha1').update(octets).digest('hex').slice(0, 12),
+    }
+  })
 }
 
 /**

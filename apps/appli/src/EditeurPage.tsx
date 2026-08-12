@@ -53,7 +53,7 @@ import {
   type ResoudreMedia,
 } from '@borne/contenu/rendu'
 import { ChampTexteRiche, type CommandesTexteRiche } from './ChampTexteRiche.jsx'
-import { importerMedia, resolveurMedias } from './contenu.js'
+import { importerMedias, resolveurMedias } from './contenu.js'
 import { couleursEffectives, stylesCouleurs, type Couleurs } from './couleurs.js'
 import { RoueCouleur } from './RoueCouleur.jsx'
 
@@ -295,15 +295,23 @@ export function EditeurPage({
   }
 
 
-  const choisirMedia = (nom: string, media: MediaManifeste) => {
+  /**
+   * Range les médias dans le bloc. Une galerie les prend **tous** ; une image
+   * ou une vidéo n'en accueille qu'un — les autres restent en bibliothèque.
+   */
+  const choisirMedias = (nom: string, medias: MediaManifeste[]) => {
     modifierEmplacement(nom, (valeur) => {
       if (valeur.type === 'galerie') {
         return {
           ...valeur,
-          elements: [...valeur.elements, { mediaId: media.id, legende: media.legende }],
+          elements: [
+            ...valeur.elements,
+            ...medias.map((media) => ({ mediaId: media.id, legende: media.legende })),
+          ],
         }
       }
-      if (valeur.type === 'image' || valeur.type === 'video') {
+      const media = medias[0]
+      if (media && (valeur.type === 'image' || valeur.type === 'video')) {
         return { ...valeur, mediaId: media.id, legende: valeur.legende || media.legende }
       }
       return valeur
@@ -311,15 +319,17 @@ export function EditeurPage({
     setSelecteur(null)
   }
 
-  // Import depuis l'ordinateur : le fichier est copié dans la bibliothèque,
-  // puis placé directement dans le bloc qui a ouvert le sélecteur.
+  const choisirMedia = (nom: string, media: MediaManifeste) => choisirMedias(nom, [media])
+
+  // Import depuis l'ordinateur : les fichiers sont copiés dans la bibliothèque,
+  // puis placés directement dans le bloc qui a ouvert le sélecteur.
   const importerDepuisDisque = () => {
     if (!selecteur) return
     const { nom, type } = selecteur
-    void importerMedia(type).then((media) => {
-      if (!media) return
-      surAjoutMedia(media)
-      choisirMedia(nom, media)
+    void importerMedias(type).then((medias) => {
+      if (medias.length === 0) return
+      for (const media of medias) surAjoutMedia(media)
+      choisirMedias(nom, medias)
     })
   }
 

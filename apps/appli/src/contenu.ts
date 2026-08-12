@@ -119,18 +119,36 @@ function mesurerVideo(url: string): Promise<{
   })
 }
 
-/**
- * Importe un fichier de l'ordinateur dans la bibliothèque : le processus
- * principal ouvre la fenêtre de choix et copie le fichier dans « medias/ »,
- * puis les dimensions (et la durée) sont mesurées ici même, par le moteur de
- * la fenêtre — pas de module natif (décision de CONTEXTE.md).
- *
- * Renvoie la fiche du média, ou null si l'utilisateur a annulé.
- */
-export async function importerMedia(type: 'image' | 'video'): Promise<MediaManifeste | null> {
-  const fichier = await window.borne.importerMedia(type)
-  if (!fichier) return null
+/** Un fichier copié dans « medias/ » par le processus principal. */
+type FichierImporte = { chemin: string; octets: number; empreinte: string }
 
+/**
+ * Importe des fichiers de l'ordinateur dans la bibliothèque : le processus
+ * principal ouvre la fenêtre de choix — **plusieurs fichiers à la fois** — et
+ * les copie dans « medias/ », puis les dimensions (et la durée) sont mesurées
+ * ici même, par le moteur de la fenêtre — pas de module natif (décision de
+ * CONTEXTE.md).
+ *
+ * Renvoie les fiches des médias, liste vide si l'utilisateur a annulé. Les
+ * fichiers sont traités **l'un après l'autre** : une vidéo se rejoue en
+ * mémoire pour sa couverture, en lancer dix ensemble remplirait la mémoire.
+ */
+export async function importerMedias(type: 'image' | 'video'): Promise<MediaManifeste[]> {
+  const fichiers = await window.borne.importerMedia(type)
+  const medias: MediaManifeste[] = []
+  for (const fichier of fichiers) medias.push(await fabriquerMedia(fichier, type))
+  return medias
+}
+
+/** Un seul fichier : pour les endroits qui n'en acceptent qu'un (image d'accueil, vignette). */
+export async function importerMedia(type: 'image' | 'video'): Promise<MediaManifeste | null> {
+  return (await importerMedias(type))[0] ?? null
+}
+
+async function fabriquerMedia(
+  fichier: FichierImporte,
+  type: 'image' | 'video',
+): Promise<MediaManifeste> {
   const url = PROTOCOLE_MEDIA + fichier.chemin
 
   // Pour une vidéo, on relit les octets déjà copiés et on les rejoue **depuis
