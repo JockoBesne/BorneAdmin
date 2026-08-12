@@ -148,6 +148,7 @@ export const schemaStyleBloc = z.object({
   italique: z.boolean().optional(),
   souligne: z.boolean().optional(),
   alignement: z.enum(['gauche', 'centre', 'droite']).optional(),
+  opacite: z.number().int().min(0).max(100).optional(),
 })
 
 export const schemaPageManifeste = z.object({

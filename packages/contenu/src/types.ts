@@ -297,6 +297,12 @@ export interface StyleBloc {
   souligne?: boolean
   /** Absent = gauche, l'alignement ordinaire. */
   alignement?: AlignementBloc
+  /**
+   * Opacité du **fond**, de 0 (invisible) à 100 (opaque) : le texte posé
+   * dessus, lui, reste net. Absente = 100, le rendu d'avant ce réglage. Sans
+   * `fond`, elle n'a aucun effet.
+   */
+  opacite?: number
 }
 
 /**

@@ -141,6 +141,17 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
   useEffect(() => {
     const auClavier = (evenement: KeyboardEvent) => {
       if (!evenement.ctrlKey && !evenement.metaKey) return
+
+      // Ctrl + Maj + A ferme l'application. Le raccourci est posé ici, dans
+      // l'écran d'administration : devant un visiteur, il n'existe pas. Il est
+      // reconnu même dans un champ de saisie — on vient peut-être de taper, et
+      // c'est justement ce qui est enregistré avant de fermer.
+      if (evenement.shiftKey && evenement.key.toLowerCase() === 'a') {
+        evenement.preventDefault()
+        quitter()
+        return
+      }
+
       const cible = evenement.target as HTMLElement | null
       if (cible?.closest('input, textarea, [contenteditable="true"]')) return
 
@@ -175,16 +186,23 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
     return () => clearTimeout(minuterie)
   }, [manifeste])
 
-  // À la fermeture, une modification encore en attente est écrite avant de
-  // rendre l'écran au visiteur — qui recharge le contenu en revenant.
-  const fermer = () => {
+  // Une modification peut attendre les 600 ms de l'enregistrement automatique :
+  // on l'écrit tout de suite avant de quitter l'écran, sinon la dernière frappe
+  // serait perdue.
+  const ecrireEnAttente = (): Promise<void> => {
     const fin =
       sale.current && manifeste
         ? enregistrerContenu(manifeste).catch(() => {})
         : Promise.resolve()
     sale.current = false
-    void fin.then(surFermeture)
+    return fin
   }
+
+  // Retour à la borne, qui recharge le contenu en revenant.
+  const fermer = () => void ecrireEnAttente().then(surFermeture)
+
+  // Fermeture de l'application entière (Ctrl + Maj + A).
+  const quitter = () => void ecrireEnAttente().then(() => window.borne.quitter())
 
   // ── Opérations sur les pages ───────────────────────────────────────────────
 
@@ -435,6 +453,9 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
             }))
           }
           surAjoutMedia={(media) => modifier((m) => ({ ...m, medias: [...m.medias, media] }))}
+          surRetraitMedia={(id) =>
+            modifier((m) => ({ ...m, medias: m.medias.filter((media) => media.id !== id) }))
+          }
         />
       ) : (
         <div className="admin__corps">

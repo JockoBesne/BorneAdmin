@@ -22,4 +22,6 @@ contextBridge.exposeInMainWorld('borne', {
   /** Écrit dans medias/ une image fabriquée par l'interface (couverture vidéo). */
   enregistrerImage: (nom, donneesBase64) =>
     ipcRenderer.invoke('medias:enregistrer-image', nom, donneesBase64),
+  /** Ferme l'application. Appelé par l'administration seule (Ctrl + Maj + A). */
+  quitter: () => ipcRenderer.invoke('app:quitter'),
 })

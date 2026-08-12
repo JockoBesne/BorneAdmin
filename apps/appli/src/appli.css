@@ -778,10 +778,33 @@ button {
   font-size: 12px;
 }
 
-/* La première rangée du formulaire laisse la place à la croix, quelle qu'elle
-   soit : un libellé, une liste de photos ou un simple message. */
+/* La première rangée du panneau laisse la place à la croix, quelle qu'elle
+   soit : la barre d'apparence, un libellé, une liste de photos ou un message. */
+.perso > .barre,
 .perso .pan__formulaire > *:first-child {
   padding-right: 34px;
+}
+
+/* Le curseur de transparence : son libellé au-dessus, comme les autres champs,
+   et une glissière large — on la vise au doigt aussi bien qu'à la souris. */
+.perso__glissiere {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--b-texte);
+}
+
+/* Nommée deux fois pour l'emporter sur « .pan input » : sans cela la glissière
+   hériterait du cadre et du fond d'une zone de saisie, et se retrouverait
+   enfermée dans une boîte noire. Même piège que « .roue__hex ». */
+.perso .perso__glissiere input {
+  width: 100%;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  accent-color: var(--b-accent);
 }
 
 .perso__gras {
@@ -1326,6 +1349,53 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* La case porte la carte, sa croix de suppression et la demande de
+   confirmation, qui vient couvrir la carte entière. */
+.media-case {
+  position: relative;
+}
+
+/* Toujours visible : au doigt, il n'y a pas de survol pour la faire venir. */
+.media-case__croix {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(9, 20, 33, 0.75);
+  color: #fff;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.media-case__croix:hover,
+.media-case__croix:focus-visible {
+  background: rgba(255, 155, 145, 0.9);
+  color: #14202e;
+}
+
+.media-case__confirme {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(9, 20, 33, 0.94);
+}
+
+.media-case__mot {
+  font-size: 13px;
+  color: var(--b-texte);
+  text-align: center;
 }
 
 /* ── Apparence : couleurs de la borne ────────────────────────────────────── */

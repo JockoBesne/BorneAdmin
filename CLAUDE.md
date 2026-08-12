@@ -126,14 +126,17 @@ ordinateur**, voir ci-dessous.
   dans `packages/contenu/src/texte.ts`. **Jamais de HTML stocké** : la saisie
   (`src/ChampTexteRiche.tsx`) relit le champ nœud par nœud, un collage arrive en
   texte brut.
-- **Champ mis en forme** (`ChampMisEnForme`) = un champ texte **et** sa barre
-  d'outils, en un seul composant. Pas de champ texte, pas de barre : la galerie,
-  le quiz, la frise et un média pas encore choisi n'en ont donc aucune.
-  Piège : ne **jamais** envelopper ce champ dans un `<label>` — le libellé
-  désignerait un bouton de la barre, et cliquer dessus écrirait un alignement
-  sur le disque (constaté).
-- **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond, et mise
-  en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
+- **Barre d'apparence** (`BarreMiseEnForme`) = posée **en tête du panneau du
+  bloc**, avant le formulaire. **Tout** bloc sélectionné se règle donc, même
+  sans champ texte (galerie, quiz, frise, photo pas encore choisie). Elle était
+  auparavant confiée au champ texte (`ChampMisEnForme`) : ce n'est plus le cas.
+  Piège toujours valable : ne **jamais** envelopper la barre dans un `<label>` —
+  le libellé désignerait un de ses boutons, et cliquer dessus écrirait un
+  alignement sur le disque (constaté).
+- **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond,
+  **transparence du fond** (`opacite`, 0–100, absente = opaque ; elle ne touche
+  que le fond — le texte posé dessus reste net, et sans fond elle ne fait rien)
+  et mise en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
   clé que partout ailleurs (`titre`, `suite:<id>`). Appliqué par `Habillage`
   dans `rendu/Modeles.tsx`, par où passent tous les blocs. Un bloc sans
   habillage n'est pas enveloppé du tout, et un habillage remis à zéro est retiré

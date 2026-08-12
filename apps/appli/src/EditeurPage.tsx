@@ -74,6 +74,7 @@ export function EditeurPage({
   generation,
   surModification,
   surAjoutMedia,
+  surRetraitMedia,
 }: {
   manifeste: Manifeste
   page: PageManifeste
@@ -85,6 +86,12 @@ export function EditeurPage({
   generation: number
   surModification: (transformation: (page: PageManifeste) => PageManifeste) => void
   surAjoutMedia: (media: MediaManifeste) => void
+  /**
+   * Retire un média de la bibliothèque. Le fichier reste dans « medias/ » :
+   * « Annuler » (Ctrl + Z) doit pouvoir remettre le média, ce qu'un fichier
+   * effacé rendrait impossible.
+   */
+  surRetraitMedia: (id: string) => void
 }) {
   const [selection, setSelection] = useState<string | null>(null)
   const [selecteur, setSelecteur] = useState<{ nom: string; type: 'image' | 'video' } | null>(null)
@@ -1141,6 +1148,7 @@ export function EditeurPage({
           resoudre={resoudre}
           surChoix={(media) => choisirMedia(selecteur.nom, media)}
           surImporter={importerDepuisDisque}
+          surSuppression={surRetraitMedia}
           surFermeture={() => setSelecteur(null)}
         />
       ) : null}
@@ -1324,9 +1332,10 @@ const evenementNeuf = (): EvenementFrise => ({
  * concerne le bloc, au même endroit. On le ferme par la croix, ou en recliquant
  * le bloc.
  *
- * La barre de mise en forme n'est pas posée ici : elle est confiée au
- * formulaire, qui la remet à « ChampMisEnForme » — le composant qui réunit un
- * champ texte et sa barre. Un bloc sans champ texte n'a donc pas de barre.
+ * La barre d'apparence est posée en tête, avant le formulaire : **tout** bloc
+ * sélectionné se règle donc, y compris ceux qui n'ont pas de champ texte — une
+ * galerie, un quiz, une frise, une photo. (Elle était auparavant réservée aux
+ * blocs qui ont un champ texte, contre lequel elle se posait.)
  */
 function PanneauBloc({
   def,
@@ -1381,20 +1390,19 @@ function PanneauBloc({
         ✕
       </button>
 
+      <BarreMiseEnForme
+        style={style}
+        couleursPage={couleursPage}
+        texteRiche={texteRiche}
+        commandesTexte={commandesTexte}
+        surStyle={surStyle}
+      />
+
       <FormulaireBloc
         def={def}
         valeur={valeur}
         resoudre={resoudre}
         commandesTexte={commandesTexte}
-        barre={
-          <BarreMiseEnForme
-            style={style}
-            couleursPage={couleursPage}
-            texteRiche={texteRiche}
-            commandesTexte={commandesTexte}
-            surStyle={surStyle}
-          />
-        }
         surChangement={surContenu}
         surChoisirMedia={surChoisirMedia}
       />
@@ -1403,17 +1411,18 @@ function PanneauBloc({
 }
 
 /**
- * La barre de mise en forme d'un bloc, faite pour être posée **juste au-dessus
- * d'un champ texte** : gras, italique, souligné | alignement | couleur du texte,
- * couleur du fond du bloc.
+ * La barre d'apparence d'un bloc, posée en tête de son panneau : gras, italique,
+ * souligné | alignement | couleur du texte, couleur du fond (et, avec elle, sa
+ * transparence).
  *
  * Les réglages portent sur le bloc entier — c'est pourquoi le fond s'appelle
  * « couleur du fond du bloc ». Seuls G / I / S font exception sur un bloc de
  * texte, où ils s'appliquent au morceau sélectionné.
  *
- * Les deux disques de couleur ne sont pas montrés d'emblée : côte à côte ils
- * feraient plus de cinq cents pixels de haut, et le champ serait rejeté hors de
- * l'écran. On ouvre celui dont on a besoin.
+ * Ce qui se déplie (les disques de couleur, le curseur de transparence) n'est
+ * pas montré d'emblée : côte à côte, deux disques feraient plus de cinq cents
+ * pixels de haut et rejetteraient le formulaire hors de l'écran. On n'ouvre que
+ * celui dont on a besoin.
  */
 function BarreMiseEnForme({
   style,
@@ -1444,6 +1453,20 @@ function BarreMiseEnForme({
     surStyle((precedent) => {
       const copie = { ...precedent }
       delete copie[champ]
+      // Le fond parti, sa transparence n'a plus rien à rendre translucide :
+      // elle s'en va avec lui, plutôt que de rester dans le fichier.
+      if (champ === 'fond') delete copie.opacite
+      return copie
+    })
+
+  // On règle une **transparence** (0 = fond bien plein), plus parlante que
+  // l'opacité qu'on range dans le contenu. Remise à zéro, elle sort du fichier.
+  const transparence = 100 - (style.opacite ?? 100)
+  const changerTransparence = (valeur: number) =>
+    surStyle((precedent) => {
+      const copie = { ...precedent }
+      if (valeur <= 0) delete copie.opacite
+      else copie.opacite = 100 - valeur
       return copie
     })
 
@@ -1543,7 +1566,14 @@ function BarreMiseEnForme({
             <IconeFond />
             <span
               className="ruban__barre"
-              style={{ backgroundColor: style.fond ?? 'transparent' }}
+              // Le bandeau montre le fond **tel qu'il sera**, transparence
+              // comprise : le damier de la classe se lit à travers.
+              style={{
+                backgroundColor:
+                  style.fond === undefined
+                    ? 'transparent'
+                    : `color-mix(in srgb, ${style.fond} ${style.opacite ?? 100}%, transparent)`,
+              }}
               aria-hidden="true"
             />
           </button>
@@ -1553,6 +1583,26 @@ function BarreMiseEnForme({
       {roue ? (
         <div className="perso__roue">
           <RoueCouleur valeur={couleurRoue} surChangement={(hex) => changerCouleur(roue, hex)} />
+
+          {/* La transparence est rangée avec le fond, et non ailleurs dans la
+              barre : elle ne rend translucide que lui, et n'a donc aucun sens
+              tant qu'aucun fond n'est posé. Le curseur porte son propre
+              libellé, avec le nombre — sinon on ne saurait pas où on en est une
+              fois le doigt levé. */}
+          {roue === 'fond' && style.fond !== undefined ? (
+            <label className="perso__glissiere">
+              <span>Transparence du fond : {transparence} %</span>
+              <input
+                type="range"
+                min={0}
+                max={90}
+                step={5}
+                value={transparence}
+                onChange={(evenement) => changerTransparence(Number(evenement.target.value))}
+              />
+            </label>
+          ) : null}
+
           {(roue === 'fond' ? style.fond : style.couleur) !== undefined ? (
             <button
               type="button"
@@ -1582,25 +1632,18 @@ function BarreMiseEnForme({
 }
 
 /**
- * Un champ texte et sa barre de mise en forme, réunis en un seul composant.
+ * Un champ texte et son libellé.
  *
- * La barre ne s'obtient qu'en passant par ici : là où il n'y a pas de champ
- * texte — une galerie, un quiz, une frise, une photo pas encore choisie — il n'y
- * a donc pas de barre, sans qu'on ait à y penser.
- *
- * Un « div » et non un « label » : un libellé désigne son premier élément de
- * formulaire, qui serait ici un bouton de la barre — cliquer le libellé
- * enfoncerait une commande de mise en forme. Les saisies portent donc leur
- * libellé par « aria-label ».
+ * Un « div » et non un « label » : le libellé désignerait le premier élément de
+ * formulaire venu, et un clic dessus déclencherait sa commande. Les saisies
+ * portent donc leur libellé par « aria-label ».
  */
 function ChampMisEnForme({
   libelle,
-  barre,
   compte,
   children,
 }: {
   libelle: string
-  barre: ReactNode
   /** Compteur de signes, sous le champ. Absent quand il n'y a rien à compter. */
   compte?: ReactNode
   children: ReactNode
@@ -1608,7 +1651,6 @@ function ChampMisEnForme({
   return (
     <div className="champ">
       <span className="champ__libelle">{libelle}</span>
-      {barre}
       {children}
       {compte}
     </div>
@@ -1627,7 +1669,6 @@ function FormulaireBloc({
   valeur,
   resoudre,
   commandesTexte,
-  barre,
   surChangement,
   surChoisirMedia,
 }: {
@@ -1636,12 +1677,6 @@ function FormulaireBloc({
   resoudre: ResoudreMedia
   /** Boîte par laquelle les boutons G I S atteignent le texte sélectionné. */
   commandesTexte: RefObject<CommandesTexteRiche | null>
-  /**
-   * La barre de mise en forme. Elle ne se pose pas à la main : on la confie à
-   * « ChampMisEnForme », qui la place contre son champ. Les formulaires sans
-   * champ texte (galerie, quiz, frise) ne s'en servent tout simplement pas.
-   */
-  barre: ReactNode
   surChangement: (transformation: (valeur: ValeurEmplacement) => ValeurEmplacement) => void
   surChoisirMedia: (type: 'image' | 'video') => void
 }) {
@@ -1665,7 +1700,6 @@ function FormulaireBloc({
       <div className="pan__formulaire">
         <ChampMisEnForme
           libelle={def.libelle}
-          barre={barre}
           compte={
             <span className="champ__compte">
               {valeur.valeur.length} / {def.maxSignes}
@@ -1691,7 +1725,6 @@ function FormulaireBloc({
       <div className="pan__formulaire">
         <ChampMisEnForme
           libelle={def.libelle}
-          barre={barre}
           compte={
             <span className="champ__compte">
               {valeur.valeur.length} / {def.maxSignes}
@@ -1754,7 +1787,7 @@ function FormulaireBloc({
         </div>
 
         {resolu ? (
-          <ChampMisEnForme libelle="Légende" barre={barre}>
+          <ChampMisEnForme libelle="Légende">
             <input
               aria-label="Légende"
               maxLength={LEGENDE_MAX}
@@ -2133,6 +2166,7 @@ function SelecteurMedia({
   resoudre,
   surChoix,
   surImporter,
+  surSuppression,
   surFermeture,
 }: {
   type: 'image' | 'video'
@@ -2140,9 +2174,23 @@ function SelecteurMedia({
   resoudre: ResoudreMedia
   surChoix: (media: MediaManifeste) => void
   surImporter: () => void
+  surSuppression: (id: string) => void
   surFermeture: () => void
 }) {
   const disponibles = manifeste.medias.filter((media) => media.type === type)
+
+  /** Média dont la croix vient d'être touchée : la carte demande confirmation. */
+  const [aSupprimer, setASupprimer] = useState<string | null>(null)
+
+  // Un média employé quelque part ne doit pas disparaître sous les pieds de la
+  // page qui l'affiche. Plutôt que d'énumérer les endroits possibles (bloc
+  // image, galerie, vignette, fond d'accueil… et ceux à venir), on cherche
+  // l'identifiant dans le contenu entier : c'est un identifiant unique, il ne
+  // peut pas s'y trouver par hasard.
+  const contenuBrut = useMemo(
+    () => JSON.stringify({ pages: manifeste.pages, reglages: manifeste.reglages }),
+    [manifeste.pages, manifeste.reglages],
+  )
 
   return (
     <div className="voile" role="dialog" aria-modal="true" aria-label="Bibliothèque des médias">
@@ -2172,16 +2220,68 @@ function SelecteurMedia({
                   : resolu.type === 'image'
                     ? resolu.url('vignette')
                     : (resolu.poster ?? '')
+              const nom = media.legende || media.id
+              const utilise = contenuBrut.includes(media.id)
               return (
-                <li key={media.id}>
+                <li key={media.id} className="media-case">
                   <button type="button" className="media-carte" onClick={() => surChoix(media)}>
                     {vignette ? (
                       <img className="media-carte__image" src={vignette} alt="" draggable={false} />
                     ) : (
                       <span className="media-carte__image media-carte__image--absente">🎬</span>
                     )}
-                    <span className="media-carte__nom">{media.legende || media.id}</span>
+                    <span className="media-carte__nom">{nom}</span>
                   </button>
+
+                  <button
+                    type="button"
+                    className="media-case__croix"
+                    aria-label={`Supprimer ${nom} de la bibliothèque`}
+                    onClick={() => setASupprimer(media.id)}
+                  >
+                    ✕
+                  </button>
+
+                  {aSupprimer === media.id ? (
+                    <div className="media-case__confirme">
+                      {utilise ? (
+                        <>
+                          <span className="media-case__mot">
+                            Déjà utilisée dans le contenu. Retirez-la d'abord des pages qui
+                            l'affichent.
+                          </span>
+                          <button
+                            type="button"
+                            className="abtn abtn--discret"
+                            onClick={() => setASupprimer(null)}
+                          >
+                            Fermer
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="media-case__mot">Supprimer de la bibliothèque ?</span>
+                          <button
+                            type="button"
+                            className="abtn abtn--danger"
+                            onClick={() => {
+                              surSuppression(media.id)
+                              setASupprimer(null)
+                            }}
+                          >
+                            Supprimer
+                          </button>
+                          <button
+                            type="button"
+                            className="abtn abtn--discret"
+                            onClick={() => setASupprimer(null)}
+                          >
+                            Annuler
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ) : null}
                 </li>
               )
             })}

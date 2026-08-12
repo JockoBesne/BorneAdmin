@@ -15,6 +15,8 @@ declare global {
         nom: string,
         donneesBase64: string,
       ) => Promise<{ chemin: string; octets: number } | null>
+      /** Ferme l'application (administration seule). */
+      quitter: () => Promise<void>
     }
   }
 }

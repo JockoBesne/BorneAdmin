@@ -271,6 +271,13 @@ app.whenReady().then(() => {
   ipcMain.handle('medias:enregistrer-image', (_evenement, nom, donneesBase64) =>
     enregistrerImage(nom, donneesBase64),
   )
+  // Fermeture demandée par l'écran d'administration (Ctrl + Maj + A). C'est
+  // l'interface qui décide : le raccourci n'existe que dans l'administration,
+  // jamais devant un visiteur.
+  ipcMain.handle('app:quitter', () => {
+    sortieAutorisee = true
+    app.quit()
+  })
   creerFenetre()
 
   app.on('activate', () => {
