@@ -48,7 +48,77 @@ Mesuré avant/après sur le contenu d'exemple : image affichée 460 × 259 aprè
 — puis 722 × 406 une fois le plafond porté à 1280 px. C'est bien la hauteur, et
 non la largeur, qui empêchait la photo de s'étendre.
 
-### 1.2 Placer un bloc sur sa ligne — *½ j*
+### 1.2 Placer un bloc sur sa ligne — ~~*½ j*~~ **FAIT (12 août)**
+
+Champ `decalage` sur le bloc, `contenu.decalages[nom]` pour les emplacements,
+tous deux déclarés dans le schéma Zod. Réglé en glissant le bloc dans le vide à
+droite d'une rangée : il se pose à la colonne visée. Rendu par la marge
+intérieure de `.mdl__cellule`, qui englobe le vide — le calcul tombe juste sur la
+grille. Une poignée sur le bord **gauche** a été essayée dans les deux sens
+(déplacer le bord, puis déplacer le bloc entier) : **refusée deux fois**, elle
+restait immobile pendant que le bloc bougeait. Ne pas la remettre.
+
+### 1.4 Montrer le redimensionnement **avant** le dépôt — *½ j*
+
+**Le problème.** Pendant qu'on glisse un bloc, on ne voit pas ce que le dépôt va
+faire aux blocs **déjà là**. Sur une rangée pleine, `placerCellule` partage les
+colonnes (le voisin passe à la moitié) : le bloc déposé et son voisin changent
+tous les deux de taille, et on ne l'apprend qu'après. Ce qui existe aujourd'hui
+ne le dit pas :
+
+- `emp--depot-<ou>` allume **un bord** du bloc visé — il dit « ici », pas
+  « voilà la taille que tu auras » ;
+- `.edit__fantome` (cadre pointillé) donne la place exacte, mais **seulement**
+  pour un dépôt dans le vide d'une rangée, et seulement pour le bloc déposé.
+
+**Ce qu'il faut.** Étendre le fantôme à **toute la rangée visée**, telle qu'elle
+sera après le dépôt : un cadre par bloc, aux largeurs d'après.
+
+**Comment — la bonne façon, sans dupliquer les règles.** `placerCellule` est une
+fonction **pure** (contenu → contenu) : pendant le glissement, l'appeler pour
+obtenir le contenu tel qu'il serait, puis dessiner la rangée depuis ce résultat.
+
+1. dans `auPointeurDeplace`, à côté de `setDepot`, calculer
+   `placerCellule(contenu, cleGlisse, depot)` — ne rien enregistrer, c'est un
+   aperçu ;
+2. retrouver la rangée visée avec `rangeesDe(apercu)`, et pour chaque cellule
+   calculer son rectangle avec le même calcul de colonnes que `depotDansLeVide`
+   (`cadreGrille`, largeur d'une colonne, gouttière relue sur la grille) ;
+3. le haut et la hauteur : la bande de la rangée actuelle, comme le fantôme le
+   fait déjà ;
+4. dessiner : le bloc déposé en cadre plein (c'est lui qu'on tient), les blocs
+   déplacés en cadre pointillé plus discret. Tous en `position: fixed` hors de
+   l'aperçu — **surtout pas** dans la toile, dont le `zoom` déplacerait un
+   élément « fixed » (voir `.edit__fantome`).
+
+**Le piège à éviter.** Ne pas recalculer les largeurs « à la main » pour
+l'aperçu : c'est exactement ce qui finit par afficher une chose et en faire une
+autre. Tout doit venir de `placerCellule`.
+
+### 1.5 Texte de la case « Recadrer la photo » écrasé sur le côté — *¼ j*
+
+**Le symptôme.** Dans le panneau d'un bloc photo, l'explication sous « Recadrer
+la photo » est comprimée en une colonne étroite à droite.
+
+**La cause, trouvée.** `.pan input` (`appli.css`, ~ligne 959) impose
+`width: 100 %` à **toute** zone de saisie du panneau. La règle
+`.perso__bascule input` (~ligne 512) a la **même spécificité** (une classe + un
+élément) et vient **avant** : elle perd. La case à cocher fait donc toute la
+largeur, et le texte se serre dans ce qui reste.
+
+**Le correctif.** Monter la spécificité de la règle de la case — le fichier a
+déjà deux précédents pour ce piège exact, `.roue__hex` (nommée à part dans la
+règle des champs) et `.perso .perso__glissiere input` (nommée deux fois). Le plus
+simple ici :
+
+```css
+.perso__bascule input[type='checkbox'] { /* … */ }
+```
+
+L'attribut ajoute assez de spécificité pour l'emporter. Vérifier en même temps
+que la case garde sa taille tactile (22 px) et **aucun** fond ni cadre de champ
+de saisie. Ajouter `flex: 1; min-width: 0` sur `.perso__bascule > span` si le
+texte reste étroit après ça.
 
 Aujourd'hui un bloc d'un quart de largeur reste collé à gauche, et l'espace
 libre de la rangée est perdu. Il faut pouvoir le pousser au centre ou à droite.
@@ -175,12 +245,16 @@ Veille désactivée, pas de verrouillage, mises à jour hors heures d'ouverture.
 
 ## Ordre conseillé
 
-1. ~~**1.1 hauteur des images**~~, ~~**2.2 écriture**~~, ~~**2.3 sauvegarde**~~,
-   ~~**4 retour à l'accueil**~~ — faits.
-2. **2.4 fins de ligne** — avant tout autre commit, sinon l'historique se dégrade.
-3. **2.1 tests** — le schéma Zod est couvert ; enchaîner sur `controles.ts`.
-4. **1.2 placement sur la ligne** — court, et complète la mise en page.
-5. **3.2 empaquetage `.exe`** — dès que le contenu réel du musée existe.
+1. ~~**1.1 hauteur des images**~~, ~~**1.2 placement sur la ligne**~~,
+   ~~**2.2 écriture**~~, ~~**2.3 sauvegarde**~~, ~~**4 retour à l'accueil**~~ —
+   faits.
+2. **1.5 texte de la case « Recadrer »** — un quart d'heure, cause connue.
+3. **1.4 aperçu du redimensionnement avant dépôt** — le dernier point où
+   l'éditeur surprend son utilisateur.
+4. **2.4 fins de ligne** — avant tout autre commit, sinon l'historique se dégrade.
+5. **2.1 tests** — le schéma Zod et `lecture.ts` sont couverts ; enchaîner sur
+   `controles.ts`.
+6. **3.2 empaquetage `.exe`** — dès que le contenu réel du musée existe.
 
 Le reste au fil de l'eau.
 
@@ -188,10 +262,18 @@ Le reste au fil de l'eau.
 
 ## Ce qu'il ne faut pas faire
 
-- **Positionnement libre au pixel** des blocs. La grille garantit qu'une page ne
-  peut ni se trouer ni faire se chevaucher deux blocs. Cette garantie est ce qui
-  permet à quelqu'un qui n'est pas graphiste de produire une page correcte du
-  premier coup — la perdre, c'est perdre le produit.
+- **Positionnement libre au pixel** des blocs. La grille garantit que deux blocs
+  ne peuvent pas se chevaucher, et qu'un vide n'apparaît que là où on l'a demandé
+  (`decalage`). Cette garantie est ce qui permet à quelqu'un qui n'est pas
+  graphiste de produire une page correcte du premier coup — la perdre, c'est
+  perdre le produit.
+- **Couper une photo sans qu'on l'ait demandé.** Une photo est entière par
+  défaut ; seule la case « Recadrer » du panneau autorise le recadrage. Des
+  photos coupées apparues toutes seules ont été le défaut le plus mal vécu de
+  l'éditeur — ne jamais rétablir une hauteur imposée par défaut sur une image.
+- **Redimensionner un bloc parce qu'on l'a déplacé.** Le glisser-déposer ne
+  change une largeur que si le bloc ne rentre pas. Même remarque : c'est vécu
+  comme une perte de contrôle.
 - **Réintroduire un module natif** (`sharp`, `better-sqlite3`). Ils obligent à
   reconstruire à chaque montée de version de Node : personne ne le fera.
 - **Un service à maintenir** (serveur, base de données). La contrainte fondatrice

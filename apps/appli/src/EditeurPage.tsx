@@ -9,10 +9,16 @@ import {
 import {
   COLONNES_GRILLE,
   COLONNES_MIN,
+  DECALAGE_MAX,
   HAUTEUR_MAX,
   HAUTEUR_MIN,
   colonnesDe,
   colonnesEmplacement,
+  colonnesPourPhoto,
+  decalageDe,
+  decalageEmplacement,
+  estRecadre,
+  LARGEUR_TOILE,
   ordreCellules,
   controlerContenu,
   DEFS_BLOCS_LIBRES,
@@ -100,10 +106,9 @@ export function EditeurPage({
   const [couleursOuvertes, setCouleursOuvertes] = useState(false)
   // Glisser-déposer sur l'aperçu : bloc en cours de déplacement, et endroit visé.
   const [glisseId, setGlisseId] = useState<string | null>(null)
-  const [depot, setDepot] = useState<{
-    cle: string
-    ou: 'avant' | 'apres' | 'gauche' | 'droite'
-  } | null>(null)
+  // Une seule déclaration de la forme d'un dépôt, plus bas (« type Depot ») :
+  // en la répétant ici, les deux finissaient par ne plus dire la même chose.
+  const [depot, setDepot] = useState<Depot | null>(null)
 
   // Le manifeste est validé au chargement : le contenu a la forme attendue.
   const contenu = page.contenu as ContenuPage
@@ -218,36 +223,48 @@ export function EditeurPage({
   // Règle la largeur d'un bloc, en colonnes sur la grille de 12. Appelé par la
   // poignée de l'aperçu (glissement) comme par le bouton du panneau (clavier).
   const redimensionnerBloc = (cle: string, colonnes: number) => {
-    const borne = Math.min(COLONNES_GRILLE, Math.max(COLONNES_MIN, Math.round(colonnes)))
     surModification((precedente) => {
       const contenuPage = precedente.contenu as ContenuPage
-
-      // Un bloc ajouté porte sa largeur ; un emplacement du modèle la range
-      // dans « largeurs », parce qu'on ne réécrit pas la déclaration du modèle.
-      if (cle.startsWith('suite:')) {
-        const id = cle.slice('suite:'.length)
-        return {
-          ...precedente,
-          contenu: {
-            ...contenuPage,
-            suite: lireSuite(contenuPage).map((bloc) =>
-              // « largeur » est laissé de côté : « colonnes » l'emporte à la
-              // lecture, et garder l'ancien champ permet d'ouvrir le contenu
-              // avec une version précédente de l'application sans tout perdre.
-              bloc.id === id ? { ...bloc, colonnes: borne } : bloc,
-            ),
-          },
-        }
-      }
-
-      return {
-        ...precedente,
-        contenu: {
-          ...contenuPage,
-          largeurs: { ...(contenuPage.largeurs ?? {}), [cle]: borne },
-        },
-      }
+      // Un bloc ajouté porte sa largeur ; un emplacement du modèle la range dans
+      // « largeurs », parce qu'on ne réécrit pas la déclaration du modèle.
+      // « avecLargeur » connaît cette différence, et laisse l'ancien champ
+      // « largeur » en place — un contenu ouvert avec une version précédente de
+      // l'application ne perd pas tout.
+      //
+      // Le décalage du bloc mange sa largeur possible : les deux tiennent
+      // toujours sur les 12 colonnes.
+      const plafond = COLONNES_GRILLE - decalageDeCle(contenuPage, cle)
+      const largeur = Math.min(plafond, Math.max(COLONNES_MIN, Math.round(colonnes)))
+      return { ...precedente, contenu: avecLargeur(contenuPage, cle, largeur) }
     })
+  }
+
+  /**
+   * Coche / décoche « Recadrer la photo ».
+   *
+   * En cochant, on donne au cadre **la hauteur qu'occupe déjà la photo** : rien
+   * ne bouge à l'écran, la photo n'est pas coupée, et les poignées de hauteur
+   * apparaissent pour la réduire. C'est ce qui rend le réglage sans danger — un
+   * réglage qui recadre au moment où on le coche serait une mauvaise surprise.
+   * En décochant, la photo redevient entière (la hauteur est simplement ignorée).
+   */
+  const basculerRecadrage = (nom: string, actif: boolean) => {
+    // Mesuré avant toute modification, sur la photo elle-même : l'aperçu est
+    // réduit, on repasse donc en pixels de toile.
+    const zone = document
+      .querySelector(`.edit__apercu .emp[data-nom="${nom}"] .b-image__zone`)
+      ?.getBoundingClientRect()
+    const page = document.querySelector('.edit__apercu .mdl')?.getBoundingClientRect()
+    const echelle = page && page.width > 0 ? page.width / LARGEUR_TOILE : 0
+
+    modifierStyle(nom, (style) => {
+      if (actif) return { ...style, recadre: true }
+      const copie = { ...style }
+      delete copie.recadre
+      return copie
+    })
+
+    if (actif && zone && echelle > 0) redimensionnerHauteur(nom, zone.height / echelle)
   }
 
   /** Hauteur d'une image ou d'une galerie, en pixels de toile. */
@@ -323,6 +340,19 @@ export function EditeurPage({
       }
       return valeur
     })
+
+    // Le bloc s'adapte à la photo qu'on vient de lui donner : sa largeur est
+    // réduite juste assez pour que la photo ne fasse pas deux écrans de haut.
+    // On ne touche pas à la photo, qui reste entière — c'est le bloc qui cède.
+    // Une photo recadrée est déjà tenue par la hauteur de son cadre : rien à
+    // faire pour elle.
+    const photo = medias[0]
+    if (photo && defPour(nom)?.type === 'image' && !estRecadre(contenu, nom)) {
+      const actuelles = colonnesDeCle(contenu, nom)
+      const voulues = colonnesPourPhoto(photo.largeur, photo.hauteur, actuelles)
+      if (voulues !== actuelles) redimensionnerBloc(nom, voulues)
+    }
+
     setSelecteur(null)
   }
 
@@ -363,8 +393,26 @@ export function EditeurPage({
   // Événements pointeur, jamais l'API « drag and drop » HTML5 : celle-ci ne
   // fonctionne pas au doigt, et la borne est un écran tactile.
 
-  /** Où le bloc va tomber, tel que le pointeur le désigne. */
-  type Depot = { cle: string; ou: 'avant' | 'apres' | 'gauche' | 'droite' }
+  /**
+   * Où le bloc va tomber, tel que le pointeur le désigne.
+   *
+   * « decalage » et « largeur » ne sont renseignés que pour un dépôt dans le
+   * vide d'une rangée : la place visée y est mesurée sur la grille au moment du
+   * geste, donc le bloc atterrit exactement là où on l'a lâché.
+   */
+  type Depot = {
+    cle: string
+    ou: 'avant' | 'apres' | 'gauche' | 'droite'
+    decalage?: number
+    largeur?: number
+    /**
+     * Emplacement exact où le bloc va se poser, en pixels d'écran — dessiné en
+     * cadre pointillé pendant le geste. Renseigné pour les dépôts dans le vide,
+     * où éclairer un bloc voisin serait trompeur : ce n'est pas contre lui que
+     * le bloc vient se coller, il y a un espace entre les deux.
+     */
+    fantome?: { gauche: number; haut: number; largeur: number; hauteur: number }
+  }
 
   const depart = useRef<{ x: number; y: number; id: string; actif: boolean } | null>(null)
   const vientDeGlisser = useRef(false)
@@ -423,7 +471,12 @@ export function EditeurPage({
     const dessous = document.elementFromPoint(x, y) as HTMLElement | null
     const emplacement = dessous?.closest('.emp[data-nom]') as HTMLElement | null
     const cle = emplacement?.dataset['nom']
-    if (!emplacement || !cle || cle === cleGlisse) return null
+    // Le pointeur ne vise aucun bloc : peut-être le vide laissé à droite d'une
+    // rangée. On s'y pose plutôt que de ne rien faire.
+    if (!emplacement || !cle) {
+      return dessous?.closest('.mdl') ? depotDansLeVide(x, y, cleGlisse) : null
+    }
+    if (cle === cleGlisse) return null
 
     const cadre = emplacement.getBoundingClientRect()
     const fractionX = (x - cadre.left) / cadre.width
@@ -441,6 +494,51 @@ export function EditeurPage({
       return bloc ? colonnesDe(bloc) : COLONNES_GRILLE
     }
     return colonnesEmplacement(contenuPage, cle, modele.emplacements[cle]?.colonnes)
+  }
+
+  /** Décalage actuel d'une cellule : les colonnes vides à sa gauche. */
+  const decalageDeCle = (contenuPage: ContenuPage, cle: string): number => {
+    if (cle.startsWith('suite:')) {
+      const bloc = lireSuite(contenuPage).find((candidat) => `suite:${candidat.id}` === cle)
+      return bloc ? decalageDe(bloc) : 0
+    }
+    return decalageEmplacement(contenuPage, cle, colonnesDeCle(contenuPage, cle))
+  }
+
+  /**
+   * Place qu'une cellule prend sur sa rangée : son décalage **et** sa largeur.
+   * C'est cette mesure qui dit qui tient sur la même rangée que qui.
+   */
+  const occupeDeCle = (contenuPage: ContenuPage, cle: string): number =>
+    decalageDeCle(contenuPage, cle) + colonnesDeCle(contenuPage, cle)
+
+  /** Fixe le décalage d'une cellule. Zéro efface le réglage plutôt que l'écrire. */
+  const avecDecalage = (contenuPage: ContenuPage, cle: string, decalage: number): ContenuPage => {
+    const borne = Math.max(0, Math.min(DECALAGE_MAX, Math.round(decalage)))
+    if (cle.startsWith('suite:')) {
+      const id = cle.slice('suite:'.length)
+      return {
+        ...contenuPage,
+        suite: lireSuite(contenuPage).map((bloc) => {
+          if (bloc.id !== id) return bloc
+          if (borne === 0) {
+            const { decalage: _retire, ...sansDecalage } = bloc
+            return sansDecalage
+          }
+          return { ...bloc, decalage: borne }
+        }),
+      }
+    }
+    if (borne === 0) {
+      // Le rangement disparaît quand il devient vide : une page dont plus aucun
+      // bloc n'est décalé retrouve exactement le fichier qu'elle avait avant.
+      const restant = sansEntree(contenuPage.decalages, cle)
+      return {
+        ...contenuPage,
+        decalages: Object.keys(restant).length > 0 ? restant : undefined,
+      }
+    }
+    return { ...contenuPage, decalages: { ...(contenuPage.decalages ?? {}), [cle]: borne } }
   }
 
   /** Fixe la largeur d'une cellule, au bon endroit selon sa nature. */
@@ -466,21 +564,110 @@ export function EditeurPage({
    * à la ligne dès qu'il n'y a plus la place — la règle même de la grille de
    * l'aperçu, refaite ici pour savoir qui partage sa rangée avec qui.
    */
-  const rangeesDe = (contenuPage: ContenuPage): string[][] => {
+  const rangeesDeCles = (contenuPage: ContenuPage, cles: string[]): string[][] => {
     const rangees: string[][] = []
     let reste = 0
-    for (const cle of ordreCellules(contenuPage, modele)) {
-      const colonnes = colonnesDeCle(contenuPage, cle)
+    for (const cle of cles) {
+      const occupe = occupeDeCle(contenuPage, cle)
       const derniere = rangees[rangees.length - 1]
-      if (derniere && colonnes <= reste) {
+      if (derniere && occupe <= reste) {
         derniere.push(cle)
-        reste -= colonnes
+        reste -= occupe
       } else {
         rangees.push([cle])
-        reste = COLONNES_GRILLE - colonnes
+        reste = COLONNES_GRILLE - occupe
       }
     }
     return rangees
+  }
+
+  const rangeesDe = (contenuPage: ContenuPage): string[][] =>
+    rangeesDeCles(contenuPage, ordreCellules(contenuPage, modele))
+
+  /** Colonnes restées libres à droite d'une rangée, sur les 12 de la grille. */
+  const libreDeRangee = (contenuPage: ContenuPage, rangee: string[]): number =>
+    COLONNES_GRILLE - rangee.reduce((total, cle) => total + occupeDeCle(contenuPage, cle), 0)
+
+  /**
+   * Dépôt dans l'espace resté libre à droite d'une rangée.
+   *
+   * Le pointeur ne vise alors aucun bloc : on cherche la rangée qui se trouve à
+   * cette hauteur, et le bloc s'y pose **à la colonne visée**, à la suite des
+   * blocs déjà là et sans toucher à leurs largeurs. Les colonnes sautées
+   * deviennent un vide — c'est tout l'intérêt : on pousse un bloc vers la
+   * droite au lieu de tout redistribuer.
+   *
+   * La rangée où se trouve déjà le bloc glissé compte comme les autres : c'est
+   * ainsi qu'on écarte deux photos côte à côte sans les déplacer ailleurs.
+   *
+   * Rien n'est proposé si la rangée n'a plus la place minimale d'un bloc : il
+   * passerait à la ligne, ce que le geste n'annonce pas.
+   */
+  const depotDansLeVide = (x: number, y: number, cleGlisse: string): Depot | null => {
+    const grille = document.querySelector('.edit__apercu .mdl__grille')
+    if (!grille) return null
+    const cadreGrille = grille.getBoundingClientRect()
+    const pas = cadreGrille.width / COLONNES_GRILLE
+    if (pas <= 0) return null
+
+    for (const rangee of rangeesDe(contenu)) {
+      const cadres = rangee
+        .map((cle) =>
+          document.querySelector(`.edit__apercu .emp[data-nom="${cle}"]`)?.getBoundingClientRect(),
+        )
+        .filter((cadre): cadre is DOMRect => cadre !== undefined)
+      if (cadres.length === 0) continue
+      const haut = Math.min(...cadres.map((cadre) => cadre.top))
+      const bas = Math.max(...cadres.map((cadre) => cadre.bottom))
+      if (y < haut || y > bas) continue
+
+      // Les blocs de la rangée, le glissé mis à part : c'est après eux qu'on se
+      // pose, et c'est leur total qui dit où commence le vide.
+      const restants = rangee.filter((cle) => cle !== cleGlisse)
+      // Rangée où le bloc glissé est seul : il se pousse **lui-même**, l'ordre
+      // de la page ne change pas. Sans ce cas, viser le vide à droite d'un bloc
+      // isolé ne ferait rien du tout.
+      const dernier = restants[restants.length - 1] ?? cleGlisse
+      const occupe = restants.reduce((total, cle) => total + occupeDeCle(contenu, cle), 0)
+      if (COLONNES_GRILLE - occupe < COLONNES_MIN) return null
+      // Le pointeur doit être dans le vide, pas sur les blocs.
+      if (x <= cadreGrille.left + occupe * pas) continue
+
+      // Colonne visée, aimantée sur la grille, puis bornée : jamais avant le
+      // vide, et toujours assez de place pour afficher le bloc.
+      const debut = Math.min(
+        COLONNES_GRILLE - COLONNES_MIN,
+        Math.max(occupe, Math.floor((x - cadreGrille.left) / pas)),
+      )
+      const largeur = Math.min(
+        colonnesDeCle(contenu, cleGlisse),
+        COLONNES_GRILLE - debut,
+      )
+
+      // Le cadre pointillé, aux vraies dimensions de la place visée. La
+      // gouttière est relue sur la grille plutôt que réécrite ici : les deux ne
+      // peuvent donc pas se contredire. « pas » ne suffirait pas — il vaut une
+      // colonne **plus sa part de gouttière**, ce qui décalerait le cadre.
+      const gouttiere = parseFloat(getComputedStyle(grille).columnGap) || 0
+      const colonne = Math.max(
+        0,
+        (cadreGrille.width - (COLONNES_GRILLE - 1) * gouttiere) / COLONNES_GRILLE,
+      )
+
+      return {
+        cle: dernier,
+        ou: 'droite',
+        decalage: debut - occupe,
+        largeur,
+        fantome: {
+          gauche: cadreGrille.left + debut * (colonne + gouttiere),
+          haut,
+          largeur: largeur * colonne + (largeur - 1) * gouttiere,
+          hauteur: bas - haut,
+        },
+      }
+    }
+    return null
   }
 
   /**
@@ -500,8 +687,11 @@ export function EditeurPage({
     for (const rangee of rangeesDe(apres)) {
       const [cle] = rangee
       if (rangee.length !== 1 || !cle || !accompagnes.has(cle)) continue
-      if (colonnesDeCle(resultat, cle) < COLONNES_GRILLE) {
-        resultat = avecLargeur(resultat, cle, COLONNES_GRILLE)
+      // Toute la largeur **restante** : un bloc poussé vers la droite garde son
+      // espace, il s'élargit seulement jusqu'au bord de la page.
+      const pleine = COLONNES_GRILLE - decalageDeCle(resultat, cle)
+      if (colonnesDeCle(resultat, cle) < pleine) {
+        resultat = avecLargeur(resultat, cle, pleine)
       }
     }
     return resultat
@@ -523,6 +713,24 @@ export function EditeurPage({
   ): ContenuPage | null => {
     const reste = ordreCellules(contenuPage, modele).filter((cle) => cle !== cleGlisse)
 
+    // Le bloc se pousse lui-même dans le vide de sa propre rangée : rien ne
+    // change dans l'ordre de la page, seule sa place sur la rangée bouge.
+    if (depot.cle === cleGlisse) {
+      if (depot.decalage === undefined || depot.largeur === undefined) return null
+      return avecLargeur(
+        avecDecalage(contenuPage, cleGlisse, depot.decalage),
+        cleGlisse,
+        depot.largeur,
+      )
+    }
+
+    // Place libre sur la rangée du voisin, mesurée **avant** l'insertion — et
+    // sur cette liste-ci, d'où le bloc glissé est absent.
+    const rangeeVoisine = rangeesDeCles(contenuPage, reste).find((rangee) =>
+      rangee.includes(depot.cle),
+    )
+    const libre = rangeeVoisine ? libreDeRangee(contenuPage, rangeeVoisine) : 0
+
     let vers = reste.indexOf(depot.cle)
     if (vers < 0) return null
     if (depot.ou === 'apres' || depot.ou === 'droite') vers += 1
@@ -530,23 +738,45 @@ export function EditeurPage({
 
     let resultat: ContenuPage = { ...contenuPage, ordre: reste }
 
-    if (depot.ou === 'gauche' || depot.ou === 'droite') {
-      // Côte à côte : les deux cellules doivent tenir sur les mêmes 12
-      // colonnes. Si le voisin est trop large pour laisser la place minimale,
-      // on partage en deux moitiés ; sinon il garde sa largeur et l'autre
-      // prend le reste.
-      const largeurVoisin = colonnesDeCle(resultat, depot.cle)
-      const partage = largeurVoisin > COLONNES_GRILLE - COLONNES_MIN
-      const colonnesVoisin = partage ? COLONNES_GRILLE / 2 : largeurVoisin
-      resultat = avecLargeur(resultat, depot.cle, colonnesVoisin)
-      resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE - colonnesVoisin)
-    } else {
-      // Déposé au-dessus ou en dessous : le bloc prend **toute la largeur**,
-      // il occupe donc une rangée à lui seul. C'est ce que le geste annonce —
-      // un trait horizontal pleine largeur — et cela évite qu'un bloc resté
-      // en demi-largeur se glisse à côté du voisin sans qu'on l'ait demandé.
-      resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE)
+    // Dépôt dans le vide d'une rangée : la place a été mesurée sur la grille au
+    // moment du geste (voir `depotDansLeVide`), on l'applique telle quelle.
+    if (depot.decalage !== undefined && depot.largeur !== undefined) {
+      resultat = avecDecalage(resultat, cleGlisse, depot.decalage)
+      return avecLargeur(resultat, cleGlisse, depot.largeur)
     }
+
+    // Tout autre dépôt remet le bloc au contact de son voisin : c'est ainsi
+    // qu'on **supprime** un espace qu'on ne veut plus.
+    resultat = avecDecalage(resultat, cleGlisse, 0)
+
+    if (depot.ou === 'gauche' || depot.ou === 'droite') {
+      if (libre >= COLONNES_MIN) {
+        // Il reste de la place sur la rangée : le bloc s'y glisse **tel quel**
+        // (au plus la place disponible) et personne d'autre ne bouge. C'est ce
+        // qui permet de remplir un espace libre, quitte à en laisser un peu.
+        resultat = avecLargeur(
+          resultat,
+          cleGlisse,
+          Math.min(colonnesDeCle(contenuPage, cleGlisse), libre),
+        )
+      } else {
+        // Rangée pleine : les deux cellules doivent tenir sur les mêmes 12
+        // colonnes. Si le voisin est trop large pour laisser la place minimale,
+        // on partage en deux moitiés ; sinon il garde sa largeur et l'autre
+        // prend le reste.
+        const largeurVoisin = colonnesDeCle(resultat, depot.cle)
+        const partage = largeurVoisin > COLONNES_GRILLE - COLONNES_MIN
+        const colonnesVoisin = partage ? COLONNES_GRILLE / 2 : largeurVoisin
+        resultat = avecLargeur(resultat, depot.cle, colonnesVoisin)
+        resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE - colonnesVoisin)
+      }
+    }
+    // Déposé au-dessus ou en dessous : le bloc **garde sa taille**. Il la
+    // prenait auparavant sur toute la largeur, pour être sûr d'occuper une
+    // rangée à lui seul ; mais déplacer un bloc n'est pas demander à le
+    // redimensionner, et se retrouver avec une photo élargie parce qu'on l'a
+    // bougée est la pire des surprises. Le seul cas où sa largeur change
+    // encore est celui où elle ne rentre pas : voir juste au-dessus.
 
     return resultat
   }
@@ -555,7 +785,9 @@ export function EditeurPage({
   const deposerCellule = (cleGlisse: string, depot: Depot) => {
     surModification((precedente) => {
       const avant = precedente.contenu as ContenuPage
-      if (cleGlisse === depot.cle) return precedente
+      // Se déposer sur soi-même ne veut rien dire… sauf pour se pousser dans le
+      // vide de sa propre rangée, où c'est justement le geste attendu.
+      if (cleGlisse === depot.cle && depot.decalage === undefined) return precedente
       if (!ordreCellules(avant, modele).includes(cleGlisse)) return precedente
 
       const apres = placerCellule(avant, cleGlisse, depot)
@@ -761,7 +993,9 @@ export function EditeurPage({
     )
 
     const enGlissement = glisseId === info.nom
-    const vise = depot?.cle === info.nom ? ` emp--depot-${depot.ou}` : ''
+    // Un dépôt qui montre son cadre fantôme n'éclaire aucun bloc : le bloc ne
+    // vient pas se coller contre celui-ci, il se pose plus loin.
+    const vise = depot?.cle === info.nom && !depot.fantome ? ` emp--depot-${depot.ou}` : ''
 
     return (
       <div
@@ -834,6 +1068,7 @@ export function EditeurPage({
         resoudre={resoudre}
         surContenu={(transformation) => modifierEmplacement(nom, transformation)}
         surStyle={(transformation) => modifierStyle(nom, transformation)}
+        surRecadrer={(actif) => basculerRecadrage(nom, actif)}
         surChoisirMedia={(type) => setSelecteur({ nom, type })}
         surFermeture={() => setSelection(null)}
       />
@@ -857,6 +1092,23 @@ export function EditeurPage({
           />
         </ToileBorne>
       </div>
+
+      {/* Place visée pendant un dépôt dans le vide. Posé hors de l'aperçu et en
+          « fixed » : les coordonnées relevées par « getBoundingClientRect » sont
+          celles de l'écran, il n'y a donc aucune conversion à faire — et rien à
+          craindre du « zoom » de la toile, qui ne s'applique pas ici. */}
+      {depot?.fantome ? (
+        <div
+          className="edit__fantome"
+          aria-hidden="true"
+          style={{
+            left: depot.fantome.gauche,
+            top: depot.fantome.haut,
+            width: depot.fantome.largeur,
+            height: depot.fantome.hauteur,
+          }}
+        />
+      ) : null}
 
       <aside className="pan">
         <div className="pan__couleurs">
@@ -1222,12 +1474,9 @@ function IconeFond() {
   )
 }
 
-/** Retire une entrée du rangement des habillages, sans toucher à l'original. */
-function sansEntree(
-  styles: Record<string, StyleBloc> | undefined,
-  nom: string,
-): Record<string, StyleBloc> {
-  const copie = { ...(styles ?? {}) }
+/** Retire une entrée d'un rangement par nom de bloc, sans toucher à l'original. */
+function sansEntree<T>(table: Record<string, T> | undefined, nom: string): Record<string, T> {
+  const copie = { ...(table ?? {}) }
   delete copie[nom]
   return copie
 }
@@ -1345,6 +1594,7 @@ function PanneauBloc({
   resoudre,
   surContenu,
   surStyle,
+  surRecadrer,
   surChoisirMedia,
   surFermeture,
 }: {
@@ -1356,6 +1606,8 @@ function PanneauBloc({
   resoudre: ResoudreMedia
   surContenu: (transformation: (valeur: ValeurEmplacement) => ValeurEmplacement) => void
   surStyle: (transformation: (style: StyleBloc) => StyleBloc) => void
+  /** Coche « Recadrer la photo » : passe par l'éditeur, qui mesure la hauteur. */
+  surRecadrer: (actif: boolean) => void
   surChoisirMedia: (type: 'image' | 'video') => void
   surFermeture: () => void
 }) {
@@ -1401,9 +1653,11 @@ function PanneauBloc({
       <FormulaireBloc
         def={def}
         valeur={valeur}
+        style={style}
         resoudre={resoudre}
         commandesTexte={commandesTexte}
         surChangement={surContenu}
+        surRecadrer={surRecadrer}
         surChoisirMedia={surChoisirMedia}
       />
     </div>
@@ -1667,17 +1921,22 @@ const LEGENDE_MAX = 200
 function FormulaireBloc({
   def,
   valeur,
+  style,
   resoudre,
   commandesTexte,
   surChangement,
+  surRecadrer,
   surChoisirMedia,
 }: {
   def: DefEmplacement
   valeur: ValeurEmplacement
+  /** Sert au seul réglage de photo : « recadrer ». */
+  style: StyleBloc
   resoudre: ResoudreMedia
   /** Boîte par laquelle les boutons G I S atteignent le texte sélectionné. */
   commandesTexte: RefObject<CommandesTexteRiche | null>
   surChangement: (transformation: (valeur: ValeurEmplacement) => ValeurEmplacement) => void
+  surRecadrer?: (actif: boolean) => void
   surChoisirMedia: (type: 'image' | 'video') => void
 }) {
   // Un texte se saisit mis en forme, directement dans le champ.
@@ -1801,6 +2060,27 @@ function FormulaireBloc({
               }
             />
           </ChampMisEnForme>
+        ) : null}
+
+        {/* Le seul endroit d'où une photo peut être coupée : une case à cocher,
+            décochée par défaut. Tant qu'elle l'est, la photo est montrée entière
+            et son bloc suit ses proportions. */}
+        {resolu && def.type === 'image' && surRecadrer ? (
+          <label className="perso__bascule">
+            <input
+              type="checkbox"
+              checked={style.recadre === true}
+              onChange={(evenement) => surRecadrer(evenement.target.checked)}
+            />
+            <span>
+              <strong>Recadrer la photo</strong>
+              <span className="pan__aide">
+                {style.recadre === true
+                  ? 'La photo remplit un cadre dont vous réglez la hauteur (poignées en haut et en bas du bloc). Ce qui dépasse est coupé.'
+                  : 'La photo est montrée entière. Cochez pour choisir vous-même la hauteur du bloc : la photo remplira le cadre et ce qui dépasse sera coupé.'}
+              </span>
+            </span>
+          </label>
         ) : null}
       </div>
     )

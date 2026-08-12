@@ -64,6 +64,11 @@
 
   --b-titre-police: "Source Serif 4", Georgia, "Times New Roman", serif;
   --b-texte-police: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  /* Espace entre deux cellules de la grille de page. Déclaré ici parce que le
+     décalage d'un bloc s'en sert dans son calcul : les deux doivent être
+     d'accord, sinon un bloc poussé à droite ne tombe plus sur la grille. */
+  --gouttiere-grille: 40px;
 }
 
 /* ── Typographie de la borne ─────────────────────────────────────────────── */
@@ -119,11 +124,13 @@
   color: var(--b-accent);
 }
 
+/* Pas de largeur maximale : c'est la largeur du bloc, réglée à la poignée, qui
+   décide de la longueur des lignes. Un plafond de 60 signes laissait un texte
+   posé dans un bloc large n'occuper que la moitié de sa place. */
 .b-corps {
   font-size: 26px;
   line-height: 40px;
   color: var(--b-texte-doux);
-  max-width: 60ch;
 }
 
 .b-corps--clair {
@@ -199,14 +206,20 @@
   width: 100%;
 }
 
-/* Le cadre épouse l'image au lieu de l'inverse : plus de bandes de fond de
-   part et d'autre quand la photo est moins large que la place disponible. */
+/* La photo occupe **tout** son bloc en largeur, et le bloc prend la hauteur que
+   ses proportions demandent. C'est ce qui supprime le vide à l'intérieur d'un
+   bloc photo : il n'y a plus de bande de fond à droite de la photo, jamais.
+   La taille d'un bloc photo se règle donc à sa largeur, et à elle seule. */
 .b-image__zone {
   display: block;
   flex: none;
-  align-self: flex-start;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
+  /* Hauteur réglée à la poignée, ou celle de la photo si personne ne l'a
+     réglée. « auto » est ici essentiel : c'est lui qui fait retomber la hauteur
+     de la photo (100 % d'une hauteur automatique vaut « auto ») sur ses vraies
+     proportions, sans rien couper. */
+  height: var(--hauteur-bloc, auto);
   padding: 0;
   border: 0;
   border-radius: 18px;
@@ -222,19 +235,28 @@
   transform: scale(0.99);
 }
 
-/* L'image garde ses proportions et n'est jamais rognée : on lui donne deux
-   plafonds — la largeur disponible et 620 px de haut — et on la laisse choisir
-   sa taille entre les deux. Aucune dimension n'est imposée, donc rien à couper
-   ni à déformer. */
+/* L'image remplit la largeur de son bloc et garde ses proportions : elle n'est
+   ni rognée ni déformée, et il ne reste aucun vide autour d'elle.
+ *
+ * Une photo plus petite que son bloc est donc agrandie. C'est le prix demandé
+ * pour ne plus voir de bande vide ; si une photo paraît floue, c'est qu'elle est
+ * trop petite pour la place qu'on lui donne — réduire la largeur du bloc la
+ * remet nette.
+ *
+ * Hauteur réglée à la poignée : la photo **recadre** (`object-fit: cover`) au
+ * lieu de rétrécir dans son cadre. C'était ce rétrécissement qui creusait le vide
+ * à sa droite. Le recadrage tourne autour du point focal du média, posé en style
+ * par `BlocImage` : ce n'est pas le centre bête de l'image qui est gardé.
+ *
+ * Hauteur non réglée : le cadre est en hauteur « auto », donc ce « 100 % »
+ * retombe sur « auto » lui aussi et la photo garde ses proportions entières —
+ * rien n'est coupé tant qu'on n'a pas demandé une hauteur. */
 .b-image__fichier {
   display: block;
+  width: 100%;
   max-width: 100%;
-  /* Plafond de hauteur : 620 px d'origine, ou celui réglé à la poignée basse.
-     C'est ce plafond qui empêchait une photo d'occuper toute la largeur d'une
-     cellule large — l'élever la laisse grandir. */
-  max-height: var(--hauteur-bloc, 620px);
-  width: auto;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
 }
 
 .b-galerie {
@@ -340,22 +362,36 @@
  *
  * Emplacements du modèle et blocs ajoutés y sont des cellules de même nature,
  * chacune d'une largeur réglable à la poignée. Les cellules s'enchaînent et
- * passent à la ligne quand la rangée est pleine : une page ne peut donc ni se
- * trouer ni faire se chevaucher deux blocs — c'est ce qui distingue cette
- * grille d'un positionnement libre. */
+ * passent à la ligne quand la rangée est pleine : deux blocs ne peuvent donc
+ * jamais se chevaucher — c'est ce qui distingue cette grille d'un
+ * positionnement libre. Un vide, lui, est possible, mais seulement là où on l'a
+ * demandé : voir le décalage ci-dessous. */
 .mdl__grille {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 40px;
+  gap: var(--gouttiere-grille);
   align-items: start;
   width: 100%;
 }
 
 /* La cellule porte sa largeur (grid-column, posé en style) et sert de repère à
-   la poignée, qui se place sur son bord droit. */
+   la poignée, qui se place sur son bord droit.
+ *
+ * Un bloc poussé vers la droite laisse des colonnes vides derrière lui : sa
+ * cellule les englobe (« span décalage + largeur ») et les rend en marge
+ * intérieure gauche. Le calcul tombe **juste** sur la grille : la cellule
+ * mesure L = t·c + (t−1)·g pour t travées de largeur c séparées de g, donc
+ * une travée avec sa gouttière vaut (L + g) / t — c'est ce que dit la ligne
+ * ci-dessous, où 100 % est la largeur de la cellule.
+ *
+ * Sans décalage, les deux variables sont absentes : la marge vaut zéro et rien
+ * ne change pour les pages déjà écrites. */
 .mdl__cellule {
   position: relative;
   min-width: 0;
+  padding-left: calc(
+    (100% + var(--gouttiere-grille)) * var(--decalage, 0) / var(--travee, 1)
+  );
 }
 
 /* Une galerie n'a pas de hauteur propre : sans plafond, elle prendrait la
@@ -370,13 +406,14 @@
   aspect-ratio: 16 / 9;
 }
 
-/* Poignée de hauteur : même principe, sur le bord bas, et seulement pour les
-   images et les galeries — la hauteur d'un texte découle de son contenu. */
-.mdl__poignee-bas {
+/* Poignées de hauteur : même principe, sur les bords haut et bas, et seulement
+   pour les images et les galeries — la hauteur d'un texte découle de son
+   contenu. Elles passent **au-dessus** des poignées de largeur (z-index) : aux
+   quatre coins, les deux se recouvrent, et c'est le geste vertical qui gagne. */
+.mdl__poignee-hauteur {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -26px;
   height: 52px;
   display: flex;
   align-items: center;
@@ -391,18 +428,26 @@
   z-index: 2;
 }
 
-.mdl__cellule:hover .mdl__poignee-bas,
-.mdl__poignee-bas:focus-visible,
-.mdl__poignee-bas:active {
+.mdl__poignee--bas {
+  bottom: -26px;
+}
+
+.mdl__poignee--haut {
+  top: -26px;
+}
+
+.mdl__cellule:hover .mdl__poignee-hauteur,
+.mdl__poignee-hauteur:focus-visible,
+.mdl__poignee-hauteur:active {
   opacity: 1;
 }
 
-.mdl__poignee-bas .mdl__poignee-barre {
+.mdl__poignee-hauteur .mdl__poignee-barre {
   width: 64px;
   height: 8px;
 }
 
-.mdl__poignee-bas:active .mdl__poignee-barre {
+.mdl__poignee-hauteur:active .mdl__poignee-barre {
   width: 100%;
   border-radius: 6px;
 }

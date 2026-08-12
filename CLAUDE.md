@@ -54,6 +54,19 @@ si le budget de la session est court, on s'arrêterait au milieu.
 3. **Redimensionner les images à l'import** (canvas) — **en attente exprès** :
    à ne lancer que si le poids des photos devient gênant pour de vrai.
 
+**À reprendre en premier — demandé le 2026-08-12, deux points courts sur
+l'éditeur.** Détail, cause et marche à suivre dans **`A-FAIRE.md` § 1.4 et 1.5** :
+
+- **§ 1.5 — texte de la case « Recadrer la photo » écrasé** sur le côté du
+  panneau (*¼ j*). Cause trouvée : `.pan input { width: 100 % }` l'emporte sur
+  `.perso__bascule input`, même spécificité et déclarée plus loin. Correctif dans
+  `A-FAIRE.md`. **Commencer par là**, c'est un quart d'heure.
+- **§ 1.4 — montrer le redimensionnement avant le dépôt** (*½ j*). Pendant qu'on
+  glisse, on ne voit pas que les blocs **déjà sur la rangée visée** vont changer
+  de largeur (partage des colonnes sur une rangée pleine). Étendre le cadre
+  fantôme à toute la rangée, en le calculant avec `placerCellule` — qui est pure,
+  donc utilisable comme aperçu. **Ne pas** refaire ce calcul à la main.
+
 **Sans objet** : l'ancienne « étape 3 — dossier partagé ». Il n'y a **qu'un seul
 ordinateur**, voir ci-dessous.
 
@@ -178,17 +191,57 @@ ordinateur**, voir ci-dessous.
 - **Grille de 12 colonnes** (`COLONNES_GRILLE`, minimum `COLONNES_MIN` = 3) = la
   mise en page de toute la page. Chaque cellule a une largeur réglée à la
   **poignée** sur son bord droit ; les cellules passent à la ligne d'elles-mêmes,
-  donc une page ne peut ni se trouer ni faire se chevaucher deux blocs.
+  donc deux blocs ne peuvent jamais se chevaucher.
+  - **Décalage** (`decalage` sur un bloc, `contenu.decalages[nom]` pour un
+    emplacement) = colonnes laissées **vides à gauche** d'un bloc. C'est le seul
+    moyen de trouer une rangée, et il faut l'avoir demandé : on glisse un bloc
+    dans le vide à droite de sa rangée, il se pose à la colonne visée. Rendu par
+    la marge intérieure de `.mdl__cellule`, qui englobe le vide (`span décalage +
+    largeur`) — le calcul tombe juste sur la grille, il dépend de
+    `--gouttiere-grille`. Tout autre dépôt le remet à zéro : c'est ainsi qu'on
+    supprime un espace. Absent = 0, le comportement d'avant.
+  - **Trois bords se tirent** : le **droit** (la largeur), le **haut** et le
+    **bas** (la hauteur, images et galeries). **Rien à gauche** — deux versions y
+    ont été essayées, déplacer le bord gauche puis déplacer le bloc entier, et
+    toutes deux **refusées par l'utilisateur** : la poignée restait immobile
+    pendant que le bloc bougeait, et le glisser-déposer fait déjà le travail. Ne
+    pas la remettre.
+  - **Photos : une seule règle, et une case pour l'exception.** Une photo est
+    **entière, jamais coupée**, remplit la largeur de son bloc (`width: 100 %`) et
+    le bloc prend ses proportions. Il n'y a donc ni vide dans le bloc, ni hauteur
+    à régler — les poignées haute et basse n'apparaissent pas.
+    - **Exception explicite** : la case « Recadrer la photo » du panneau du bloc
+      (`StyleBloc.recadre`). Cochée, le bloc reçoit une hauteur (poignées haute et
+      basse) et la photo la remplit en se recadrant autour de son point focal.
+      Cocher la case **mesure d'abord la hauteur qu'occupe déjà la photo** : rien
+      ne bouge, rien n'est coupé tant qu'on n'a pas tiré une poignée.
+    - `hauteurCellule` est le seul passage : une photo non recadrée n'a jamais de
+      hauteur imposée, **même si le fichier en contient une** (les hauteurs
+      écrites du temps où elles servaient de plafond sont ignorées, pas effacées).
+      C'est ce qui a fait apparaître des photos coupées sans que personne ne l'ait
+      demandé — le défaut le plus mal vécu de toute la mise en page.
+    - **Choisir une photo rétrécit le bloc** juste assez pour que la photo ne
+      dépasse pas `HAUTEUR_PHOTO_VISEE` (620 px, l'ancien plafond : la mise en
+      page reste familière) — `colonnesPourPhoto`, jamais en dessous de
+      `COLONNES_MIN`, jamais élargi. Sans quoi une photo en hauteur mise en pleine
+      largeur ferait deux écrans. Le bloc cède, la photo n'est pas touchée.
+      Vérifié par `lecture.test.ts`.
+  - **Le glisser-déposer ne redimensionne pas le bloc déposé**, sauf quand il ne
+    rentre pas (rangée trop pleine : partage des colonnes). Un dépôt au-dessus /
+    en dessous lui donnait autrefois la pleine largeur : supprimé — déplacer
+    n'est pas redimensionner. Un bloc déposé peut donc se retrouver côte à côte
+    avec son voisin si sa largeur le permet.
   - Où est rangée la largeur : un bloc ajouté porte `colonnes` ; un emplacement
     du modèle passe par `contenu.largeurs[nom]`. La poignée distingue les deux
     par la clé (`suite:<id>` ou le nom).
   - L'ancien champ `largeur: 'pleine' | 'moitie'` n'est plus écrit mais **reste
     lu** : ne pas le supprimer.
-  - **Hauteur** : seules les images et galeries en ont une réglable (poignée
-    basse) — la hauteur d'un texte découle de son contenu. Rangée dans `hauteur`
-    (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de toile, lue par
-    le rendu via la variable CSS `--hauteur-bloc`. Absente, l'image garde son
-    plafond de 620 px et la galerie ses 260 px.
+  - **Hauteur** : les galeries en ont une réglable, les photos **seulement si on
+    a coché « Recadrer »** (`hauteurReglable(type, recadre)`) — la hauteur d'un
+    texte découle de son contenu, celle d'une vidéo de son cadre 16/9. Rangée dans
+    `hauteur` (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de toile,
+    lue par le rendu via la variable CSS `--hauteur-bloc`. Absente, la galerie
+    fait 260 px.
   - **Le modèle 3 fait exception** : sa composition vidéo est indivisible, ses
     emplacements ne passent pas par la grille. Ses blocs ajoutés, si.
 - **Toile** (`ToileBorne`) = conteneur de référence **1920 px de large**, mis à

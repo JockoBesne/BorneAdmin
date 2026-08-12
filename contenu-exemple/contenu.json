@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-12T13:39:34.109650Z",
+  "genereLe": "2026-08-12T15:17:42.842Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Troisième étage — de l'Antiquité aux années 1970",
@@ -225,6 +225,7 @@
         "suite": [
           {
             "id": "b1",
+            "colonnes": 9,
             "valeur": {
               "type": "texte",
               "valeur": "**Un message en deux nombres**\n\nPour transmettre un message, Chappe utilise un livre de codes où sont répertoriés des lettres, des mots et des expressions. Chaque élément est associé à deux nombres : le premier indique une page du livre, le second une ligne. Ces deux nombres sont ensuite convertis en positions des bras du télégraphe et transmis de tour en tour.\n\nSeuls les directeurs de ligne, situés au départ et à l'arrivée, possèdent le livre de codes. Eux seuls peuvent transformer un message en signaux, puis traduire les signaux reçus en texte. Des contrôleurs, longeant les lignes à cheval, vérifient aléatoirement à la longue-vue si les signaux sont corrects."
@@ -236,6 +237,17 @@
               "type": "texte",
               "valeur": "**Les limites du télégraphe**\n\nLa première ligne reliant Paris à Lille est inaugurée en 1794. Un message peut alors être transmis en moins de dix minutes, contre environ deux jours à cheval. Face à son succès, le réseau est développé dans toute la France, notamment sous Napoléon.\n\nToutefois, son fonctionnement dépend entièrement de la visibilité : la nuit, le brouillard ou les intempéries interrompent les communications. Ces limites poussent les ingénieurs à rechercher un système plus fiable, ouvrant la voie au télégraphe électrique au milieu du XIXᵉ siècle."
             }
+          },
+          {
+            "id": "010081e5-54e2-4d8a-a644-78535ecc6728",
+            "apres": "galerie",
+            "colonnes": 3,
+            "hauteur": 1160,
+            "valeur": {
+              "type": "image",
+              "mediaId": "media-morse-controleur-aerien",
+              "legende": "Le Morse encore employé par les contrôleurs aériens"
+            }
           }
         ],
         "ordre": [
@@ -243,6 +255,7 @@
           "image",
           "texte",
           "galerie",
+          "suite:010081e5-54e2-4d8a-a644-78535ecc6728",
           "suite:b1",
           "suite:b2"
         ],
@@ -261,6 +274,9 @@
       "vignette": "media-morse-manipulateur",
       "contenu": {
         "modele": "t2",
+        "hauteurs": {
+          "galerie": 160
+        },
         "emplacements": {
           "titre": {
             "type": "titre",
@@ -345,24 +361,27 @@
         "suite": [
           {
             "id": "b1",
+            "colonnes": 6,
+            "hauteur": 500,
             "valeur": {
               "type": "image",
               "mediaId": "media-telephone-demoiselle",
               "legende": "Une demoiselle du téléphone à son standard"
-            },
-            "colonnes": 6
+            }
           },
           {
             "id": "b2",
+            "colonnes": 6,
+            "hauteur": 740,
             "valeur": {
               "type": "image",
               "mediaId": "media-telephone-demoiselles-1892",
               "legende": "Un standard téléphonique en 1892"
-            },
-            "colonnes": 6
+            }
           },
           {
             "id": "b3",
+            "colonnes": 6,
             "valeur": {
               "type": "texte",
               "valeur": "**Les demoiselles du téléphone**\n\nDans la vitrine des téléphones, vous pouvez découvrir le téléphone Marty 1910, l'un des modèles emblématiques du début du XXᵉ siècle. À cette époque, les téléphones ne possèdent ni clavier ni cadran permettant de composer directement un numéro. Pour établir une communication, l'utilisateur actionne une manivelle qui génère un courant électrique et signale son appel au standard téléphonique.\n\nLorsqu'il décroche son combiné, il est mis en relation avec une opératrice, surnommée « demoiselle du téléphone ». Après avoir indiqué le nom ou le numéro du correspondant souhaité, celle-ci réalise manuellement le raccordement en reliant les deux lignes sur le standard. Chaque appel nécessite ainsi l'intervention humaine d'une opératrice avant que la conversation puisse commencer.\n\nCe métier exige une grande concentration et une excellente mémoire."
@@ -370,6 +389,7 @@
           },
           {
             "id": "b4",
+            "colonnes": 6,
             "valeur": {
               "type": "texte",
               "valeur": "**Vers l'automatique**\n\nTant que le réseau ne compte qu'un nombre limité d'abonnés, les connexions peuvent être établies rapidement. Mais le réseau s'étoffe et les liaisons deviennent très nombreuses : en 1889, l'ingénieur Strowger invente les premiers centraux téléphoniques automatiques.\n\nVous pouvez également découvrir le téléphone U43, l'un des premiers téléphones produits à grande échelle, à cadran, permettant à chaque abonné d'avoir son numéro."
@@ -381,9 +401,9 @@
           "image",
           "texte",
           "suite:b1",
-          "suite:b2",
           "suite:b3",
-          "suite:b4"
+          "suite:b4",
+          "suite:b2"
         ],
         "styles": {
           "suite:b4": {

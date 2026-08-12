@@ -4,6 +4,7 @@ import {
   BLOC_LIBRE_TEXTE_MAX_SIGNES,
   COLONNES_GRILLE,
   COLONNES_MIN,
+  DECALAGE_MAX,
   HAUTEUR_MAX,
   HAUTEUR_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
@@ -78,6 +79,8 @@ export const schemaBlocLibre = z.object({
   // Largeur en colonnes réglée à la poignée. Bornée ici aussi : un contenu
   // modifié à la main ne doit pas pouvoir produire un bloc illisible.
   colonnes: z.number().int().min(COLONNES_MIN).max(COLONNES_GRILLE).optional(),
+  // Colonnes vides à gauche du bloc. 0 = collé à son voisin, comme avant.
+  decalage: z.number().int().min(0).max(DECALAGE_MAX).optional(),
   hauteur: z.number().int().min(HAUTEUR_MIN).max(HAUTEUR_MAX).optional(),
   valeur: z.discriminatedUnion('type', [
     z.object({
@@ -149,6 +152,9 @@ export const schemaStyleBloc = z.object({
   souligne: z.boolean().optional(),
   alignement: z.enum(['gauche', 'centre', 'droite']).optional(),
   opacite: z.number().int().min(0).max(100).optional(),
+  // Photos : recadrer dans un cadre de hauteur choisie plutôt que montrer la
+  // photo entière. Absent = entière, jamais coupée.
+  recadre: z.boolean().optional(),
 })
 
 export const schemaPageManifeste = z.object({
@@ -168,6 +174,8 @@ export const schemaPageManifeste = z.object({
     largeurs: z
       .record(z.string(), z.number().int().min(COLONNES_MIN).max(COLONNES_GRILLE))
       .optional(),
+    // Décalages des emplacements du modèle : colonnes vides à leur gauche.
+    decalages: z.record(z.string(), z.number().int().min(0).max(DECALAGE_MAX)).optional(),
     hauteurs: z
       .record(z.string(), z.number().int().min(HAUTEUR_MIN).max(HAUTEUR_MAX))
       .optional(),

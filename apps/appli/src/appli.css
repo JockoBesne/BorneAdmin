@@ -496,6 +496,55 @@ button {
   padding: 18px;
 }
 
+/* Réglage à cocher dans le panneau d'un bloc (aujourd'hui : recadrer une photo).
+   Toute la ligne est la cible — libellé et explication comprises : sur un écran
+   tactile, viser la case seule demanderait de la précision au pixel. */
+.perso__bascule {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--b-trait);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.perso__bascule input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 2px 0 0;
+  accent-color: var(--b-accent);
+  cursor: pointer;
+}
+
+.perso__bascule > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.perso__bascule strong {
+  font-size: 15px;
+  color: var(--b-texte);
+}
+
+/* Place visée quand on glisse un bloc dans le vide d'une rangée : un cadre
+   pointillé, aux dimensions exactes de l'endroit où il va se poser. Il remplace
+   le liseré sur le bloc voisin, qui laissait croire que les deux allaient se
+   toucher alors qu'un espace les sépare.
+
+   Ne prend jamais le pointeur (« pointer-events »), sinon il se placerait entre
+   le doigt et la page et le dépôt viserait le cadre lui-même. */
+.edit__fantome {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  border: 3px dashed var(--b-accent);
+  border-radius: 18px;
+  background: rgba(233, 180, 76, 0.14);
+}
+
 /* Panneau des blocs. */
 
 .pan {
