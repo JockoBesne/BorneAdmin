@@ -82,11 +82,133 @@ async function servirMedia(requete) {
   })
 }
 
+// ── Sauvegardes ──────────────────────────────────────────────────────────────
+//
+// contenu.json est le seul fichier du produit : s'il est perdu, tout l'est.
+// Une copie est donc mise de côté avant chaque écriture, et c'est là qu'on
+// vient rechercher de quoi repartir si le fichier courant devient illisible.
+
+const DOSSIER_SAUVEGARDES = path.join(DOSSIER_CONTENU, 'sauvegardes')
+
+/** Au-delà, les plus anciennes sont effacées. Un contenu.json pèse quelques
+ *  dizaines de kilooctets — garder plusieurs jours ne coûte rien. */
+const SAUVEGARDES_MAX = 48
+
+/** Les sauvegardes, de la plus récente à la plus ancienne. */
+function sauvegardes() {
+  try {
+    return fs
+      .readdirSync(DOSSIER_SAUVEGARDES)
+      .filter((nom) => /^contenu-\d+\.json$/.test(nom))
+      .sort()
+      .reverse()
+      .map((nom) => path.join(DOSSIER_SAUVEGARDES, nom))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Copie le contenu courant à côté, avant de l'écraser.
+ *
+ * **Une par heure**, et c'est le nom du fichier qui l'impose : la deuxième
+ * écriture d'une même heure retombe sur un nom déjà pris et ne fait rien.
+ * L'enregistrement est automatique toutes les 600 ms — sans cette retenue,
+ * taper une phrase produirait cinquante copies.
+ *
+ * Rien ici ne doit empêcher l'enregistrement : un disque plein ou un dossier en
+ * lecture seule fait perdre la sauvegarde, pas le travail en cours.
+ */
+function sauvegarder() {
+  try {
+    if (!fs.existsSync(FICHIER_CONTENU)) return
+    fs.mkdirSync(DOSSIER_SAUVEGARDES, { recursive: true })
+
+    const heure = new Date().toISOString().slice(0, 13).replace(/[-T]/g, '')
+    const cible = path.join(DOSSIER_SAUVEGARDES, `contenu-${heure}.json`)
+    if (fs.existsSync(cible)) return
+    fs.copyFileSync(FICHIER_CONTENU, cible)
+
+    // Le nom est de longueur fixe : l'ordre alphabétique est l'ordre du temps.
+    for (const ancienne of sauvegardes().slice(SAUVEGARDES_MAX)) {
+      fs.rmSync(ancienne, { force: true })
+    }
+  } catch (cause) {
+    console.warn('Sauvegarde impossible (sans conséquence sur l’enregistrement) :', cause)
+  }
+}
+
+/** Met de côté un contenu illisible. Jamais d'effacement : il est peut-être
+ *  réparable à la main, et c'est le travail du musée qu'il contient. */
+function ecarterContenuAbime() {
+  try {
+    const horodatage = new Date().toISOString().replace(/[:.]/g, '-')
+    fs.renameSync(FICHIER_CONTENU, `${FICHIER_CONTENU}.abime-${horodatage}`)
+  } catch (cause) {
+    console.warn('Le contenu abîmé n’a pas pu être mis de côté :', cause)
+  }
+}
+
+/**
+ * Contenu de départ, pour un tout premier démarrage.
+ *
+ * Les trois premiers réglages n'ont pas de valeur par défaut dans le schéma Zod
+ * et doivent donc figurer ici. Ils reprennent `REGLAGES_DEFAUT`
+ * (`packages/contenu/src/manifeste.ts`) — le processus principal ne peut pas
+ * importer le paquet TypeScript, il n'est pas construit pour lui.
+ */
+function contenuVide() {
+  return {
+    version: 1,
+    genereLe: new Date().toISOString(),
+    reglages: {
+      titreVeille: 'Musée des Transmissions',
+      sousTitreVeille: "Touchez l'écran pour découvrir l'exposition",
+      minutesAvantVeille: 3,
+      pinAdmin: '1975',
+      couleurFond: '#0e2237',
+      couleurTexte: '#f5f7fa',
+    },
+    pages: [],
+    medias: [],
+  }
+}
+
 // ── Lecture du contenu ───────────────────────────────────────────────────────
 
+/**
+ * Lit le contenu, et se rattrape si le fichier ne s'ouvre pas.
+ *
+ * Un écran d'erreur au milieu d'une salle d'exposition n'est pas une option :
+ * personne ne sera là pour le comprendre. On tente donc, dans l'ordre, le
+ * fichier courant, puis les sauvegardes de la plus récente à la plus ancienne,
+ * puis un contenu vide. Le fichier illisible n'est jamais effacé, seulement
+ * renommé — il porte le travail du musée.
+ */
 function lireContenu() {
-  const brut = fs.readFileSync(FICHIER_CONTENU, 'utf8')
-  return JSON.parse(brut)
+  try {
+    if (fs.existsSync(FICHIER_CONTENU)) {
+      return JSON.parse(fs.readFileSync(FICHIER_CONTENU, 'utf8'))
+    }
+  } catch (cause) {
+    console.error('contenu.json illisible, reprise sur une sauvegarde :', cause)
+    ecarterContenuAbime()
+  }
+
+  for (const sauvegarde of sauvegardes()) {
+    try {
+      const repris = JSON.parse(fs.readFileSync(sauvegarde, 'utf8'))
+      console.warn('Contenu repris de', sauvegarde)
+      ecrireContenu(repris)
+      return repris
+    } catch {
+      // Sauvegarde elle-même abîmée : on essaie la précédente.
+    }
+  }
+
+  const vide = contenuVide()
+  ecrireContenu(vide)
+  return vide
 }
 
 /**
@@ -107,15 +229,40 @@ function ecrireContenu(manifeste) {
   ) {
     throw new Error('Contenu refusé : forme inattendue.')
   }
+
+  sauvegarder()
+
   const temporaire = FICHIER_CONTENU + '.tmp'
-  fs.writeFileSync(temporaire, JSON.stringify(manifeste, null, 2) + '\n', 'utf8')
+  const descripteur = fs.openSync(temporaire, 'w')
+  try {
+    fs.writeFileSync(descripteur, JSON.stringify(manifeste, null, 2) + '\n', 'utf8')
+    // Le renommage seul ne suffit pas. Sans « fsync », le système peut avoir
+    // enregistré le nouveau nom avant le contenu qu'il désigne : une coupure de
+    // courant laisserait alors un contenu.json **vide** — exactement ce que
+    // l'écriture en deux temps est censée empêcher.
+    fs.fsyncSync(descripteur)
+  } finally {
+    fs.closeSync(descripteur)
+  }
   fs.renameSync(temporaire, FICHIER_CONTENU)
 }
 
 /**
+ * Un nom de fichier encore libre dans medias/. Un nom déjà pris reçoit un
+ * suffixe numérique : on n'écrase jamais un média existant, qui peut être
+ * utilisé par d'autres pages que celle qu'on est en train de modifier.
+ */
+function nomLibre(radical, extension) {
+  let nom = radical + extension
+  for (let n = 2; fs.existsSync(path.join(DOSSIER_MEDIAS, nom)); n += 1) {
+    nom = `${radical}-${n}${extension}`
+  }
+  return nom
+}
+
+/**
  * Import d'un média : fenêtre de choix de fichier, puis copie dans le dossier
- * des médias. Un nom déjà pris reçoit un suffixe numérique — on n'écrase
- * jamais un média existant, qui peut être utilisé par d'autres pages.
+ * des médias.
  *
  * Les dimensions et la durée sont mesurées par l'interface (moteur de la
  * fenêtre), pas ici : pas de module natif d'images (décision de CONTEXTE.md).
@@ -137,11 +284,7 @@ async function importerMedia(evenement, type) {
   if (choix.canceled || !source) return null
 
   const extension = path.extname(source)
-  const radical = path.basename(source, extension)
-  let nom = radical + extension
-  for (let n = 2; fs.existsSync(path.join(DOSSIER_MEDIAS, nom)); n += 1) {
-    nom = `${radical}-${n}${extension}`
-  }
+  const nom = nomLibre(path.basename(source, extension), extension)
 
   const cible = path.join(DOSSIER_MEDIAS, nom)
   fs.copyFileSync(source, cible)
@@ -171,15 +314,113 @@ function enregistrerImage(nomSouhaite, donneesBase64) {
       .replace(/[^a-zA-Z0-9_-]+/g, '-')
       .slice(0, 60) || 'couverture'
 
-  let nom = `${radical}.jpg`
-  for (let n = 2; fs.existsSync(path.join(DOSSIER_MEDIAS, nom)); n += 1) {
-    nom = `${radical}-${n}.jpg`
-  }
+  const nom = nomLibre(radical, '.jpg')
 
   const octets = Buffer.from(String(donneesBase64 ?? ''), 'base64')
   if (octets.length === 0) return null
   fs.writeFileSync(path.join(DOSSIER_MEDIAS, nom), octets)
   return { chemin: nom, octets: octets.length }
+}
+
+// ── Transport d'une page d'un ordinateur à l'autre ───────────────────────────
+//
+// Un export est un **dossier** « Ma page.bornepage » : un page.json et les
+// médias de la page, copiés tels quels. Pas d'archive : Node n'en sait pas
+// fabriquer sans dépendance, et surtout une vidéo de 300 Mo passerait alors
+// entièrement en mémoire. Ici chaque fichier est copié par le système, à coût
+// constant — et arrive octet pour octet, ce qui est la condition d'une page
+// identique sur les deux machines.
+
+/** Un titre de page devient un nom de dossier acceptable par Windows. */
+function nomDossierExport(titre) {
+  const propre = String(titre ?? '')
+    .replace(/[\\/:*?"<>|]+/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60)
+  return (propre || 'page') + '.bornepage'
+}
+
+/**
+ * Écrit un dossier d'export à l'endroit choisi (typiquement une clé USB).
+ * L'interface a déjà préparé le contenu du page.json et la liste des fichiers :
+ * ici on ne fait qu'écrire et copier.
+ */
+async function exporterPage(evenement, donnees, fichiers) {
+  const fenetre = BrowserWindow.fromWebContents(evenement.sender)
+  const choix = await dialog.showOpenDialog(fenetre, {
+    title: 'Où déposer la page ? (clé USB, dossier…)',
+    buttonLabel: 'Exporter ici',
+    properties: ['openDirectory', 'createDirectory'],
+  })
+
+  const parent = choix.filePaths[0]
+  if (choix.canceled || !parent) return null
+
+  // Un export déjà présent n'est pas écrasé : on ne sait pas ce qu'il contient.
+  const radical = nomDossierExport(donnees?.page?.titre)
+  let dossier = path.join(parent, radical)
+  for (let n = 2; fs.existsSync(dossier); n += 1) dossier = path.join(parent, `${radical} (${n})`)
+
+  fs.mkdirSync(path.join(dossier, 'medias'), { recursive: true })
+  fs.writeFileSync(path.join(dossier, 'page.json'), JSON.stringify(donnees, null, 2) + '\n', 'utf8')
+
+  for (const nom of Array.isArray(fichiers) ? fichiers : []) {
+    const source = path.join(DOSSIER_MEDIAS, path.basename(String(nom)))
+    if (fs.existsSync(source)) {
+      fs.copyFileSync(source, path.join(dossier, 'medias', path.basename(String(nom))))
+    }
+  }
+
+  return dossier
+}
+
+/**
+ * Ouvre un dossier d'export et rend son page.json tel quel. La validation est
+ * faite par l'interface, avec le même schéma Zod qu'à l'écriture.
+ */
+async function lireExportPage(evenement) {
+  const fenetre = BrowserWindow.fromWebContents(evenement.sender)
+  const choix = await dialog.showOpenDialog(fenetre, {
+    title: 'Choisir la page à importer (dossier « .bornepage »)',
+    buttonLabel: 'Importer',
+    properties: ['openDirectory'],
+  })
+
+  const dossier = choix.filePaths[0]
+  if (choix.canceled || !dossier) return null
+
+  const fichier = path.join(dossier, 'page.json')
+  if (!fs.existsSync(fichier)) {
+    throw new Error("Ce dossier n'est pas une page exportée : il n'y a pas de page.json.")
+  }
+  return { dossier, donnees: JSON.parse(fs.readFileSync(fichier, 'utf8')) }
+}
+
+/**
+ * Copie dans medias/ les fichiers réclamés par un import, et dit sous quel nom
+ * chacun a été rangé — un nom déjà pris est décalé, jamais écrasé.
+ *
+ * Les noms venus du page.json sont réduits à leur dernière partie
+ * (`path.basename`) : un fichier d'export bricolé à la main ne doit pas pouvoir
+ * désigner quoi que ce soit hors de ces deux dossiers.
+ */
+function importerMediasPage(dossier, fichiers) {
+  fs.mkdirSync(DOSSIER_MEDIAS, { recursive: true })
+  const correspondance = {}
+
+  for (const brut of Array.isArray(fichiers) ? fichiers : []) {
+    const nom = path.basename(String(brut))
+    const source = path.join(String(dossier), 'medias', nom)
+    if (!nom || !fs.existsSync(source)) continue
+
+    const extension = path.extname(nom)
+    const cible = nomLibre(path.basename(nom, extension), extension)
+    fs.copyFileSync(source, path.join(DOSSIER_MEDIAS, cible))
+    correspondance[nom] = cible
+  }
+
+  return correspondance
 }
 
 // ── Fenêtre ──────────────────────────────────────────────────────────────────
@@ -257,6 +498,10 @@ function creerFenetre() {
 }
 
 app.whenReady().then(() => {
+  // Un dossier de contenu tout neuf n'a pas encore de medias/ : le créer ici
+  // évite que le premier import échoue sur une installation fraîche.
+  fs.mkdirSync(DOSSIER_MEDIAS, { recursive: true })
+
   protocol.handle('media', servirMedia)
   ipcMain.handle('contenu:lire', () => lireContenu())
   ipcMain.handle('contenu:ecrire', (_evenement, manifeste) => ecrireContenu(manifeste))
@@ -265,6 +510,13 @@ app.whenReady().then(() => {
   )
   ipcMain.handle('medias:enregistrer-image', (_evenement, nom, donneesBase64) =>
     enregistrerImage(nom, donneesBase64),
+  )
+  ipcMain.handle('page:exporter', (evenement, donnees, fichiers) =>
+    exporterPage(evenement, donnees, fichiers),
+  )
+  ipcMain.handle('page:lire-export', (evenement) => lireExportPage(evenement))
+  ipcMain.handle('page:importer-medias', (_evenement, dossier, fichiers) =>
+    importerMediasPage(dossier, fichiers),
   )
   creerFenetre()
 

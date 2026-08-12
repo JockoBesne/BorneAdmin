@@ -228,11 +228,40 @@ export const schemaManifeste = z.object({
   medias: z.array(schemaMediaManifeste),
 })
 
+/**
+ * Une page sortie de l'application, destinée à en réintégrer une autre — on
+ * prépare le contenu au calme sur un ordinateur de bureau, on l'apporte à la
+ * borne sur une clé USB.
+ *
+ * Le fichier `page.json` d'un dossier d'export suit ce schéma. Il est validé à
+ * l'écriture **et** à la lecture, comme le contenu lui-même : une page abîmée
+ * est refusée avant d'entrer dans la borne, jamais après.
+ *
+ * Les deux couleurs ne sont pas décoratives : une page qui n'a pas de couleurs
+ * propres suit le thème de **sa** machine. Sans ce relevé, elle changerait
+ * d'aspect en changeant d'ordinateur — voir `integrerImport` dans
+ * `transfert.ts`.
+ */
+export const VERSION_EXPORT = 1
+
+export const schemaExportPage = z.object({
+  format: z.literal('borne-page'),
+  version: z.number().int().positive(),
+  exporteLe: z.string(),
+  /** Couleurs de la borne d'origine, pour juger de la fidélité à l'import. */
+  couleurFond: z.string().regex(COULEUR),
+  couleurTexte: z.string().regex(COULEUR),
+  page: schemaPageManifeste,
+  /** Uniquement les médias dont la page se sert, fiches complètes. */
+  medias: z.array(schemaMediaManifeste),
+})
+
 export type FichierMediaManifeste = z.infer<typeof schemaFichierMedia>
 export type MediaManifeste = z.infer<typeof schemaMediaManifeste>
 export type PageManifeste = z.infer<typeof schemaPageManifeste>
 export type Reglages = z.infer<typeof schemaReglages>
 export type Manifeste = z.infer<typeof schemaManifeste>
+export type ExportPage = z.infer<typeof schemaExportPage>
 
 export const REGLAGES_DEFAUT: Reglages = {
   titreVeille: 'Musée des Transmissions',

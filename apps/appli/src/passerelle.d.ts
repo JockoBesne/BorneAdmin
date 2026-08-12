@@ -14,6 +14,12 @@ declare global {
         nom: string,
         donneesBase64: string,
       ) => Promise<{ chemin: string; octets: number } | null>
+      exporterPage: (donnees: unknown, fichiers: string[]) => Promise<string | null>
+      lireExportPage: () => Promise<{ dossier: string; donnees: unknown } | null>
+      importerMediasPage: (
+        dossier: string,
+        fichiers: string[],
+      ) => Promise<Record<string, string>>
     }
   }
 }

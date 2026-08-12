@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-05T14:16:28.627Z",
+  "genereLe": "2026-08-12T08:45:09.524Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Touchez l'écran pour découvrir l'exposition",
@@ -236,7 +236,18 @@
               }
             ]
           }
-        }
+        },
+        "suite": [
+          {
+            "id": "4d3bb3e5-e2c5-4674-9574-f6dd3bdda183",
+            "apres": "galerie",
+            "valeur": {
+              "type": "video",
+              "mediaId": "media-video",
+              "legende": "Vidéo de test"
+            }
+          }
+        ]
       }
     },
     {

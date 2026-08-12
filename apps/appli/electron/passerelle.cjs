@@ -22,4 +22,11 @@ contextBridge.exposeInMainWorld('borne', {
   /** Écrit dans medias/ une image fabriquée par l'interface (couverture vidéo). */
   enregistrerImage: (nom, donneesBase64) =>
     ipcRenderer.invoke('medias:enregistrer-image', nom, donneesBase64),
+  /** Dépose un dossier « .bornepage » à l'endroit choisi. Null si annulé. */
+  exporterPage: (donnees, fichiers) => ipcRenderer.invoke('page:exporter', donnees, fichiers),
+  /** Ouvre un dossier « .bornepage » et rend son page.json. Null si annulé. */
+  lireExportPage: () => ipcRenderer.invoke('page:lire-export'),
+  /** Copie dans medias/ les fichiers d'un import ; rend les noms retenus. */
+  importerMediasPage: (dossier, fichiers) =>
+    ipcRenderer.invoke('page:importer-medias', dossier, fichiers),
 })

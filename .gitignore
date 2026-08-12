@@ -4,6 +4,8 @@ dist/
 
 # Données d'exécution (jamais versionnées : elles appartiennent au musée)
 donnees/
+sauvegardes/
+*.abime-*
 *.db
 *.db-wal
 *.db-shm

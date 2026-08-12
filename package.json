@@ -13,6 +13,7 @@
     "appli": "npm run demarrer -w @borne/appli",
     "construire": "npm run construire -w @borne/appli",
     "verifier": "tsc -p apps/appli/tsconfig.json",
+    "tester": "node --experimental-strip-types --import ./scripts/ts.mjs --test packages/contenu/src/*.test.ts",
     "reparer-electron": "node node_modules/electron/install.js"
   },
   "devDependencies": {

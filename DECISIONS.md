@@ -6,6 +6,43 @@ Format : **contexte → décision → pourquoi**.
 
 ---
 
+## 2026-08-12 — Transport d'une page par clé USB (export / import)
+
+**Contexte.** La décision du 2026-08-04 (« un seul ordinateur ») tenait pour le
+*stockage* du contenu, mais laissait un problème de travail : préparer une page
+demande de rester devant la borne, en salle d'exposition, aux heures d'ouverture.
+Le personnel veut pouvoir rédiger au calme, sur son propre ordinateur.
+
+**Décision.** Une page s'**exporte** dans un dossier `Nom.bornepage` (un
+`page.json` et les médias qu'elle utilise) et se **réimporte** ailleurs. Ni
+dossier partagé, ni copie périodique, ni poste maître : l'utilisateur déclenche,
+la clé USB transporte.
+
+**Pourquoi ce n'est pas l'étape 3 réanimée.** Ce qui avait été abandonné, c'est
+la *synchronisation* — deux dépôts de contenu à tenir cohérents, une copie au
+démarrage puis périodique, une publication versionnée. Ici il n'y a rien à tenir
+cohérent : une page part, une page arrive, chacune à la demande. La borne reste
+seule maîtresse de son `contenu.json`.
+
+**Pourquoi un dossier et non une archive.** Node ne sait pas fabriquer un `.zip`
+sans dépendance, et le contourner en glissant les médias encodés dans le JSON
+ferait passer une vidéo de 300 Mo entièrement en mémoire, gonflée d'un tiers.
+Un dossier se copie fichier par fichier, à coût constant, et les médias arrivent
+octet pour octet — c'est la condition d'une page identique des deux côtés.
+
+**Ce qui garantit la fidélité.** Trois pièges, traités dans `transfert.ts` :
+les identifiants de médias sont **renumérotés** s'ils sont déjà pris ici ; un
+média déjà présent (même empreinte) est **réutilisé** au lieu d'être recopié ; et
+les couleurs de la page sont **figées** si les deux machines n'ont pas le même
+thème — une page sans couleurs propres suit celles de sa borne, elle changerait
+donc d'aspect en arrivant.
+
+**Réserve.** Les deux ordinateurs doivent faire tourner la **même version** de
+l'application. Un modèle ou un champ ajouté d'un côté et pas de l'autre ne se
+transporte pas.
+
+---
+
 ## 2026-08-04 — Un seul ordinateur : l'étape « dossier partagé » disparaît
 
 **Contexte.** `CONTEXTE.md` supposait **deux** postes : un PC de bureau pour

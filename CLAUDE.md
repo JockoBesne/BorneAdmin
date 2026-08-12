@@ -16,6 +16,8 @@ ne pas s'y fier sans vérifier).
 - `npm run appli` — construit l'interface et ouvre la fenêtre (`vite build && electron .`).
 - `npm run construire` — construit seulement (vérifier que ça compile).
 - `npm run verifier` — vérifie les types TypeScript. **Toujours lancer avant de conclure.**
+- `npm run tester` — `node:test` sur `packages/contenu`. Aucune dépendance : le
+  crochet `scripts/ts.mjs` fait résoudre les imports « ./x.js » vers « x.ts ».
 - `npm install` à la racine — installe tout (monorepo npm workspaces).
 - `npm run reparer-electron` — retélécharge le binaire Electron.
 
@@ -25,7 +27,10 @@ ne pas s'y fier sans vérifier).
 F11/Échap), l'accès admin caché, l'éditeur complet (textes, images, vidéos,
 galeries, quiz, frises), l'import de médias depuis l'ordinateur (avec **image de
 couverture** pour les vidéos), les couleurs réglables, le glisser-déposer des
-blocs — **complet** depuis le 2026-08-05, menu d'ajout compris.
+blocs — **complet** depuis le 2026-08-05, menu d'ajout compris. Depuis le
+2026-08-12 : le **mode borne verrouillé** (`kiosk`, aucune touche ne rend le
+bureau, sortie de maintenance Ctrl + Alt + Maj + Q) et l'**export / import d'une
+page** par clé USB (voir `DECISIONS.md`).
 
 **Reste à faire, par ordre d'importance.** Le détail chiffré est dans
 **`A-FAIRE.md`** (liste de travail, estimations en demi-journées) — le résumé
@@ -75,14 +80,25 @@ ordinateur**, voir ci-dessous.
 
 - **`apps/appli/`** — l'application. C'est ici que se fait le travail.
   - `electron/principal.cjs` — processus principal : fenêtre, protocole
-    `media://`, lecture **et écriture** du `contenu.json` (écriture atomique :
-    `.tmp` puis renommage), import de médias (`dialog.showOpenDialog` + copie).
+    `media://`, lecture **et écriture** du `contenu.json`, import de médias
+    (`dialog.showOpenDialog` + copie), transport d'une page.
+    - **Écriture atomique** : `.tmp`, `fsync`, puis renommage. Le `fsync` n'est
+      pas décoratif — sans lui, une coupure de courant peut laisser un fichier
+      vide, le renommage ayant été enregistré avant les octets.
+    - **Sauvegardes** : copie dans `sauvegardes/` avant chaque écriture, au plus
+      une par heure (le nom porte l'heure), 48 gardées. Au démarrage, un
+      `contenu.json` illisible est **renommé** `.abime-<date>` et la sauvegarde
+      la plus récente reprend sa place. Rien n'est jamais effacé.
   - `electron/passerelle.cjs` — `contextBridge` : **la seule** surface exposée à
     l'interface (`window.borne`). Ajouter une capacité = ajouter une ligne ici,
-    **et** son type dans `src/passerelle.d.ts`. Quatre à ce jour : lire et écrire
-    le contenu, importer un média, enregistrer une image fabriquée (couverture).
+    **et** son type dans `src/passerelle.d.ts`. Sept à ce jour : lire et écrire
+    le contenu, importer un média, enregistrer une image fabriquée (couverture),
+    et les trois du transport de page (déposer un export, relire un export,
+    copier ses médias).
   - `src/App.tsx` — bascule visiteur / admin.
   - `src/Visiteur.tsx` — borne : **sommaire d'accueil** (`.hub`) puis les pages.
+    Une page ouverte se referme sur l'accueil après `minutesAvantVeille` sans
+    contact — sauf pendant la lecture d'une vidéo, où le retour est repoussé.
   - `src/AccesAdmin.tsx` — accès caché (coin, appui 5 s, code PIN).
   - `src/Admin.tsx` — liste des pages, panneau « Apparence », enregistrement auto.
   - `src/EditeurPage.tsx` — **le gros fichier** : aperçu fidèle à gauche,
@@ -99,6 +115,9 @@ ordinateur**, voir ci-dessous.
   - `src/lecture.ts` — lecture typée : `lireTexte`, `lireSuite`, **`ordreCellules`**,
     `colonnesDe`…
   - `src/controles.ts` — contrôles affichés dans l'éditeur, messages en français.
+  - `src/transfert.ts` — export / import d'une page (clé USB). **Ne touche pas au
+    disque** : prépare et fusionne des données, la copie des fichiers est faite
+    par `principal.cjs`. C'est ce qui le rend testable — `transfert.test.ts`.
   - `src/modeles/` — les 3 modèles (`t1`, `t2`, `t3`) et leurs emplacements.
   - `src/rendu/` — `RenduPage`, `Modeles.tsx` (dont `RenduGrille`),
     `ateliers.tsx` (**quiz et frise**), `blocs.tsx`, `ToileBorne`, `modeles.css`.

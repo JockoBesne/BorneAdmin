@@ -1,5 +1,11 @@
 import {
+  fichiersDe,
+  integrerImport,
+  mediasManquants,
+  preparerExport,
+  schemaExportPage,
   schemaManifeste,
+  VERSION_EXPORT,
   type Manifeste,
   type MediaManifeste,
   type ProfilImage,
@@ -34,6 +40,56 @@ export async function chargerContenu(): Promise<Manifeste> {
 export async function enregistrerContenu(manifeste: Manifeste): Promise<void> {
   const estampille = { ...manifeste, genereLe: new Date().toISOString() }
   await window.borne.ecrireContenu(schemaManifeste.parse(estampille))
+}
+
+/**
+ * Dépose une page dans un dossier « .bornepage » choisi par l'utilisateur.
+ * Renvoie le chemin écrit, ou null si la fenêtre a été fermée sans choisir.
+ *
+ * Validé par le même schéma qu'à la relecture, avant d'écrire : ce qui part sur
+ * la clé est toujours quelque chose que l'application saura reprendre.
+ */
+export async function exporterPage(manifeste: Manifeste, idPage: string): Promise<string | null> {
+  const donnees = preparerExport(manifeste, idPage)
+  if (!donnees) return null
+  return window.borne.exporterPage(schemaExportPage.parse(donnees), fichiersDe(donnees.medias))
+}
+
+/**
+ * Reprend une page déposée sur une clé.
+ *
+ * Ne modifie rien : renvoie la transformation à passer à « modifier » (dans
+ * Admin.tsx), pour que l'import soit un pas d'historique comme un autre — donc
+ * annulable par Ctrl + Z, comme n'importe quelle fausse manœuvre.
+ *
+ * Seuls les médias absents de la bibliothèque sont recopiés depuis la clé :
+ * réimporter une page dont on n'a changé que le texte ne recopie aucune vidéo.
+ */
+export async function importerPage(manifeste: Manifeste): Promise<{
+  idPage: string
+  titre: string
+  appliquer: (manifeste: Manifeste) => Manifeste
+} | null> {
+  const lu = await window.borne.lireExportPage()
+  if (!lu) return null
+
+  const exporte = schemaExportPage.parse(lu.donnees)
+  if (exporte.version > VERSION_EXPORT) {
+    throw new Error(
+      'Cette page vient d’une version plus récente de l’application. Mettez à jour la borne avant de l’importer.',
+    )
+  }
+
+  const chemins = await window.borne.importerMediasPage(
+    lu.dossier,
+    fichiersDe(mediasManquants(manifeste, exporte)),
+  )
+
+  return {
+    idPage: exporte.page.id,
+    titre: exporte.page.titre,
+    appliquer: (courant) => integrerImport(courant, exporte, chemins),
+  }
 }
 
 function mesurerImage(url: string): Promise<{ largeur: number | null; hauteur: number | null }> {

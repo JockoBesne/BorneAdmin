@@ -75,35 +75,47 @@ tant que le musée ne l'a pas demandé.**
 
 ### 2.1 Tests automatisés — *2 j* — **le manque le plus grave**
 
-Il n'y en a aucun. Chaque modification est vérifiée à la main, et rien
-n'empêche de casser en silence ce qui marchait. Deux régressions l'ont déjà
-montré cette semaine (la règle CSS de l'accès admin supprimée par un nettoyage,
-la poignée cassée par une exception non gardée).
+Presque aucun. Chaque modification est vérifiée à la main, et rien n'empêche de
+casser en silence ce qui marchait. Deux régressions l'ont déjà montré cette
+semaine (la règle CSS de l'accès admin supprimée par un nettoyage, la poignée
+cassée par une exception non gardée).
 
-À couvrir en priorité, dans cet ordre :
+**Amorcé le 2026-08-12** : `npm run tester`, avec `transfert.test.ts` (export /
+import d'une page) et `manifeste.test.ts` (**point 1 ci-dessous, fait**). Reste :
 
-1. **Le schéma Zod** — qu'un contenu valide reste valide après un aller-retour
-   lecture/écriture. C'est ce qui protège contre l'effacement silencieux d'un
-   champ, le piège le plus coûteux de ce projet.
+1. ~~**Le schéma Zod**~~ — fait. Un contenu utilisant *tous* les champs
+   facultatifs doit ressortir identique de deux allers-retours, et le
+   `contenu-exemple` du dépôt doit rester valide. Ajouter un champ à `types.ts`
+   sans le déclarer dans `manifeste.ts` fait maintenant échouer le test.
 2. **Les contrôles avant publication** (`controles.ts`) — messages et gravités.
 3. **La lecture du contenu** (`lecture.ts`) — largeurs, positions, blocs vides.
 4. **Les ateliers** — verdicts du quiz et de la frise.
 
 Outil : `node:test` suffit, aucune dépendance à ajouter.
 
-### 2.2 Écriture du contenu — vérifier l'existant — *½ j*
+### 2.2 Écriture du contenu — ~~*½ j*~~ **FAIT (12 août)**
 
-L'écriture est annoncée atomique (fichier `.tmp` puis renommage). À éprouver
-réellement : couper l'alimentation pendant une écriture ne doit jamais laisser
-un `contenu.json` tronqué. C'est le seul fichier du produit — s'il est perdu,
-tout l'est.
+L'écriture était annoncée atomique (`.tmp` puis renommage) mais ne l'était pas
+tout à fait : sans `fsync`, le système peut enregistrer le nouveau nom avant le
+contenu qu'il désigne, et une coupure de courant laisse un `contenu.json`
+**vide** — précisément ce que le renommage devait empêcher. Le descripteur est
+maintenant synchronisé avant renommage.
 
-### 2.3 Sauvegarde et retour arrière — *1 j*
+### 2.3 Sauvegarde et retour arrière — ~~*1 j*~~ **FAIT pour la sauvegarde (12 août)**
 
-Aujourd'hui : aucun filet. Une fausse manœuvre dans l'administration est
-définitive. Garder les **N dernières versions** du `contenu.json` (datées, dans
-un sous-dossier) et offrir « revenir à la version de… » dans les paramètres.
-Peu de code, beaucoup de tranquillité.
+Une copie de `contenu.json` est mise de côté dans `sauvegardes/` avant chaque
+écriture, **au plus une par heure** (le nom porte l'heure, la deuxième écriture
+de l'heure ne fait rien — l'enregistrement automatique se déclenche toutes les
+600 ms). Les 48 dernières sont gardées.
+
+Au démarrage, un `contenu.json` illisible n'affiche plus d'écran d'erreur : la
+sauvegarde la plus récente est reprise, et le fichier abîmé est **renommé**
+`.abime-<date>`, jamais effacé. Plus rien de lisible du tout : contenu vide, et
+les fichiers abîmés restent à côté.
+
+**Reste à faire** : l'écran « revenir à la version de… » dans l'administration.
+Aujourd'hui la reprise est automatique en cas de fichier cassé, mais revenir
+volontairement à hier demande de copier un fichier à la main. *½ j*
 
 ### 2.4 Fins de ligne CRLF/LF — *½ j*
 
@@ -139,7 +151,7 @@ Veille désactivée, pas de verrouillage, mises à jour hors heures d'ouverture.
 
 | Tâche | Effort | Pourquoi |
 |---|---|---|
-| **Écran de veille** + retour automatique à l'accueil | ½ j | Le réglage existe déjà dans le contenu, il n'est pas branché. Avec l'accueil, un visiteur ne doit pas tomber sur la page laissée par le précédent. |
+| ~~**Retour automatique à l'accueil**~~ | — | **FAIT (12 août).** `minutesAvantVeille` est branché dans `Visiteur.tsx` : après ce délai sans toucher l'écran, la page se referme sur l'accueil. Une vidéo en cours de lecture repousse le retour — le visiteur regarde, justement sans toucher. Reste possible, si le musée le demande : un vrai **écran de veille** (titre + invitation) plutôt que l'accueil. |
 | **Redimensionner les images à l'import** (canvas) | 1 j | Une photo de 8 Mo copiée telle quelle alourdit le dossier et ralentit l'affichage. À faire via le navigateur — **jamais** en réintroduisant `sharp`. |
 | **Image de couverture d'une vidéo** | ½ j | Sans elle, une vidéo est un rectangle noir avant lecture. Extraction par `<video>` + canvas. |
 | **Réordonner les photos d'une galerie** | ½ j | Manque signalé de longue date. |
@@ -163,12 +175,12 @@ Veille désactivée, pas de verrouillage, mises à jour hors heures d'ouverture.
 
 ## Ordre conseillé
 
-1. ~~**1.1 hauteur des images**~~ — fait.
+1. ~~**1.1 hauteur des images**~~, ~~**2.2 écriture**~~, ~~**2.3 sauvegarde**~~,
+   ~~**4 retour à l'accueil**~~ — faits.
 2. **2.4 fins de ligne** — avant tout autre commit, sinon l'historique se dégrade.
-3. **2.1 tests** — à partir du schéma Zod ; chaque jour sans eux coûte plus cher.
+3. **2.1 tests** — le schéma Zod est couvert ; enchaîner sur `controles.ts`.
 4. **1.2 placement sur la ligne** — court, et complète la mise en page.
-5. **4 écran de veille** — court, visible immédiatement par les visiteurs.
-6. **3.1 et 3.2 déploiement** — dès que le contenu réel du musée existe.
+5. **3.2 empaquetage `.exe`** — dès que le contenu réel du musée existe.
 
 Le reste au fil de l'eau.
 

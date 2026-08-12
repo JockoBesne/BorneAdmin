@@ -52,6 +52,50 @@ export function Visiteur() {
   // Couleurs : celles de la page ouverte si elle en a, sinon le thème global.
   // Hors d'une page (l'accueil), celles propres à l'accueil s'il en a.
   const reglages = manifeste?.reglages ?? REGLAGES_DEFAUT
+  const minutesAvantVeille = reglages.minutesAvantVeille
+
+  /*
+   * Retour automatique à l'accueil après un moment sans rien toucher.
+   *
+   * C'est la raison d'être de l'accueil : un visiteur arrive devant un écran que
+   * quelqu'un vient de laisser, et il ne doit pas atterrir au milieu de la page
+   * d'un autre. Le délai se règle depuis l'administration
+   * (« minutesAvantVeille ») — il existait dans le contenu depuis le début sans
+   * être branché.
+   *
+   * Rien à faire sur l'accueil lui-même : on y est déjà.
+   */
+  useEffect(() => {
+    if (!ouverte) return
+
+    const delai = Math.max(1, minutesAvantVeille) * 60_000
+    let minuterie = 0
+
+    // Une vidéo qui joue n'est pas de l'inactivité : le visiteur regarde,
+    // justement sans toucher l'écran. On repousse plutôt que de le couper au
+    // milieu — c'est le cas qui se produirait dès la première vidéo un peu
+    // longue.
+    const videoEnCours = () =>
+      Array.from(document.querySelectorAll('video')).some((video) => !video.paused && !video.ended)
+
+    const armer = () => {
+      window.clearTimeout(minuterie)
+      minuterie = window.setTimeout(() => {
+        if (videoEnCours()) armer()
+        else setOuverte(null)
+      }, delai)
+    }
+
+    armer()
+    window.addEventListener('pointerdown', armer)
+    window.addEventListener('keydown', armer)
+
+    return () => {
+      window.clearTimeout(minuterie)
+      window.removeEventListener('pointerdown', armer)
+      window.removeEventListener('keydown', armer)
+    }
+  }, [ouverte, minutesAvantVeille])
   const style = stylesCouleurs(page ? couleursEffectives(reglages, page) : couleursHub(reglages))
 
   let contenu

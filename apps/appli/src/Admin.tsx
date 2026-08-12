@@ -11,7 +11,14 @@ import {
 import { RenduPage, ToileBorne, type ResoudreMedia } from '@borne/contenu/rendu'
 import { Accueil, ApercuPage } from './Accueil.jsx'
 import { ClavierTactile } from './ClavierTactile.jsx'
-import { chargerContenu, enregistrerContenu, importerMedia, resolveurMedias } from './contenu.js'
+import {
+  chargerContenu,
+  enregistrerContenu,
+  exporterPage,
+  importerMedia,
+  importerPage,
+  resolveurMedias,
+} from './contenu.js'
 import { couleursHub, stylesCouleurs } from './couleurs.js'
 import { EditeurPage } from './EditeurPage.jsx'
 import { RoueCouleur } from './RoueCouleur.jsx'
@@ -52,6 +59,9 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
   const [apparenceOuverte, setApparenceOuverte] = useState(false)
   const [suppression, setSuppression] = useState<string | null>(null)
   const [etat, setEtat] = useState<EtatEnregistrement>('repos')
+  // Compte rendu du dernier import ou export. Une opération sur une clé USB est
+  // la seule action de cet écran dont le résultat ne se voit pas tout seul.
+  const [transfert, setTransfert] = useState<string | null>(null)
   const sale = useRef(false)
 
   // Historique : les états d'avant, et ceux qu'on vient d'annuler. Le contenu
@@ -238,6 +248,41 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
     })
   }
 
+  // ── Transport d'une page (clé USB) ─────────────────────────────────────────
+  // Préparer une page au bureau, l'apporter en salle. L'export ne touche pas au
+  // contenu ; l'import passe par « modifier », donc il s'annule au Ctrl + Z.
+
+  const exporter = (id: string) => {
+    if (!manifeste) return
+    setTransfert(null)
+    exporterPage(manifeste, id)
+      .then((dossier) => {
+        if (dossier) setTransfert(`Page exportée dans ${dossier}`)
+      })
+      .catch((cause: unknown) =>
+        setTransfert(`⚠ Export impossible : ${cause instanceof Error ? cause.message : cause}`),
+      )
+  }
+
+  const importer = () => {
+    if (!manifeste) return
+    setTransfert(null)
+    importerPage(manifeste)
+      .then((reprise) => {
+        if (!reprise) return
+        const remplace = manifeste.pages.some((page) => page.id === reprise.idPage)
+        modifier(reprise.appliquer)
+        setTransfert(
+          remplace
+            ? `« ${reprise.titre} » a remplacé la page du même nom.`
+            : `« ${reprise.titre} » a été ajoutée à la fin de l'accueil.`,
+        )
+      })
+      .catch((cause: unknown) =>
+        setTransfert(`⚠ Import impossible : ${cause instanceof Error ? cause.message : cause}`),
+      )
+  }
+
   const changerCouleur = (
     champ: 'couleurFond' | 'couleurTexte' | 'hubCouleurFond' | 'hubCouleurTexte',
     hex: string,
@@ -389,6 +434,14 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                 : `${manifeste.pages.length} page${manifeste.pages.length > 1 ? 's' : ''} — l'ordre ci-dessous est celui de l'écran d'accueil, de gauche à droite.`}
             </p>
             <div className="admin__entete-boutons">
+              <button
+                type="button"
+                className="abtn"
+                title="Reprendre une page préparée sur un autre ordinateur"
+                onClick={importer}
+              >
+                Importer une page
+              </button>
               <button type="button" className="abtn" onClick={() => setApparenceOuverte(true)}>
                 Apparence
               </button>
@@ -401,6 +454,12 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
               </button>
             </div>
           </div>
+
+          {transfert ? (
+            <p className="admin__message" role="status" aria-live="polite">
+              {transfert}
+            </p>
+          ) : null}
 
           <ul className="admin__pages">
             {manifeste.pages.map((candidate, rang) => (
@@ -474,6 +533,14 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                         onClick={() => dupliquer(candidate.id)}
                       >
                         Dupliquer
+                      </button>
+                      <button
+                        type="button"
+                        className="abtn abtn--discret"
+                        title="Déposer cette page sur une clé USB, pour un autre ordinateur"
+                        onClick={() => exporter(candidate.id)}
+                      >
+                        Exporter
                       </button>
                       <button
                         type="button"
