@@ -57,7 +57,10 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
   const [pageOuverte, setPageOuverte] = useState<string | null>(null)
   const [choixModele, setChoixModele] = useState(false)
   const [apparenceOuverte, setApparenceOuverte] = useState(false)
+  const [accueilOuvert, setAccueilOuvert] = useState(false)
   const [suppression, setSuppression] = useState<string | null>(null)
+  /** Page en cours de glissement dans la liste, s'il y en a une. */
+  const [glissee, setGlissee] = useState<string | null>(null)
   const [etat, setEtat] = useState<EtatEnregistrement>('repos')
   // Compte rendu du dernier import ou export. Une opération sur une clé USB est
   // la seule action de cet écran dont le résultat ne se voit pas tout seul.
@@ -148,6 +151,17 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
   useEffect(() => {
     const auClavier = (evenement: KeyboardEvent) => {
       if (!evenement.ctrlKey && !evenement.metaKey) return
+
+      // Ctrl + Maj + A ferme l'application. Le raccourci est posé ici, dans
+      // l'écran d'administration : devant un visiteur, il n'existe pas. Il est
+      // reconnu même dans un champ de saisie — on vient peut-être de taper, et
+      // c'est justement ce qui est enregistré avant de fermer.
+      if (evenement.shiftKey && evenement.key.toLowerCase() === 'a') {
+        evenement.preventDefault()
+        quitter()
+        return
+      }
+
       const cible = evenement.target as HTMLElement | null
       if (cible?.closest('input, textarea, [contenteditable="true"]')) return
 
@@ -182,16 +196,23 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
     return () => clearTimeout(minuterie)
   }, [manifeste])
 
-  // À la fermeture, une modification encore en attente est écrite avant de
-  // rendre l'écran au visiteur — qui recharge le contenu en revenant.
-  const fermer = () => {
+  // Une modification peut attendre les 600 ms de l'enregistrement automatique :
+  // on l'écrit tout de suite avant de quitter l'écran, sinon la dernière frappe
+  // serait perdue.
+  const ecrireEnAttente = (): Promise<void> => {
     const fin =
       sale.current && manifeste
         ? enregistrerContenu(manifeste).catch(() => {})
         : Promise.resolve()
     sale.current = false
-    void fin.then(surFermeture)
+    return fin
   }
+
+  // Retour à la borne, qui recharge le contenu en revenant.
+  const fermer = () => void ecrireEnAttente().then(surFermeture)
+
+  // Fermeture de l'application entière (Ctrl + Maj + A).
+  const quitter = () => void ecrireEnAttente().then(() => window.borne.quitter())
 
   // ── Opérations sur les pages ───────────────────────────────────────────────
 
@@ -282,6 +303,59 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
         setTransfert(`⚠ Import impossible : ${cause instanceof Error ? cause.message : cause}`),
       )
   }
+
+  /**
+   * Pose une page à la place d'une autre. Appelée pendant le glissement, à
+   * chaque fois que le doigt passe sur une autre ligne : la liste se réordonne
+   * sous le doigt, on voit le résultat avant de lâcher.
+   *
+   * Les modifications rapprochées ne font qu'un pas d'historique (voir
+   * REGROUPEMENT_MS) : un glissement entier s'annule donc d'un seul Ctrl + Z.
+   */
+  const deplacerVers = (id: string, cible: string) =>
+    modifier((m) => {
+      const depart = m.pages.findIndex((page) => page.id === id)
+      const arrivee = m.pages.findIndex((page) => page.id === cible)
+      if (depart < 0 || arrivee < 0 || depart === arrivee) return m
+      const pages = [...m.pages]
+      const [retiree] = pages.splice(depart, 1)
+      if (!retiree) return m
+      pages.splice(arrivee, 0, retiree)
+      return { ...m, pages: renumeroter(pages) }
+    })
+
+  /**
+   * Glissement d'une page dans la liste : on suit le doigt sur la **fenêtre**,
+   * pas sur la poignée.
+   *
+   * La capture du pointeur (`setPointerCapture`, ce qu'emploie l'éditeur de
+   * page) ne convient pas ici : la ligne qu'on tient **change de place** pendant
+   * le geste, et Chromium relâche alors la capture — le glissement s'arrêtait
+   * au premier déplacement, et la ligne restait accrochée au doigt. Défaut
+   * constaté à l'essai.
+   */
+  useEffect(() => {
+    if (!glissee) return
+
+    const bouger = (evenement: PointerEvent) => {
+      // La ligne réellement sous le doigt donne la place où poser la page.
+      const sous = document
+        .elementFromPoint(evenement.clientX, evenement.clientY)
+        ?.closest('.admin__page')
+      const cible = sous?.getAttribute('data-page')
+      if (cible && cible !== glissee) deplacerVers(glissee, cible)
+    }
+    const finir = () => setGlissee(null)
+
+    window.addEventListener('pointermove', bouger)
+    window.addEventListener('pointerup', finir)
+    window.addEventListener('pointercancel', finir)
+    return () => {
+      window.removeEventListener('pointermove', bouger)
+      window.removeEventListener('pointerup', finir)
+      window.removeEventListener('pointercancel', finir)
+    }
+  })
 
   const changerCouleur = (
     champ: 'couleurFond' | 'couleurTexte' | 'hubCouleurFond' | 'hubCouleurTexte',
@@ -424,6 +498,9 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
             }))
           }
           surAjoutMedia={(media) => modifier((m) => ({ ...m, medias: [...m.medias, media] }))}
+          surRetraitMedia={(id) =>
+            modifier((m) => ({ ...m, medias: m.medias.filter((media) => media.id !== id) }))
+          }
         />
       ) : (
         <div className="admin__corps">
@@ -431,7 +508,7 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
             <p className="admin__message">
               {manifeste.pages.length === 0
                 ? 'Aucune page pour le moment.'
-                : `${manifeste.pages.length} page${manifeste.pages.length > 1 ? 's' : ''} — l'ordre ci-dessous est celui de l'écran d'accueil, de gauche à droite.`}
+                : `${manifeste.pages.length} page${manifeste.pages.length > 1 ? 's' : ''} — cet ordre est celui de l'écran d'accueil, de gauche à droite. Glissez une page par sa poignée ⠿, ou servez-vous des flèches.`}
             </p>
             <div className="admin__entete-boutons">
               <button
@@ -441,6 +518,9 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                 onClick={importer}
               >
                 Importer une page
+              </button>
+              <button type="button" className="abtn" onClick={() => setAccueilOuvert(true)}>
+                Écran d'accueil
               </button>
               <button type="button" className="abtn" onClick={() => setApparenceOuverte(true)}>
                 Apparence
@@ -463,7 +543,11 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
 
           <ul className="admin__pages">
             {manifeste.pages.map((candidate, rang) => (
-              <li key={candidate.id} className="admin__page">
+              <li
+                key={candidate.id}
+                data-page={candidate.id}
+                className={`admin__page${glissee === candidate.id ? ' admin__page--glisse' : ''}`}
+              >
                 {suppression === candidate.id ? (
                   <>
                     <span className="admin__page-titre">
@@ -488,6 +572,20 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                   </>
                 ) : (
                   <>
+                    {/* Poignée de déplacement. Événements pointeur, jamais le
+                        « drag and drop » du navigateur : celui-ci ne répond pas
+                        au doigt. Même choix que dans l'éditeur de page. */}
+                    <span
+                      className="admin__poignee"
+                      role="presentation"
+                      title="Glisser pour changer l'ordre"
+                      onPointerDown={(evenement) => {
+                        evenement.preventDefault()
+                        setGlissee(candidate.id)
+                      }}
+                    >
+                      ⠿
+                    </span>
                     <span className="admin__rang">{rang + 1}</span>
                     <button
                       type="button"
@@ -503,22 +601,22 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                       <button
                         type="button"
                         className="abtn abtn--icone"
-                        aria-label="Déplacer cette page vers la gauche dans l'accueil"
-                        title="Vers la gauche dans l'accueil"
+                        aria-label="Monter cette page dans la liste"
+                        title="Monter — la page avance dans l'accueil"
                         disabled={rang === 0}
                         onClick={() => deplacer(candidate.id, -1)}
                       >
-                        ◀
+                        ▲
                       </button>
                       <button
                         type="button"
                         className="abtn abtn--icone"
-                        aria-label="Déplacer cette page vers la droite dans l'accueil"
-                        title="Vers la droite dans l'accueil"
+                        aria-label="Descendre cette page dans la liste"
+                        title="Descendre — la page recule dans l'accueil"
                         disabled={rang === manifeste.pages.length - 1}
                         onClick={() => deplacer(candidate.id, 1)}
                       >
-                        ▶
+                        ▼
                       </button>
                       <button
                         type="button"
@@ -614,120 +712,23 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                     surChangement={(hex) => changerCouleur('couleurTexte', hex)}
                   />
                 </div>
-
-                {/* L'accueil à part : c'est le seul écran que tout visiteur
-                    voit, on peut vouloir le distinguer des pages. Tant qu'on
-                    n'y touche pas, il suit les couleurs ci-dessus. */}
-                <div className="apparence__encart">
-                  <h3 className="apparence__encart-titre">Écran d'accueil</h3>
-                  <p className="apparence__encart-note">
-                    {manifeste.reglages.hubCouleurFond || manifeste.reglages.hubCouleurTexte
-                      ? "Couleurs propres à l'accueil. Les pages ne changent pas."
-                      : "L'accueil suit les couleurs de la borne. Touchez une roue pour lui en donner d'autres."}
-                  </p>
-                  <div className="apparence__couleur">
-                    <span className="champ__libelle">Fond de l'accueil</span>
-                    <RoueCouleur
-                      valeur={manifeste.reglages.hubCouleurFond ?? manifeste.reglages.couleurFond}
-                      surChangement={(hex) => changerCouleur('hubCouleurFond', hex)}
-                    />
-                  </div>
-                  <div className="apparence__couleur">
-                    <span className="champ__libelle">Texte de l'accueil</span>
-                    <RoueCouleur
-                      valeur={manifeste.reglages.hubCouleurTexte ?? manifeste.reglages.couleurTexte}
-                      surChangement={(hex) => changerCouleur('hubCouleurTexte', hex)}
-                    />
-                  </div>
-                  <button type="button" className="abtn abtn--discret" onClick={retablirCouleursHub}>
-                    Remettre les couleurs de la borne
-                  </button>
-
-                  {/* Image de fond de tout l'écran d'accueil. */}
-                  <div className="apparence__couleur">
-                    <span className="champ__libelle">Image de fond</span>
-                    <div className="apparence__image">
-                      <span className="apparence__miniature">
-                        {imageFond ? (
-                          <img src={imageFond.url('moyen')} alt="" />
-                        ) : (
-                          <span aria-hidden="true">◈</span>
-                        )}
-                      </span>
-                      <button type="button" className="abtn" onClick={choisirImageFond}>
-                        {imageFond ? "Changer l'image" : 'Choisir une image'}
-                      </button>
-                      {imageFond ? (
-                        <button
-                          type="button"
-                          className="abtn abtn--discret"
-                          onClick={retirerImageFond}
-                        >
-                          Retirer
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {/* Image de présentation de chaque page sur sa carte. Sans
-                      choix, c'est la première image de la page qui sert. */}
-                  <div className="apparence__couleur">
-                    <span className="champ__libelle">Image de chaque page</span>
-                    <ul className="apparence__vignettes">
-                      {manifeste.pages.map((candidate) => (
-                        <li key={candidate.id} className="apparence__image">
-                          <span className="apparence__miniature">
-                            <ApercuPage page={candidate} media={apercuMedia} />
-                          </span>
-                          <span className="apparence__image-nom">{candidate.titre}</span>
-                          <button
-                            type="button"
-                            className="abtn"
-                            onClick={() => choisirVignette(candidate.id)}
-                          >
-                            {candidate.vignette ? 'Changer' : 'Choisir'}
-                          </button>
-                          {candidate.vignette ? (
-                            <button
-                              type="button"
-                              className="abtn abtn--discret"
-                              onClick={() => retirerVignette(candidate.id)}
-                            >
-                              Automatique
-                            </button>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+                <p className="apparence__encart-note">
+                  Ces couleurs valent pour les pages. L'écran d'accueil se règle à part, par
+                  son propre bouton.
+                </p>
               </div>
 
-              {/* Aperçus vivants : ils suivent chaque réglage au fur et à
-                  mesure. Celui de l'accueil est le composant de la borne
-                  lui-même, mis à l'échelle — il ne peut donc pas mentir. */}
-              <div className="apparence__apercu">
-                <span className="apparence__etiquette">Aperçu de l'accueil</span>
-                <div
-                  className="apparence__toile apparence__toile--accueil"
-                  style={stylesCouleurs(couleursHub(manifeste.reglages))}
-                >
-                  <ToileBorne>
-                    <Accueil manifeste={manifeste} media={apercuMedia} />
-                  </ToileBorne>
+              {/* Aperçu vivant : il suit chaque réglage au fur et à mesure. */}
+              {pageApercu ? (
+                <div className="apparence__apercu">
+                  <span className="apparence__etiquette">Aperçu d'une page</span>
+                  <div className="apparence__toile" style={stylesCouleurs(manifeste.reglages)}>
+                    <ToileBorne>
+                      <RenduPage contenu={pageApercu as ContenuPage} media={apercuMedia} />
+                    </ToileBorne>
+                  </div>
                 </div>
-
-                {pageApercu ? (
-                  <>
-                    <span className="apparence__etiquette">Aperçu d'une page</span>
-                    <div className="apparence__toile" style={stylesCouleurs(manifeste.reglages)}>
-                      <ToileBorne>
-                        <RenduPage contenu={pageApercu as ContenuPage} media={apercuMedia} />
-                      </ToileBorne>
-                    </div>
-                  </>
-                ) : null}
-              </div>
+              ) : null}
             </div>
 
             <div className="pan__actions">
@@ -738,6 +739,122 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                 type="button"
                 className="abtn abtn--principal"
                 onClick={() => setApparenceOuverte(false)}
+              >
+                Terminé
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* L'écran d'accueil a son propre panneau : c'est le seul écran que tout
+          visiteur voit, et il ne se règle pas comme une page — couleurs, image
+          de fond, et image de présentation de chaque carte. Son aperçu est le
+          composant de la borne lui-même, mis à l'échelle : il ne peut donc pas
+          montrer autre chose que ce que verra le visiteur. */}
+      {accueilOuvert && manifeste ? (
+        <div className="voile" role="dialog" aria-modal="true" aria-label="Écran d'accueil">
+          <div className="voile__boite voile__boite--large">
+            <h2 className="voile__titre">Écran d'accueil</h2>
+
+            <div className="apparence">
+              <div className="apparence__reglages">
+                <p className="apparence__encart-note">
+                  {manifeste.reglages.hubCouleurFond || manifeste.reglages.hubCouleurTexte
+                    ? "Couleurs propres à l'accueil. Les pages ne changent pas."
+                    : "L'accueil suit les couleurs de la borne. Touchez une roue pour lui en donner d'autres."}
+                </p>
+                <div className="apparence__couleur">
+                  <span className="champ__libelle">Couleur du fond</span>
+                  <RoueCouleur
+                    valeur={manifeste.reglages.hubCouleurFond ?? manifeste.reglages.couleurFond}
+                    surChangement={(hex) => changerCouleur('hubCouleurFond', hex)}
+                  />
+                </div>
+                <div className="apparence__couleur">
+                  <span className="champ__libelle">Couleur du texte</span>
+                  <RoueCouleur
+                    valeur={manifeste.reglages.hubCouleurTexte ?? manifeste.reglages.couleurTexte}
+                    surChangement={(hex) => changerCouleur('hubCouleurTexte', hex)}
+                  />
+                </div>
+                <button type="button" className="abtn abtn--discret" onClick={retablirCouleursHub}>
+                  Remettre les couleurs de la borne
+                </button>
+
+                {/* Image de fond de tout l'écran d'accueil. */}
+                <div className="apparence__couleur">
+                  <span className="champ__libelle">Image de fond</span>
+                  <div className="apparence__image">
+                    <span className="apparence__miniature">
+                      {imageFond ? (
+                        <img src={imageFond.url('moyen')} alt="" />
+                      ) : (
+                        <span aria-hidden="true">◈</span>
+                      )}
+                    </span>
+                    <button type="button" className="abtn" onClick={choisirImageFond}>
+                      {imageFond ? "Changer l'image" : 'Choisir une image'}
+                    </button>
+                    {imageFond ? (
+                      <button type="button" className="abtn abtn--discret" onClick={retirerImageFond}>
+                        Retirer
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Image de présentation de chaque page sur sa carte. Sans
+                    choix, c'est la première image de la page qui sert. */}
+                <div className="apparence__couleur">
+                  <span className="champ__libelle">Image de chaque page</span>
+                  <ul className="apparence__vignettes">
+                    {manifeste.pages.map((candidate) => (
+                      <li key={candidate.id} className="apparence__image">
+                        <span className="apparence__miniature">
+                          <ApercuPage page={candidate} media={apercuMedia} />
+                        </span>
+                        <span className="apparence__image-nom">{candidate.titre}</span>
+                        <button
+                          type="button"
+                          className="abtn"
+                          onClick={() => choisirVignette(candidate.id)}
+                        >
+                          {candidate.vignette ? 'Changer' : 'Choisir'}
+                        </button>
+                        {candidate.vignette ? (
+                          <button
+                            type="button"
+                            className="abtn abtn--discret"
+                            onClick={() => retirerVignette(candidate.id)}
+                          >
+                            Automatique
+                          </button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="apparence__apercu">
+                <span className="apparence__etiquette">Aperçu de l'accueil</span>
+                <div
+                  className="apparence__toile apparence__toile--accueil"
+                  style={stylesCouleurs(couleursHub(manifeste.reglages))}
+                >
+                  <ToileBorne>
+                    <Accueil manifeste={manifeste} media={apercuMedia} />
+                  </ToileBorne>
+                </div>
+              </div>
+            </div>
+
+            <div className="pan__actions">
+              <button
+                type="button"
+                className="abtn abtn--principal"
+                onClick={() => setAccueilOuvert(false)}
               >
                 Terminé
               </button>

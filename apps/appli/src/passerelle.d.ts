@@ -7,9 +7,10 @@ declare global {
     borne: {
       lireContenu: () => Promise<unknown>
       ecrireContenu: (manifeste: unknown) => Promise<void>
+      /** Plusieurs fichiers peuvent être choisis d'un coup : liste, vide si annulé. */
       importerMedia: (
         type: 'image' | 'video',
-      ) => Promise<{ chemin: string; octets: number; empreinte: string } | null>
+      ) => Promise<{ chemin: string; octets: number; empreinte: string }[]>
       enregistrerImage: (
         nom: string,
         donneesBase64: string,
@@ -20,6 +21,8 @@ declare global {
         dossier: string,
         fichiers: string[],
       ) => Promise<Record<string, string>>
+      /** Ferme l'application (administration seule). */
+      quitter: () => Promise<void>
     }
   }
 }

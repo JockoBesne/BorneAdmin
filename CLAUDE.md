@@ -28,9 +28,15 @@ F11/Échap), l'accès admin caché, l'éditeur complet (textes, images, vidéos,
 galeries, quiz, frises), l'import de médias depuis l'ordinateur (avec **image de
 couverture** pour les vidéos), les couleurs réglables, le glisser-déposer des
 blocs — **complet** depuis le 2026-08-05, menu d'ajout compris. Depuis le
-2026-08-12 : le **mode borne verrouillé** (`kiosk`, aucune touche ne rend le
-bureau, sortie de maintenance Ctrl + Alt + Maj + Q) et l'**export / import d'une
-page** par clé USB (voir `DECISIONS.md`).
+2026-08-12 : le **mode borne verrouillé**, l'**export / import d'une page** par
+clé USB (voir `DECISIONS.md`), le **retour automatique à l'accueil** et les
+**sauvegardes** de `contenu.json`.
+
+**Deux façons de fermer la borne**, arrivées par deux chemins et conservées
+toutes les deux : **Ctrl + Maj + A** depuis l'écran d'administration (elle
+enregistre d'abord, c'est celle à donner au musée) et **Ctrl + Alt + Maj + Q**
+n'importe où, y compris devant un visiteur — la sortie de maintenance, à garder
+pour vous. Les deux passent par `sortieAutorisee` dans `principal.cjs`.
 
 **Reste à faire, par ordre d'importance.** Le détail chiffré est dans
 **`A-FAIRE.md`** (liste de travail, estimations en demi-journées) — le résumé
@@ -91,10 +97,10 @@ ordinateur**, voir ci-dessous.
       la plus récente reprend sa place. Rien n'est jamais effacé.
   - `electron/passerelle.cjs` — `contextBridge` : **la seule** surface exposée à
     l'interface (`window.borne`). Ajouter une capacité = ajouter une ligne ici,
-    **et** son type dans `src/passerelle.d.ts`. Sept à ce jour : lire et écrire
-    le contenu, importer un média, enregistrer une image fabriquée (couverture),
-    et les trois du transport de page (déposer un export, relire un export,
-    copier ses médias).
+    **et** son type dans `src/passerelle.d.ts`. Huit à ce jour : lire et écrire
+    le contenu, importer des médias, enregistrer une image fabriquée
+    (couverture), les trois du transport de page (déposer un export, relire un
+    export, copier ses médias), et fermer l'application.
   - `src/App.tsx` — bascule visiteur / admin.
   - `src/Visiteur.tsx` — borne : **sommaire d'accueil** (`.hub`) puis les pages.
     Une page ouverte se referme sur l'accueil après `minutesAvantVeille` sans
@@ -145,14 +151,17 @@ ordinateur**, voir ci-dessous.
   dans `packages/contenu/src/texte.ts`. **Jamais de HTML stocké** : la saisie
   (`src/ChampTexteRiche.tsx`) relit le champ nœud par nœud, un collage arrive en
   texte brut.
-- **Champ mis en forme** (`ChampMisEnForme`) = un champ texte **et** sa barre
-  d'outils, en un seul composant. Pas de champ texte, pas de barre : la galerie,
-  le quiz, la frise et un média pas encore choisi n'en ont donc aucune.
-  Piège : ne **jamais** envelopper ce champ dans un `<label>` — le libellé
-  désignerait un bouton de la barre, et cliquer dessus écrirait un alignement
-  sur le disque (constaté).
-- **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond, et mise
-  en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
+- **Barre d'apparence** (`BarreMiseEnForme`) = posée **en tête du panneau du
+  bloc**, avant le formulaire. **Tout** bloc sélectionné se règle donc, même
+  sans champ texte (galerie, quiz, frise, photo pas encore choisie). Elle était
+  auparavant confiée au champ texte (`ChampMisEnForme`) : ce n'est plus le cas.
+  Piège toujours valable : ne **jamais** envelopper la barre dans un `<label>` —
+  le libellé désignerait un de ses boutons, et cliquer dessus écrirait un
+  alignement sur le disque (constaté).
+- **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond,
+  **transparence du fond** (`opacite`, 0–100, absente = opaque ; elle ne touche
+  que le fond — le texte posé dessus reste net, et sans fond elle ne fait rien)
+  et mise en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
   clé que partout ailleurs (`titre`, `suite:<id>`). Appliqué par `Habillage`
   dans `rendu/Modeles.tsx`, par où passent tous les blocs. Un bloc sans
   habillage n'est pas enveloppé du tout, et un habillage remis à zéro est retiré

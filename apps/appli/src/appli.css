@@ -293,6 +293,34 @@ button {
   background: var(--b-surface);
 }
 
+/* Poignée de déplacement d'une page. Large : c'est un doigt qui l'attrape, et
+   « touch-action: none » évite que le geste fasse défiler la liste à la place. */
+.admin__poignee {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -10px;
+  color: var(--b-texte-doux);
+  font-size: 20px;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+}
+
+.admin__poignee:hover {
+  color: var(--b-accent);
+}
+
+/* La ligne qu'on tient s'efface un peu : on voit qu'elle est en mouvement, et
+   les lignes qu'elle traverse restent lisibles. */
+.admin__page--glisse {
+  opacity: 0.55;
+  border-color: var(--b-accent);
+}
+
 .admin__rang {
   flex: none;
   width: 30px;
@@ -450,7 +478,12 @@ button {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 400px;
+  /* Le panneau des blocs est ce qu'on manipule le plus, au doigt : il occupe
+     un tiers de la largeur plutôt qu'une colonne fixe et étroite. Borné des
+     deux côtés — jamais moins de 400 px (les formulaires du quiz et de la frise
+     n'y tiendraient plus), jamais plus de 640 px (au-delà, c'est l'aperçu de la
+     page qui deviendrait trop petit pour juger de la mise en page). */
+  grid-template-columns: 1fr clamp(400px, 32vw, 640px);
   /* Borne la hauteur de la ligne à celle de l'éditeur : sans cela la ligne
      grandit avec le contenu et le panneau de droite ne défile pas — on ne peut
      alors pas atteindre le 2ᵉ disque de couleur ni le bouton du bas. */
@@ -745,10 +778,33 @@ button {
   font-size: 12px;
 }
 
-/* La première rangée du formulaire laisse la place à la croix, quelle qu'elle
-   soit : un libellé, une liste de photos ou un simple message. */
+/* La première rangée du panneau laisse la place à la croix, quelle qu'elle
+   soit : la barre d'apparence, un libellé, une liste de photos ou un message. */
+.perso > .barre,
 .perso .pan__formulaire > *:first-child {
   padding-right: 34px;
+}
+
+/* Le curseur de transparence : son libellé au-dessus, comme les autres champs,
+   et une glissière large — on la vise au doigt aussi bien qu'à la souris. */
+.perso__glissiere {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--b-texte);
+}
+
+/* Nommée deux fois pour l'emporter sur « .pan input » : sans cela la glissière
+   hériterait du cadre et du fond d'une zone de saisie, et se retrouverait
+   enfermée dans une boîte noire. Même piège que « .roue__hex ». */
+.perso .perso__glissiere input {
+  width: 100%;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  accent-color: var(--b-accent);
 }
 
 .perso__gras {
@@ -1295,6 +1351,53 @@ button {
   white-space: nowrap;
 }
 
+/* La case porte la carte, sa croix de suppression et la demande de
+   confirmation, qui vient couvrir la carte entière. */
+.media-case {
+  position: relative;
+}
+
+/* Toujours visible : au doigt, il n'y a pas de survol pour la faire venir. */
+.media-case__croix {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(9, 20, 33, 0.75);
+  color: #fff;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.media-case__croix:hover,
+.media-case__croix:focus-visible {
+  background: rgba(255, 155, 145, 0.9);
+  color: #14202e;
+}
+
+.media-case__confirme {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(9, 20, 33, 0.94);
+}
+
+.media-case__mot {
+  font-size: 13px;
+  color: var(--b-texte);
+  text-align: center;
+}
+
 /* ── Apparence : couleurs de la borne ────────────────────────────────────── */
 
 .admin__entete-boutons {
@@ -1326,23 +1429,8 @@ button {
   gap: 10px;
 }
 
-/* Encart de l'écran d'accueil : visiblement à part, sinon on croirait régler
-   les couleurs de toute la borne une deuxième fois. */
-.apparence__encart {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  border: 1px solid var(--b-trait);
-  border-radius: 12px;
-}
-
-.apparence__encart-titre {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-}
-
+/* Phrase d'explication en tête d'un panneau : ce que le réglage touche, et ce
+   qu'il ne touche pas. */
 .apparence__encart-note {
   margin: 0;
   font-size: 13px;
@@ -1605,8 +1693,21 @@ button {
   overflow: hidden;
 }
 
+/* Hauteur **arrêtée**, et pas seulement un plancher comme pour une page : une
+   page peut être plus longue qu'un écran et défiler, l'accueil non. C'est cette
+   hauteur ferme qui permet ensuite aux cartes de se répartir la place au lieu
+   de la réclamer — sans elle, une carte pleine largeur pousse son titre sous le
+   bas de l'écran. */
+.toile--accueil .toile__ecran {
+  height: 100%;
+}
+
 .hub {
   flex: 1;
+  /* Sans cela, l'accueil refuse de descendre sous la hauteur de ses cartes et
+     déborde de l'écran : c'est la règle par défaut d'un élément flexible, qui
+     ne rétrécit jamais en dessous de son contenu. */
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -1657,7 +1758,7 @@ button {
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 29px;
 }
 
@@ -1665,6 +1766,7 @@ button {
    pas une souris — seul le dessin a disparu, pas la cible. */
 .hub__fleche {
   flex: none;
+  align-self: center;
   width: 96px;
   height: 96px;
   border: none;
@@ -1697,11 +1799,19 @@ button {
   min-width: 0;
   display: grid;
   grid-auto-flow: column;
-  /* Trois cartes par écran, quel que soit le nombre de pages. */
-  grid-auto-columns: calc((100% - 2 * 42px) / 3);
-  /* Les cartes valent leur image plus leur titre : sans cela elles s'étireraient
-     sur toute la hauteur de la rangée. */
-  align-items: start;
+  /* Les cartes se partagent la largeur : « --colonnes » vaut le nombre de pages,
+     plafonné à trois, et il est posé par le composant. Une page occupe donc tout
+     l'écran, deux la moitié chacune, trois un tiers — au-delà, on reste au tiers
+     et les suivantes attendent derrière. */
+  grid-auto-columns: calc((100% - (var(--colonnes, 3) - 1) * 42px) / var(--colonnes, 3));
+  /* Les cartes prennent toute la hauteur de la rangée : c'est elle qui commande,
+     pas la largeur — sans cela, une carte pleine largeur serait deux fois plus
+     haute que l'écran. */
+  align-items: stretch;
+  /* La rangée fait la hauteur de la piste, et pas celle de son contenu : sans
+     cela, une carte pleine largeur pousse la rangée sous le bas de l'écran et
+     son titre disparaît. */
+  grid-auto-rows: 100%;
   gap: 42px;
   margin: 0;
   /* De quoi laisser respirer l'ombre et le léger soulèvement d'une carte. */
@@ -1738,8 +1848,6 @@ button {
   overflow: hidden;
   text-align: left;
   cursor: pointer;
-  /* Plus de hauteur imposée : la carte vaut son image plus son titre. */
-  height: auto;
   transition:
     transform 180ms cubic-bezier(0.2, 0, 0.2, 1),
     border-color 180ms ease,
@@ -1768,14 +1876,14 @@ button {
 }
 
 .hub__image {
-  /* Toutes les vignettes au même format : la rangée reste régulière quelles que
-     soient les photos, et le rognage reste léger.
-     6/7 plutôt que 16/9 : la carte est plus haute que large, donc plus visible
-     de loin, sans s'élargir — la largeur, elle, est fixée par les trois par
-     écran. Le rognage est en revanche marqué : une photo paysage perd ses
-     côtés. */
-  flex: none;
-  aspect-ratio: 6 / 7;
+  /* L'image prend toute la place que le titre laisse, sur toute la hauteur de la
+     rangée. Plus de format imposé : la carte n'a plus la même largeur selon le
+     nombre de pages, et un format fixe rendrait une carte pleine largeur deux
+     fois plus haute que l'écran. La photo est cadrée au centre (« cover ») —
+     large et basse quand la carte est large, haute et étroite quand elles sont
+     trois. */
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1930,20 +2038,32 @@ button {
   gap: 6px;
 }
 
+/* Les chiffres sont les touches les plus visées au doigt — une année, une durée,
+   un code — et il y a la place à droite : elles sont donc plus grandes que les
+   lettres. Le clavier n'y gagne qu'une cinquantaine de pixels de hauteur. */
+.clavier__pave .clavier__touche {
+  min-width: 76px;
+  min-height: 66px;
+  font-size: 26px;
+}
+
 .clavier__touche--zero {
   grid-column: span 2;
 }
 
+/* Assez larges pour un doigt, sans que le clavier grandisse en hauteur : les
+   quatre rangées de lettres restent alignées sur celles du pavé des chiffres,
+   qui est plus haut qu'elles. */
 .clavier__touche {
-  min-width: 50px;
-  min-height: 50px;
+  min-width: 66px;
+  min-height: 62px;
   padding: 0 10px;
   border: 1px solid var(--b-trait);
   border-radius: 10px;
   background: var(--b-surface);
   color: var(--b-texte);
   font-family: inherit;
-  font-size: 19px;
+  font-size: 24px;
   cursor: pointer;
 }
 
@@ -1959,13 +2079,13 @@ button {
 }
 
 .clavier__touche--large {
-  min-width: 88px;
-  font-size: 16px;
+  min-width: 112px;
+  font-size: 18px;
 }
 
 .clavier__touche--espace {
-  min-width: 250px;
-  font-size: 16px;
+  min-width: 300px;
+  font-size: 18px;
 }
 
 /* Dans le coin du pavé, à côté du zéro : ronde, pour ne pas se confondre avec

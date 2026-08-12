@@ -48,6 +48,7 @@ const complet = {
           titre: {
             fond: '#ff0000',
             couleur: '#ffffff',
+            opacite: 60,
             gras: true,
             italique: true,
             souligne: true,

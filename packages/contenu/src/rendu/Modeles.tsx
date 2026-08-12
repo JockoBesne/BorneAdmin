@@ -61,8 +61,16 @@ function Habillage({ style, children }: { style: StyleBloc | undefined; children
   if (style.alignement === 'droite') classes.push('b-hab--droite')
   if (classes.length === 1) return <>{children}</>
 
+  // Transparence : elle ne touche que le **fond**, mélangé à du transparent —
+  // le texte et les photos posés dessus restent nets. Sans fond, elle n'a rien
+  // à rendre translucide. (« color-mix » évite de décomposer le « #rrggbb ».)
+  const fond =
+    style.fond !== undefined && style.opacite !== undefined && style.opacite < 100
+      ? `color-mix(in srgb, ${style.fond} ${style.opacite}%, transparent)`
+      : style.fond
+
   return (
-    <div className={classes.join(' ')} style={{ background: style.fond, color: style.couleur }}>
+    <div className={classes.join(' ')} style={{ background: fond, color: style.couleur }}>
       {children}
     </div>
   )
@@ -484,6 +492,18 @@ function renduBlocLibre(
 }
 
 // ── Modèle 1 — Une image, un texte ───────────────────────────────────────────
+
+/**
+ * Modèle 0 — page vierge. Rien d'imposé : la grille affiche les blocs ajoutés,
+ * et seulement eux. Même rendu que les autres, sans emplacement de départ.
+ */
+export function Modele0(props: PropsModele) {
+  return (
+    <article className="mdl mdl-0">
+      <RenduGrille {...props} />
+    </article>
+  )
+}
 
 export function Modele1(props: PropsModele) {
   return (

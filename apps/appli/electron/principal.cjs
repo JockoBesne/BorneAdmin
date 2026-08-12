@@ -251,6 +251,9 @@ function ecrireContenu(manifeste) {
  * Un nom de fichier encore libre dans medias/. Un nom déjà pris reçoit un
  * suffixe numérique : on n'écrase jamais un média existant, qui peut être
  * utilisé par d'autres pages que celle qu'on est en train de modifier.
+ *
+ * Employé par les trois chemins qui écrivent dans medias/ : l'import de
+ * fichiers, l'image de couverture d'une vidéo, et l'import d'une page.
  */
 function nomLibre(radical, extension) {
   let nom = radical + extension
@@ -261,8 +264,11 @@ function nomLibre(radical, extension) {
 }
 
 /**
- * Import d'un média : fenêtre de choix de fichier, puis copie dans le dossier
- * des médias.
+ * Import de médias : fenêtre de choix de fichiers, puis copie dans le dossier
+ * des médias. **Plusieurs fichiers à la fois** (`multiSelections`) : préparer
+ * une galerie ne doit pas demander autant d'allers-retours que de photos.
+ *
+ * Renvoie **la liste** des fichiers copiés, vide si l'utilisateur a annulé.
  *
  * Les dimensions et la durée sont mesurées par l'interface (moteur de la
  * fenêtre), pas ici : pas de module natif d'images (décision de CONTEXTE.md).
@@ -275,26 +281,27 @@ async function importerMedia(evenement, type) {
 
   const fenetre = BrowserWindow.fromWebContents(evenement.sender)
   const choix = await dialog.showOpenDialog(fenetre, {
-    title: type === 'video' ? 'Choisir une vidéo' : 'Choisir une photo',
-    properties: ['openFile'],
+    title: type === 'video' ? 'Choisir une ou plusieurs vidéos' : 'Choisir une ou plusieurs photos',
+    properties: ['openFile', 'multiSelections'],
     filters: filtres,
   })
 
-  const source = choix.filePaths[0]
-  if (choix.canceled || !source) return null
+  if (choix.canceled) return []
 
-  const extension = path.extname(source)
-  const nom = nomLibre(path.basename(source, extension), extension)
+  return choix.filePaths.map((source) => {
+    const extension = path.extname(source)
+    const nom = nomLibre(path.basename(source, extension), extension)
 
-  const cible = path.join(DOSSIER_MEDIAS, nom)
-  fs.copyFileSync(source, cible)
+    const cible = path.join(DOSSIER_MEDIAS, nom)
+    fs.copyFileSync(source, cible)
 
-  const octets = fs.readFileSync(cible)
-  return {
-    chemin: nom,
-    octets: octets.length,
-    empreinte: crypto.createHash('sha1').update(octets).digest('hex').slice(0, 12),
-  }
+    const octets = fs.readFileSync(cible)
+    return {
+      chemin: nom,
+      octets: octets.length,
+      empreinte: crypto.createHash('sha1').update(octets).digest('hex').slice(0, 12),
+    }
+  })
 }
 
 /**
@@ -518,6 +525,13 @@ app.whenReady().then(() => {
   ipcMain.handle('page:importer-medias', (_evenement, dossier, fichiers) =>
     importerMediasPage(dossier, fichiers),
   )
+  // Fermeture demandée par l'écran d'administration (Ctrl + Maj + A). C'est
+  // l'interface qui décide : le raccourci n'existe que dans l'administration,
+  // jamais devant un visiteur.
+  ipcMain.handle('app:quitter', () => {
+    sortieAutorisee = true
+    app.quit()
+  })
   creerFenetre()
 
   app.on('activate', () => {

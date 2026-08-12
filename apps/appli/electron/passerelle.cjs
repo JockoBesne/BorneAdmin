@@ -29,4 +29,6 @@ contextBridge.exposeInMainWorld('borne', {
   /** Copie dans medias/ les fichiers d'un import ; rend les noms retenus. */
   importerMediasPage: (dossier, fichiers) =>
     ipcRenderer.invoke('page:importer-medias', dossier, fichiers),
+  /** Ferme l'application. Appelé par l'administration seule (Ctrl + Maj + A). */
+  quitter: () => ipcRenderer.invoke('app:quitter'),
 })
