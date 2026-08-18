@@ -113,8 +113,23 @@ ordinateur**, voir ci-dessous.
   - `src/Visiteur.tsx` — borne : **sommaire d'accueil** (`.hub`) puis les pages.
     Une page ouverte se referme sur l'accueil après `minutesAvantVeille` sans
     contact — sauf pendant la lecture d'une vidéo, où le retour est repoussé.
+    Barre du haut : le retour à l'accueil. **Au bout de la page**, dans la toile
+    et non dans un bandeau (`.voisines`, composant `Voisine`) : les pages
+    **précédente** et **suivante**, dans l'ordre du sommaire — on ne les atteint
+    qu'en descendant, et elles ne mangent aucune hauteur d'écran le reste du
+    temps. Aux deux bouts du parcours, le bouton reste en place mais éteint : la
+    position des cibles ne bouge jamais d'une page à l'autre. Étant dans la
+    toile, leurs tailles sont en **pixels de toile**, pas en `vw`.
+  - `src/Accueil.tsx` — le sommaire. La vignette d'une carte est montrée
+    **entière** (`object-fit: contain`), sur un fond fait de la même image
+    floutée et assombrie (`.hub__fond`). Rognée (« cover »), une carte ou une
+    planche de signaux devenait une bande illisible ; montrée entière sans ce
+    fond, elle flottait au milieu d'un grand vide.
   - `src/AccesAdmin.tsx` — accès caché (coin, appui 5 s, code PIN).
   - `src/Admin.tsx` — liste des pages, panneau « Apparence », enregistrement auto.
+    Le panneau « Écran d'accueil » règle aussi le **délai avant le retour
+    automatique** (`minutesAvantVeille`, 1 à 60 minutes) : le réglage vivait dans
+    le fichier de contenu sans que personne puisse le voir.
   - `src/EditeurPage.tsx` — **le gros fichier** : aperçu fidèle à gauche,
     panneau des blocs à droite, glisser-déposer, formulaires. Cliquer un bloc
     déplie **sous lui** son panneau (`PanneauBloc`) : contenu puis
@@ -138,7 +153,23 @@ ordinateur**, voir ci-dessous.
     **Le même rendu sert la borne et l'aperçu de l'admin** : l'aperçu est fidèle
     par construction — ne jamais dupliquer le rendu côté admin.
 - **`contenu-exemple/`** — jeu de test lu/écrit par défaut (`BORNE_CONTENU` pour
-  en pointer un autre).
+  en pointer un autre). Depuis le 2026-08-18, c'est aussi la **démonstration de
+  présentation** : les 12 pages du 3ᵉ étage, refaites pour montrer tous les
+  outils de mise en page (les quatre modèles, grille et décalages, hauteurs et
+  recadrage, habillages, textes enrichis, quiz et frises, couleurs par page).
+  L'état d'avant est gardé dans `contenu.json.avant-refonte-demo`.
+  - **Piège, rencontré et payé cher : les légendes des médias ne décrivaient pas
+    les fichiers.** « chappe-tour » est une *carte* du réseau, pas une tour ;
+    « morse-manipulateur » est l'*alphabet* Morse ; « radio-philips » était le
+    *logo* de la marque ; « pigeon-vitrine-1/2 » montrent l'appareil photo de
+    Neubronner. Une démonstration bâtie sur ces légendes présente chaque pièce
+    pour ce qu'elle n'est pas. **Regarder les fichiers avant de les placer** :
+    on ouvre les images (une planche-contact injectée dans la fenêtre suffit),
+    on relève ce qu'elles montrent, et seulement ensuite on écrit la page.
+  - L'illustration générée par IA (`tours-signaux-chaine.png`) et le logo
+    Philips ont été retirés de la bibliothèque ; les fichiers restent sur le
+    disque. Deux pages n'ont donc **aucune photo** (l'entre-deux-guerres, la
+    télévision) : il manque des clichés pris au musée.
 - **`packages/ui/`** — composants génériques, peu utilisés.
 - `apps/api`, `apps/admin`, `apps/borne` — **réservoir** de code de l'ancienne
   architecture. Ne tournent plus, ne sont plus installés, mais restent une

@@ -1532,9 +1532,15 @@ button {
   width: min(1000px, 94vw);
 }
 
+/* Réglages à gauche, aperçu à droite.
+ *
+ * L'aperçu a une largeur **garantie** : sans elle, une colonne « auto » prend
+ * la largeur de son contenu le plus large — une phrase un peu longue dans les
+ * réglages suffit alors à réduire l'aperçu à zéro pixel, et il disparaît de
+ * l'écran sans que rien ne signale l'erreur. Constaté, corrigé le 2026-08-18. */
 .apparence {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(0, auto) minmax(360px, 1fr);
   gap: 28px;
   align-items: start;
 }
@@ -1558,6 +1564,35 @@ button {
   font-size: 13px;
   line-height: 18px;
   color: var(--b-texte-doux);
+}
+
+/* Délai avant le retour automatique à l'accueil : un nombre, puis sa phrase.
+   Le champ est habillé ici, car « .pan input » ne vaut que dans le panneau
+   d'un bloc — hors de lui, il resterait blanc sur fond sombre. */
+.apparence__veille {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--b-texte-doux);
+}
+
+.apparence__veille input {
+  width: 88px;
+  padding: 10px 12px;
+  border: 1px solid rgba(245, 247, 250, 0.2);
+  border-radius: 10px;
+  background: #0e2237;
+  color: var(--b-texte);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.apparence__veille input:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 1px;
 }
 
 /* Une ligne « miniature + nom + boutons ». */
@@ -2006,6 +2041,7 @@ button {
      trois. */
   flex: 1;
   min-height: 0;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2013,10 +2049,38 @@ button {
   overflow: hidden;
 }
 
-.hub__vignette {
+/* La même image, floutée et assombrie, remplit le fond de la carte.
+ *
+ * Sans elle, une pièce montrée entière (« contain ») flotte au milieu d'une
+ * grande plage vide : la carte paraît inachevée. Avec elle, la carte est
+ * pleine, la pièce reste entière et lisible au centre, et le flou empêche de
+ * confondre le fond avec le document. */
+.hub__fond {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: blur(34px) saturate(0.55) brightness(0.3);
+  /* L'agrandissement mange les bords délavés que le flou fait apparaître. */
+  transform: scale(1.2);
+}
+
+/* « contain », et non « cover ».
+ *
+ * Le fonds d'un musée n'est pas fait que de photographies : ce sont des cartes,
+ * des gravures, des planches de signaux. Rognées dans une carte verticale,
+ * elles deviennent illisibles — d'une carte de France il ne restait qu'une
+ * bande où on lisait « appe » et « rdeaux ». Montrée entière, la pièce est
+ * reconnaissable ; la bande de fond qui reste autour d'elle est le prix, et il
+ * est bien moindre. Même règle que pour les photos d'une page : on ne coupe pas
+ * un document sans l'avoir demandé. */
+.hub__vignette {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 18px;
+  object-fit: contain;
 }
 
 .hub__image--absente {
@@ -2101,6 +2165,97 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ── Fin de page : les deux pages voisines ────────────────────────────────
+   Ces boutons sont **dans** la toile, à la suite de la page : on les atteint
+   en descendant, ils ne mangent aucune hauteur d'écran le reste du temps.
+   Toutes les tailles sont donc en pixels de toile (référence 1920 × 1080),
+   comme la page elle-même — pas en « vw », qui vaudrait pour la fenêtre.
+   Les marges de côté sont celles de la page (96 px), pour que les boutons
+   tombent sur les mêmes bords que les blocs. */
+.voisines {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  gap: 40px;
+  padding: 0 96px 72px;
+  background: var(--b-fond);
+}
+
+.voisine {
+  flex: 1;
+  min-width: 0;
+  /* Deux doigts de haut : la cible reste facile à viser sans regarder. */
+  min-height: 132px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 20px 44px;
+  border: 3px solid rgba(233, 180, 76, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--b-accent);
+  font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+/* La page suivante se lit et se pointe à droite, comme elle se trouve. */
+.voisine--suivante {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.voisine:hover:not(:disabled),
+.voisine:focus-visible:not(:disabled) {
+  background: rgba(233, 180, 76, 0.16);
+}
+
+.voisine:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+/* Aux deux bouts du parcours : le bouton reste, il ne disparaît pas. */
+.voisine:disabled {
+  border-color: rgba(245, 247, 250, 0.12);
+  color: rgba(245, 247, 250, 0.3);
+  cursor: default;
+}
+
+.voisine__fleche {
+  flex: none;
+  font-size: 56px;
+  line-height: 1;
+}
+
+.voisine__textes {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.voisine__sens {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.voisine__nom {
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--b-texte);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voisine:disabled .voisine__nom {
+  color: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {

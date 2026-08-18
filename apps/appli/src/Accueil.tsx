@@ -199,5 +199,13 @@ export function ApercuPage({ page, media }: { page: PageManifeste; media: Resoud
       </span>
     )
   }
-  return <img className="hub__vignette" src={adresse} alt="" draggable={false} />
+  // Deux fois la même image : l'une floutée remplit le fond de la carte,
+  // l'autre est montrée entière par-dessus. Le navigateur ne la télécharge
+  // qu'une fois. Voir « .hub__fond » dans la feuille de style.
+  return (
+    <>
+      <img className="hub__fond" src={adresse} alt="" aria-hidden="true" draggable={false} />
+      <img className="hub__vignette" src={adresse} alt="" draggable={false} />
+    </>
+  )
 }
