@@ -207,6 +207,14 @@ export const COLONNES_MIN = 3
  */
 export const DECALAGE_MAX = COLONNES_GRILLE - COLONNES_MIN
 
+/* Taille du texte d'un bloc, en pourcentage de sa taille normale : 100 = celle
+ * que le modèle a prévue. Les bornes empêchent l'illisible (trop petit sur un
+ * écran regardé à deux mètres) comme l'ingérable (un titre qui déborde de sa
+ * page). Le pas est franc : dix pour cent se voient, deux non. */
+export const TAILLE_TEXTE_MIN = 60
+export const TAILLE_TEXTE_MAX = 200
+export const PAS_TAILLE_TEXTE = 10
+
 /* Hauteur réglable, en pixels de toile (référence 1920 × 1080).
  * Ne concerne que les galeries et les photos **recadrées** : la hauteur d'un
  * texte découle de son contenu, celle d'une photo de ses proportions, celle
@@ -361,6 +369,16 @@ export interface StyleBloc {
    * sans l'avoir demandé — c'était le défaut à corriger.
    */
   recadre?: boolean
+  /**
+   * Taille du texte du bloc, en pourcentage de sa taille normale (100 = celle
+   * du modèle). Absente = 100 : un bloc jamais réglé s'écrit comme avant.
+   *
+   * C'est un **facteur**, pas une taille en points : un titre et un paragraphe
+   * réglés à 120 % gardent leur écart, la page reste hiérarchisée. Les ateliers
+   * (quiz, frise) n'en tiennent pas compte — leurs commandes tactiles sont
+   * dimensionnées au doigt, les grossir les casserait.
+   */
+  taille?: number
 }
 
 /**

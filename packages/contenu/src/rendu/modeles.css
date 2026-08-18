@@ -101,11 +101,15 @@
   box-sizing: border-box;
 }
 
+/* « --facteur-texte » : posé par l'habillage quand on a réglé la taille du
+   texte d'un bloc, absent partout ailleurs (d'où la valeur de repli 1). Chaque
+   texte multiplie **sa** taille : leurs écarts sont conservés, un titre reste
+   un titre. */
 .b-h1 {
   margin: 0;
   font-family: var(--b-titre-police);
-  font-size: 68px;
-  line-height: 78px;
+  font-size: calc(68px * var(--facteur-texte, 1));
+  line-height: calc(78px * var(--facteur-texte, 1));
   font-weight: 600;
   letter-spacing: -0.5px;
   color: var(--b-texte);
@@ -118,8 +122,8 @@
 .b-h3 {
   margin: 0 0 12px;
   font-family: var(--b-titre-police);
-  font-size: 34px;
-  line-height: 42px;
+  font-size: calc(34px * var(--facteur-texte, 1));
+  line-height: calc(42px * var(--facteur-texte, 1));
   font-weight: 600;
   color: var(--b-accent);
 }
@@ -128,8 +132,8 @@
    décide de la longueur des lignes. Un plafond de 60 signes laissait un texte
    posé dans un bloc large n'occuper que la moitié de sa place. */
 .b-corps {
-  font-size: 26px;
-  line-height: 40px;
+  font-size: calc(26px * var(--facteur-texte, 1));
+  line-height: calc(40px * var(--facteur-texte, 1));
   color: var(--b-texte-doux);
 }
 
@@ -139,8 +143,8 @@
 }
 
 .b-petit {
-  font-size: 21px;
-  line-height: 32px;
+  font-size: calc(21px * var(--facteur-texte, 1));
+  line-height: calc(32px * var(--facteur-texte, 1));
   color: var(--b-texte-doux);
 }
 
@@ -164,8 +168,8 @@
 
 .b-legende {
   margin-top: 14px;
-  font-size: 20px;
-  line-height: 28px;
+  font-size: calc(20px * var(--facteur-texte, 1));
+  line-height: calc(28px * var(--facteur-texte, 1));
   font-weight: 500;
   color: var(--b-texte-doux);
 }
@@ -291,11 +295,16 @@
   cursor: pointer;
 }
 
+/* « contain » et non « cover » : la photo garde ses proportions et reste
+   **entière**, comme partout ailleurs dans l'application. Avec « cover » elle
+   remplissait sa case en se faisant rogner — une photo en hauteur perdait le
+   haut et le bas sans que personne ne l'ait demandé. Le prix est une bande de
+   fond de part et d'autre quand les photos n'ont pas toutes la même forme. */
 .b-galerie__image {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .b-video {

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-12T15:17:42.842Z",
+  "genereLe": "2026-08-18T08:05:01.208Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Troisième étage — de l'Antiquité aux années 1970",
@@ -91,6 +91,7 @@
         "suite": [
           {
             "id": "b1",
+            "colonnes": 8,
             "valeur": {
               "type": "texte",
               "valeur": "**Les tours à signaux**\n\nLes tours à signaux reposent sur un principe simple : transmettre l'information à distance grâce à des signaux de feu ou de fumée, relayés de tour en tour.\n\nCe système existe dès l'Antiquité et se développe notamment dans l'empire romain pour surveiller les frontières et les zones sensibles.\n\nAu Moyen-Âge, seigneurs et rois reprennent ce principe pour défendre leurs territoires en installant des tours sur les points hauts afin de relayer rapidement les alertes.\n\nCes communications restent limitées à des messages simples, définis à l'avance, et seront utilisées jusqu'au XVIIIᵉ siècle."
@@ -98,6 +99,7 @@
           },
           {
             "id": "b2",
+            "colonnes": 4,
             "valeur": {
               "type": "image",
               "mediaId": "media-tours-signaux-chaine",
@@ -182,6 +184,10 @@
       "vignette": "media-chappe-telegraphe",
       "contenu": {
         "modele": "t2",
+        "largeurs": {
+          "image": 6,
+          "texte": 6
+        },
         "emplacements": {
           "titre": {
             "type": "titre",
@@ -194,7 +200,39 @@
           },
           "texte": {
             "type": "texte",
-            "valeur": "**1791 – milieu du XIXᵉ siècle**\n\nLa première grande révolution des communications à longue distance apparaît pendant la Révolution française avec le télégraphe optique de Claude Chappe. Son réseau repose sur une succession de tours équipées de bras articulés visibles de loin. Les opérateurs, appelés « stationnaires », observent le signal reçu à l'aide d'une longue-vue puis le reproduisent pour la tour suivante, permettant au message de parcourir rapidement de grandes distances."
+            "valeur": "1791 – milieu du XIXᵉ siècle\n\n\n\n\n\nLa première grande révolution des communications à longue distance apparaît pendant la Révolution française avec le télégraphe optique de Claude Chappe. Son réseau repose sur une succession de tours équipées de bras articulés visibles de loin. Les opérateurs, appelés « stationnaires », observent le signal reçu à l'aide d'une longue-vue puis le reproduisent pour la tour suivante, permettant au message de parcourir rapidement de grandes distances.",
+            "lignes": [
+              {
+                "morceaux": [
+                  {
+                    "gras": true,
+                    "texte": "1791 – milieu du XIXᵉ siècle"
+                  }
+                ]
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": [
+                  {
+                    "texte": "La première grande révolution des communications à longue distance apparaît pendant la Révolution française avec le télégraphe optique de Claude Chappe. Son réseau repose sur une succession de tours équipées de bras articulés visibles de loin. Les opérateurs, appelés « stationnaires », observent le signal reçu à l'aide d'une longue-vue puis le reproduisent pour la tour suivante, permettant au message de parcourir rapidement de grandes distances."
+                  }
+                ]
+              }
+            ]
           },
           "galerie": {
             "type": "galerie",
@@ -225,10 +263,49 @@
         "suite": [
           {
             "id": "b1",
-            "colonnes": 9,
+            "colonnes": 7,
             "valeur": {
               "type": "texte",
-              "valeur": "**Un message en deux nombres**\n\nPour transmettre un message, Chappe utilise un livre de codes où sont répertoriés des lettres, des mots et des expressions. Chaque élément est associé à deux nombres : le premier indique une page du livre, le second une ligne. Ces deux nombres sont ensuite convertis en positions des bras du télégraphe et transmis de tour en tour.\n\nSeuls les directeurs de ligne, situés au départ et à l'arrivée, possèdent le livre de codes. Eux seuls peuvent transformer un message en signaux, puis traduire les signaux reçus en texte. Des contrôleurs, longeant les lignes à cheval, vérifient aléatoirement à la longue-vue si les signaux sont corrects."
+              "valeur": "\nUn message en deux nombres\n\nPour transmettre un message, Chappe utilise un livre de codes où sont répertoriés des lettres, des mots et des expressions. Chaque élément est associé à deux nombres : le premier indique une page du livre, le second une ligne. Ces deux nombres sont ensuite convertis en positions des bras du télégraphe et transmis de tour en tour.\n\n\n\nSeuls les directeurs de ligne, situés au départ et à l'arrivée, possèdent le livre de codes. Eux seuls peuvent transformer un message en signaux, puis traduire les signaux reçus en texte. Des contrôleurs, longeant les lignes à cheval, vérifient aléatoirement à la longue-vue si les signaux sont corrects.",
+              "lignes": [
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Un message en deux nombres",
+                      "gras": true
+                    }
+                  ]
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Pour transmettre un message, Chappe utilise un livre de codes où sont répertoriés des lettres, des mots et des expressions. Chaque élément est associé à deux nombres : le premier indique une page du livre, le second une ligne. Ces deux nombres sont ensuite convertis en positions des bras du télégraphe et transmis de tour en tour."
+                    }
+                  ]
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Seuls les directeurs de ligne, situés au départ et à l'arrivée, possèdent le livre de codes. Eux seuls peuvent transformer un message en signaux, puis traduire les signaux reçus en texte. Des contrôleurs, longeant les lignes à cheval, vérifient aléatoirement à la longue-vue si les signaux sont corrects."
+                    }
+                  ]
+                }
+              ]
             }
           },
           {
@@ -241,7 +318,7 @@
           {
             "id": "010081e5-54e2-4d8a-a644-78535ecc6728",
             "apres": "galerie",
-            "colonnes": 3,
+            "colonnes": 5,
             "hauteur": 1160,
             "valeur": {
               "type": "image",
@@ -254,9 +331,9 @@
           "titre",
           "image",
           "texte",
-          "galerie",
-          "suite:010081e5-54e2-4d8a-a644-78535ecc6728",
           "suite:b1",
+          "suite:010081e5-54e2-4d8a-a644-78535ecc6728",
+          "galerie",
           "suite:b2"
         ],
         "styles": {
@@ -274,8 +351,12 @@
       "vignette": "media-morse-manipulateur",
       "contenu": {
         "modele": "t2",
+        "largeurs": {
+          "image": 5
+        },
         "hauteurs": {
-          "galerie": 160
+          "galerie": 160,
+          "image": 380
         },
         "emplacements": {
           "titre": {
@@ -312,6 +393,7 @@
         "suite": [
           {
             "id": "b1",
+            "colonnes": 12,
             "valeur": {
               "type": "texte",
               "valeur": "**L'électro-aimant, et tout change**\n\nLe principe de l'électro-aimant, inventé par Arago en 1824, permet aux communications de vivre la révolution électrique. Le principe est simple : si l'on fait passer un courant électrique dans un solénoïde, le champ électromagnétique attire un aimant à son extrémité.\n\nCes découvertes amènent le développement d'un télégraphe électrique qui n'est plus soumis aux aléas climatiques et nocturnes : tant que le fil n'est pas coupé, le message passe."
@@ -332,7 +414,12 @@
           "galerie",
           "suite:b1",
           "suite:b2"
-        ]
+        ],
+        "styles": {
+          "image": {
+            "recadre": true
+          }
+        }
       }
     },
     {
@@ -362,7 +449,7 @@
           {
             "id": "b1",
             "colonnes": 6,
-            "hauteur": 500,
+            "hauteur": 780,
             "valeur": {
               "type": "image",
               "mediaId": "media-telephone-demoiselle",
@@ -381,7 +468,7 @@
           },
           {
             "id": "b3",
-            "colonnes": 6,
+            "colonnes": 12,
             "valeur": {
               "type": "texte",
               "valeur": "**Les demoiselles du téléphone**\n\nDans la vitrine des téléphones, vous pouvez découvrir le téléphone Marty 1910, l'un des modèles emblématiques du début du XXᵉ siècle. À cette époque, les téléphones ne possèdent ni clavier ni cadran permettant de composer directement un numéro. Pour établir une communication, l'utilisateur actionne une manivelle qui génère un courant électrique et signale son appel au standard téléphonique.\n\nLorsqu'il décroche son combiné, il est mis en relation avec une opératrice, surnommée « demoiselle du téléphone ». Après avoir indiqué le nom ou le numéro du correspondant souhaité, celle-ci réalise manuellement le raccordement en reliant les deux lignes sur le standard. Chaque appel nécessite ainsi l'intervention humaine d'une opératrice avant que la conversation puisse commencer.\n\nCe métier exige une grande concentration et une excellente mémoire."
@@ -389,7 +476,7 @@
           },
           {
             "id": "b4",
-            "colonnes": 6,
+            "colonnes": 12,
             "valeur": {
               "type": "texte",
               "valeur": "**Vers l'automatique**\n\nTant que le réseau ne compte qu'un nombre limité d'abonnés, les connexions peuvent être établies rapidement. Mais le réseau s'étoffe et les liaisons deviennent très nombreuses : en 1889, l'ingénieur Strowger invente les premiers centraux téléphoniques automatiques.\n\nVous pouvez également découvrir le téléphone U43, l'un des premiers téléphones produits à grande échelle, à cadran, permettant à chaque abonné d'avoir son numéro."
@@ -400,14 +487,17 @@
           "titre",
           "image",
           "texte",
-          "suite:b1",
           "suite:b3",
-          "suite:b4",
-          "suite:b2"
+          "suite:b1",
+          "suite:b2",
+          "suite:b4"
         ],
         "styles": {
           "suite:b4": {
             "fond": "#17334d"
+          },
+          "suite:b1": {
+            "recadre": true
           }
         }
       }
@@ -466,8 +556,13 @@
       "modele": "t2",
       "ordre": 7,
       "vignette": "media-radio-lampe-tm",
+      "couleurTexte": "#f8faf5",
       "contenu": {
         "modele": "t2",
+        "largeurs": {
+          "image": 12,
+          "texte": 6
+        },
         "emplacements": {
           "titre": {
             "type": "titre",
@@ -486,6 +581,7 @@
         "suite": [
           {
             "id": "b1",
+            "colonnes": 6,
             "valeur": {
               "type": "texte",
               "valeur": "**Le matériel militaire**\n\nPendant la Première Guerre mondiale, la TSF connaît ses premiers usages à grande échelle. Sous l'impulsion du général Ferrié, l'ampoule triode — ou ampoule de télégraphie militaire — est améliorée, ce qui perfectionne les communications radio.\n\nCependant, le matériel reste encombrant et peu pratique. D'autres moyens sont donc utilisés : le morse, la télégraphie optique avec l'héliographe, le téléphone de campagne et les pigeons voyageurs.\n\nLa guerre permet aussi à de nombreux soldats de se familiariser avec ces technologies. Le téléphone se développe : des postes centraux mobiles sont déployés, notamment avec le modèle « Marty 1910 »."
@@ -509,14 +605,18 @@
         "ordre": [
           "titre",
           "image",
-          "texte",
           "suite:b1",
+          "texte",
           "suite:b2",
           "suite:b3"
         ],
         "styles": {
           "suite:b3": {
             "fond": "#17334d"
+          },
+          "suite:b1": {
+            "fond": "#ecfffc",
+            "opacite": 10
           }
         }
       }

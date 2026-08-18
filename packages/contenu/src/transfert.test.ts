@@ -77,6 +77,37 @@ test("l'export n'emporte que les médias de la page, et reste valide", () => {
   schemaExportPage.parse(exporte)
 })
 
+test("l'habillage d'un bloc traverse la clé USB, taille du texte comprise", () => {
+  /*
+   * L'export passe par un fichier : ce qui n'est pas déclaré dans le schéma Zod
+   * est effacé en silence au passage. Un réglage d'apparence perdu ne fait rien
+   * planter — la page arrive simplement fade sur l'autre machine, et personne
+   * ne comprend pourquoi. D'où ce contrôle, sur le dernier réglage ajouté.
+   */
+  const modele = page('p1', 'm1')
+  const habillee: PageManifeste = {
+    ...modele,
+    contenu: {
+      ...modele.contenu,
+      styles: { image: { taille: 145, fond: '#112233', opacite: 60, alignement: 'centre' } },
+    },
+  }
+
+  const exporte = preparerExport(manifeste([habillee], [media('m1', 'aaa', 'onde.jpg')]), 'p1')
+  assert.ok(exporte)
+
+  // Écrit puis relu comme sur la clé : c'est ce passage-là qui élague.
+  const relu = schemaExportPage.parse(JSON.parse(JSON.stringify(exporte)))
+  const fusion = integrerImport(manifeste([], [media('m1', 'aaa', 'onde.jpg')]), relu, {})
+
+  const contenu = fusion.pages[0]!.contenu as {
+    styles?: Record<string, { taille?: number; fond?: string; opacite?: number }>
+  }
+  assert.equal(contenu.styles?.image?.taille, 145, 'la taille du texte a survécu')
+  assert.equal(contenu.styles?.image?.fond, '#112233')
+  assert.equal(contenu.styles?.image?.opacite, 60)
+})
+
 test('un média déjà présent est réutilisé, pas recopié', () => {
   const exporte = preparerExport(manifeste([page('p1', 'm1')], [media('m1', 'aaa', 'onde.jpg')]), 'p1')
   assert.ok(exporte)

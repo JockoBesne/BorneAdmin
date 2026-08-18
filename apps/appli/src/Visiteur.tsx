@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { REGLAGES_DEFAUT, type ContenuPage, type Manifeste } from '@borne/contenu'
-import { RenduPage, ToileBorne } from '@borne/contenu/rendu'
+import { RenduPage, ToileBorne, type ResoudreMedia } from '@borne/contenu/rendu'
 import { Accueil } from './Accueil.jsx'
 import { chargerContenu, resolveurMedias } from './contenu.js'
 import { couleursEffectives, couleursHub, stylesCouleurs } from './couleurs.js'
@@ -22,6 +22,12 @@ export function Visiteur() {
   const [erreur, setErreur] = useState<string | null>(null)
   /** Page ouverte, ou « null » quand on est sur l'accueil. */
   const [ouverte, setOuverte] = useState<string | null>(null)
+  /** Photo affichée en grand par-dessus la page, ou « null ». */
+  const [visionneuse, setVisionneuse] = useState<string | null>(null)
+
+  // Quitter la page referme la photo : sans cela, elle réapparaîtrait par-dessus
+  // la page suivante — y compris après le retour automatique à l'accueil.
+  useEffect(() => setVisionneuse(null), [ouverte])
 
   useEffect(() => {
     let annule = false
@@ -131,7 +137,12 @@ export function Visiteur() {
 
         {/* La clé remonte la toile à chaque page : le défilement repart du haut. */}
         <ToileBorne key={page.id}>
-          <RenduPage contenu={page.contenu as ContenuPage} media={media} lecteurVideo />
+          <RenduPage
+            contenu={page.contenu as ContenuPage}
+            media={media}
+            lecteurVideo
+            surImage={setVisionneuse}
+          />
         </ToileBorne>
       </div>
     )
@@ -149,6 +160,57 @@ export function Visiteur() {
   return (
     <div className="visiteur-hote" style={style}>
       {contenu}
+      {visionneuse ? (
+        <Visionneuse
+          mediaId={visionneuse}
+          media={media}
+          surFermeture={() => setVisionneuse(null)}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * Une photo en grand, par-dessus la page — touchée dans une galerie ou dans un
+ * bloc image. Elle est montrée **entière** (« contain ») : agrandir une photo
+ * pour la couper serait absurde.
+ *
+ * Toucher n'importe où referme, en plus du bouton : c'est le geste qu'un
+ * visiteur essaie en premier, et viser un bouton précis au doigt ne va pas de
+ * soi. Le fond est un bouton à part entière plutôt qu'un « onClick » sur le
+ * cadre — sinon toucher la photo elle-même refermerait aussi, par ricochet.
+ */
+function Visionneuse({
+  mediaId,
+  media,
+  surFermeture,
+}: {
+  mediaId: string
+  media: ResoudreMedia
+  surFermeture: () => void
+}) {
+  const resolu = media(mediaId)
+  if (!resolu) return null
+
+  return (
+    <div
+      className="visionneuse"
+      role="dialog"
+      aria-modal="true"
+      aria-label={resolu.legende || 'Photo'}
+    >
+      <button
+        type="button"
+        className="visionneuse__zone"
+        onClick={surFermeture}
+        aria-label="Fermer"
+      />
+      <img className="visionneuse__image" src={resolu.url('grand')} alt={resolu.legende} />
+      {resolu.legende ? <p className="visionneuse__legende">{resolu.legende}</p> : null}
+      <button type="button" className="visionneuse__fermer" onClick={surFermeture}>
+        Fermer ✕
+      </button>
     </div>
   )
 }

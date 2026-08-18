@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import {
   colonnesDe,
   colonnesEmplacement,
@@ -62,6 +62,8 @@ function Habillage({ style, children }: { style: StyleBloc | undefined; children
   if (style.souligne) classes.push('b-hab--souligne')
   if (style.alignement === 'centre') classes.push('b-hab--centre')
   if (style.alignement === 'droite') classes.push('b-hab--droite')
+  const taille = style.taille !== undefined && style.taille !== 100 ? style.taille : null
+  if (taille !== null) classes.push('b-hab--taille')
   if (classes.length === 1) return <>{children}</>
 
   // Transparence : elle ne touche que le **fond**, mélangé à du transparent —
@@ -72,8 +74,21 @@ function Habillage({ style, children }: { style: StyleBloc | undefined; children
       ? `color-mix(in srgb, ${style.fond} ${style.opacite}%, transparent)`
       : style.fond
 
+  // La taille passe par une variable CSS plutôt que par « font-size » : les
+  // textes du rendu ont chacun leur taille en pixels, qu'un « font-size » posé
+  // au-dessus n'atteindrait pas. Chaque texte multiplie la sienne par ce
+  // facteur — leurs écarts sont donc conservés.
   return (
-    <div className={classes.join(' ')} style={{ background: fond, color: style.couleur }}>
+    <div
+      className={classes.join(' ')}
+      style={
+        {
+          background: fond,
+          color: style.couleur,
+          ...(taille !== null ? { '--facteur-texte': taille / 100 } : {}),
+        } as CSSProperties
+      }
+    >
       {children}
     </div>
   )

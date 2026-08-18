@@ -84,6 +84,7 @@ export function estStyleVide(style: StyleBloc): boolean {
     !style.souligne &&
     (style.alignement === undefined || style.alignement === 'gauche') &&
     (style.opacite === undefined || style.opacite === 100) &&
+    (style.taille === undefined || style.taille === 100) &&
     !style.recadre
   )
 }

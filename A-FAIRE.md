@@ -58,7 +58,7 @@ grille. Une poignée sur le bord **gauche** a été essayée dans les deux sens
 (déplacer le bord, puis déplacer le bloc entier) : **refusée deux fois**, elle
 restait immobile pendant que le bloc bougeait. Ne pas la remettre.
 
-### 1.4 Montrer le redimensionnement **avant** le dépôt — *½ j*
+### 1.4 Montrer le redimensionnement **avant** le dépôt — ~~*½ j*~~ **FAIT (18 août)**
 
 **Le problème.** Pendant qu'on glisse un bloc, on ne voit pas ce que le dépôt va
 faire aux blocs **déjà là**. Sur une rangée pleine, `placerCellule` partage les
@@ -95,7 +95,23 @@ obtenir le contenu tel qu'il serait, puis dessiner la rangée depuis ce résulta
 l'aperçu : c'est exactement ce qui finit par afficher une chose et en faire une
 autre. Tout doit venir de `placerCellule`.
 
-### 1.5 Texte de la case « Recadrer la photo » écrasé sur le côté — *¼ j*
+**Fait ainsi.** `apercuDepot` (dans `EditeurPage.tsx`) appelle `placerCellule`
+pendant le geste — elle est pure, rien n'est enregistré — puis dessine la rangée
+visée du résultat : un cadre par bloc, plein pour celui qu'on tient, pointillé
+discret pour ceux qui vont rétrécir. Aucune largeur n'est recalculée à la main.
+La bande verticale est celle qu'occupe la rangée aujourd'hui, ou la hauteur du
+bloc tenu s'il est plus grand. Quand le bloc atterrit seul sur sa rangée,
+l'ancien cadre fantôme prend le relais.
+
+**Complété le 18 août** (geste jugé peu réactif et peu parlant) : le bloc qu'on
+tient **suit le doigt**, la place visée n'est plus recalculée quand elle n'a pas
+changé (l'éditeur ne se redessine donc plus à chaque pixel), et le pointeur voit
+**à travers** le bloc tenu (`elementsFromPoint`). Mesuré par CDP : le bloc se
+déplace exactement de la distance parcourue par le pointeur, et les cadres
+annoncés (431 px de large, à 81 et 532) tombent au pixel sur les blocs obtenus
+après le dépôt.
+
+### 1.5 Texte de la case « Recadrer la photo » écrasé sur le côté — ~~*¼ j*~~ **FAIT (18 août)**
 
 **Le symptôme.** Dans le panneau d'un bloc photo, l'explication sous « Recadrer
 la photo » est comprimée en une colonne étroite à droite.
@@ -115,10 +131,9 @@ simple ici :
 .perso__bascule input[type='checkbox'] { /* … */ }
 ```
 
-L'attribut ajoute assez de spécificité pour l'emporter. Vérifier en même temps
-que la case garde sa taille tactile (22 px) et **aucun** fond ni cadre de champ
-de saisie. Ajouter `flex: 1; min-width: 0` sur `.perso__bascule > span` si le
-texte reste étroit après ça.
+**Fait ainsi**, exactement : sélecteur `.perso__bascule input[type='checkbox']`,
+plus `padding: 0; border: 0; background: none` (le champ du panneau lui en
+posait), et `flex: 1; min-width: 0` sur `.perso__bascule > span`.
 
 Aujourd'hui un bloc d'un quart de largeur reste collé à gauche, et l'espace
 libre de la rangée est perdu. Il faut pouvoir le pousser au centre ou à droite.
@@ -225,6 +240,8 @@ Veille désactivée, pas de verrouillage, mises à jour hors heures d'ouverture.
 | **Redimensionner les images à l'import** (canvas) | 1 j | Une photo de 8 Mo copiée telle quelle alourdit le dossier et ralentit l'affichage. À faire via le navigateur — **jamais** en réintroduisant `sharp`. |
 | **Image de couverture d'une vidéo** | ½ j | Sans elle, une vidéo est un rectangle noir avant lecture. Extraction par `<video>` + canvas. |
 | **Réordonner les photos d'une galerie** | ½ j | Manque signalé de longue date. |
+| ~~**Taille du texte réglable par bloc**~~ | — | **FAIT (18 août).** Deux boutons `A` (pas de 10 %) et une case où écrire la valeur, de 60 à 200 %. C'est un facteur : titres et paragraphes gardent leurs écarts. Champ `taille` de `StyleBloc`, déclaré dans le schéma Zod et vérifié à l'aller-retour par clé USB (`transfert.test.ts`). Les ateliers (quiz, frise) gardent leurs tailles, leurs commandes étant dimensionnées au doigt. |
+| ~~**Agrandir une photo au toucher**~~ | — | **FAIT (18 août).** Toucher une photo (galerie ou bloc image) l'affiche en grand par-dessus la page ; toucher n'importe où referme. Le rendu savait déjà le demander (`surImage`), la borne ne l'écoutait pas. |
 | **Dupliquer un bloc** | ¼ j | Refaire un quiz avec d'autres questions demande aujourd'hui tout ressaisir. |
 | **Annuler la dernière action** | 1 j | Il n'y a aucun retour arrière dans l'éditeur. Sur un outil à enregistrement automatique, c'est le principal filet qui manque. |
 
@@ -248,9 +265,8 @@ Veille désactivée, pas de verrouillage, mises à jour hors heures d'ouverture.
 1. ~~**1.1 hauteur des images**~~, ~~**1.2 placement sur la ligne**~~,
    ~~**2.2 écriture**~~, ~~**2.3 sauvegarde**~~, ~~**4 retour à l'accueil**~~ —
    faits.
-2. **1.5 texte de la case « Recadrer »** — un quart d'heure, cause connue.
-3. **1.4 aperçu du redimensionnement avant dépôt** — le dernier point où
-   l'éditeur surprend son utilisateur.
+2. ~~**1.5 texte de la case « Recadrer »**~~, ~~**1.4 aperçu du
+   redimensionnement avant dépôt**~~ — faits le 18 août.
 4. **2.4 fins de ligne** — avant tout autre commit, sinon l'historique se dégrade.
 5. **2.1 tests** — le schéma Zod et `lecture.ts` sont couverts ; enchaîner sur
    `controles.ts`.

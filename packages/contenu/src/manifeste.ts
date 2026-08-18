@@ -15,6 +15,8 @@ import {
   QUIZ_QUESTION_MAX_SIGNES,
   QUIZ_REPONSE_MAX_SIGNES,
   QUIZ_REPONSES_MAX,
+  TAILLE_TEXTE_MAX,
+  TAILLE_TEXTE_MIN,
 } from './types.js'
 
 /**
@@ -155,6 +157,8 @@ export const schemaStyleBloc = z.object({
   // Photos : recadrer dans un cadre de hauteur choisie plutôt que montrer la
   // photo entière. Absent = entière, jamais coupée.
   recadre: z.boolean().optional(),
+  // Taille du texte, en pourcentage de la taille normale. Absente = 100.
+  taille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
 })
 
 export const schemaPageManifeste = z.object({

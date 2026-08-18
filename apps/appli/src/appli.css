@@ -509,17 +509,26 @@ button {
   cursor: pointer;
 }
 
-.perso__bascule input {
+/* « [type='checkbox'] » n'est pas décoratif : « .pan input » (plus bas dans ce
+   fichier, même spécificité) imposerait sinon « width: 100 % » à la case, qui
+   prendrait toute la ligne et écraserait le texte sur le côté. L'attribut fait
+   pencher la balance. Même piège que « .roue__hex ». */
+.perso__bascule input[type='checkbox'] {
   flex: none;
   width: 22px;
   height: 22px;
   margin: 2px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
   accent-color: var(--b-accent);
   cursor: pointer;
 }
 
 .perso__bascule > span {
   display: flex;
+  flex: 1;
+  min-width: 0;
   flex-direction: column;
   gap: 4px;
 }
@@ -536,13 +545,21 @@ button {
 
    Ne prend jamais le pointeur (« pointer-events »), sinon il se placerait entre
    le doigt et la page et le dépôt viserait le cadre lui-même. */
+/* Place visée pendant un glissement. Le bloc qu'on tient : cadre plein.
+   Les blocs déjà là, qui vont changer de largeur pour lui faire place :
+   pointillé discret — ils annoncent, ils ne réclament pas l'attention. */
 .edit__fantome {
   position: fixed;
   z-index: 40;
   pointer-events: none;
-  border: 3px dashed var(--b-accent);
+  border: 3px solid var(--b-accent);
   border-radius: 18px;
   background: rgba(233, 180, 76, 0.14);
+}
+
+.edit__fantome--voisin {
+  border: 2px dashed rgba(233, 180, 76, 0.55);
+  background: none;
 }
 
 /* Panneau des blocs. */
@@ -800,6 +817,54 @@ button {
 
 .ruban__lettre {
   font-weight: 700;
+}
+
+/* Les deux « A » de la taille du texte : leur différence de corps dit à elle
+   seule lequel réduit et lequel agrandit, sans un mot à lire. */
+.ruban__lettre--petite {
+  font-size: 11px;
+}
+
+.ruban__lettre--grande {
+  font-size: 17px;
+}
+
+/* La valeur est **affichée**, pas devinée : sur un réglage à deux boutons, on
+   ne saurait sinon jamais où l'on en est — et elle s'écrit directement.
+   « .ruban input.ruban__valeur » nomme la case deux fois, exprès : « .pan input »
+   lui donnerait sinon toute la largeur du panneau (même piège que « .roue__hex »
+   et que la case « Recadrer »). */
+.ruban__taille {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px;
+}
+
+.ruban input.ruban__valeur {
+  width: 44px;
+  padding: 2px 4px;
+  border: 1px solid var(--b-trait);
+  border-radius: 6px;
+  background: rgba(245, 247, 250, 0.06);
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--b-texte);
+}
+
+/* Les flèches natives du champ « number » sont minuscules et se doublent des
+   deux « A » : on les retire plutôt que d'offrir deux commandes pour un même
+   réglage, dont une trop petite pour être visée. */
+.ruban input.ruban__valeur::-webkit-inner-spin-button,
+.ruban input.ruban__valeur::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.ruban__unite {
+  font-size: 12px;
+  color: var(--b-texte-doux);
 }
 
 /* Bandeau de couleur sous l'icône, comme dans un traitement de texte : on voit
@@ -1172,9 +1237,17 @@ button {
 }
 
 /* Le bloc en cours de déplacement s'efface : on suit la cible, pas l'origine. */
+/* Le bloc qu'on tient suit le doigt, réduit (transformation écrite par
+   l'éditeur). Il passe au-dessus des autres sans les cacher : à sa taille
+   réelle, il recouvrait la page entière et l'on ne voyait plus où il allait
+   tomber. L'ombre le décolle, comme une feuille qu'on soulève ; le liseré dit
+   que c'est bien lui qu'on tient. */
 .emp--glisse {
-  opacity: 0.35;
+  z-index: 30;
+  opacity: 0.9;
   cursor: grabbing;
+  outline-color: var(--b-accent);
+  box-shadow: 0 18px 40px rgba(4, 11, 19, 0.55);
 }
 
 /* Repère de dépôt : un trait épais sur le bord visé. Sans lui, on ne sait pas
@@ -2149,4 +2222,58 @@ button {
 .clavier__fermer:active {
   background: var(--b-accent);
   color: #0b1a2b;
+}
+
+/* ── Visionneuse : une photo en grand par-dessus la page ─────────────────── */
+
+.visionneuse {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 4vh 4vw;
+  background: rgba(4, 11, 19, 0.96);
+}
+
+/* Le fond entier referme. « z-index: -1 » le range derrière la photo : sans
+   cela il la recouvrirait, et la photo elle-même serait un bouton de fermeture. */
+.visionneuse__zone {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 0;
+  background: transparent;
+}
+
+.visionneuse__image {
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.visionneuse__legende {
+  margin: 0;
+  max-width: 60ch;
+  text-align: center;
+  font-size: clamp(15px, 1.3vw, 24px);
+  color: var(--b-texte-doux);
+}
+
+.visionneuse__fermer {
+  position: absolute;
+  top: 3vh;
+  right: 3vw;
+  min-height: 56px;
+  padding: 0 26px;
+  border: 2px solid rgba(245, 247, 250, 0.3);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--b-texte);
+  font-size: 18px;
+  font-weight: 600;
 }

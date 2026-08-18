@@ -35,6 +35,9 @@ import {
   QUIZ_EXPLICATION_MAX_SIGNES,
   QUIZ_QUESTION_MAX_SIGNES,
   QUIZ_REPONSE_MAX_SIGNES,
+  PAS_TAILLE_TEXTE,
+  TAILLE_TEXTE_MAX,
+  TAILLE_TEXTE_MIN,
   type BlocLibre,
   type ContenuPage,
   type DefEmplacement,
@@ -414,7 +417,89 @@ export function EditeurPage({
     fantome?: { gauche: number; haut: number; largeur: number; hauteur: number }
   }
 
-  const depart = useRef<{ x: number; y: number; id: string; actif: boolean } | null>(null)
+  /** Un cadre de l'aperçu de dépôt, en pixels d'écran. */
+  type CadreApercu = {
+    cle: string
+    gauche: number
+    haut: number
+    largeur: number
+    hauteur: number
+  }
+
+  const depart = useRef<{
+    x: number
+    y: number
+    id: string
+    actif: boolean
+    /** Le bloc de l'aperçu qu'on tient, s'il y en a un : il suit le doigt. */
+    element: HTMLElement | null
+    /** Mise à l'échelle de la toile, pour traduire les pixels d'écran. */
+    echelle: number
+    /**
+     * Hauteur du bloc au repos, en pixels d'écran, relevée **avant** qu'il ne
+     * soit réduit pour être porté : une fois la transformation posée, sa boîte
+     * mesurée ne vaut plus que 45 % et les cadres seraient tout plats.
+     */
+    hauteur: number
+  } | null>(null)
+
+  /**
+   * Facteur de « zoom » subi par un élément de la toile. Un déplacement de 10
+   * pixels d'écran vaut 10 / echelle pixels **dans** la toile : sans cette
+   * division, le bloc traînerait derrière le doigt.
+   *
+   * Chromium le donne directement (« currentCSSZoom ») depuis la version 128 ;
+   * avant, on le mesure — la boîte englobante est zoomée, « offsetWidth » ne
+   * l'est pas.
+   */
+  const echelleDe = (element: HTMLElement): number => {
+    const donne = (element as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom
+    if (donne && donne > 0) return donne
+    const mesure = element.getBoundingClientRect().width / (element.offsetWidth || 1)
+    return mesure > 0 ? mesure : 1
+  }
+
+  /**
+   * Taille du bloc pendant qu'on le porte. À l'échelle 1, un bloc pleine largeur
+   * recouvrait la moitié de la page : on ne voyait plus ni les blocs voisins ni
+   * les cadres qui annoncent le résultat — c'est le reproche qui a été fait au
+   * geste. Réduit, il se lit comme ce qu'il est : l'objet qu'on tient en main,
+   * pas la page. La place réelle, elle, est donnée par les cadres.
+   */
+  const ECHELLE_PORTE = 0.45
+
+  /** Rend au bloc suivi sa place : fin du geste, ou abandon. */
+  const relacherBlocSuivi = () => {
+    const element = depart.current?.element
+    if (!element) return
+    element.style.transform = ''
+    element.style.transformOrigin = ''
+    element.style.willChange = ''
+  }
+
+  /**
+   * Deux dépôts qui désignent la même place. Sans cette comparaison, chaque
+   * mouvement du pointeur remplacerait l'état par un objet **équivalent** et
+   * redessinerait tout l'éditeur — cinquante fois par seconde pour rien.
+   */
+  const memeDepot = (a: Depot | null, b: Depot | null): boolean => {
+    if (a === b) return true
+    if (!a || !b) return false
+    return (
+      a.cle === b.cle &&
+      a.ou === b.ou &&
+      a.decalage === b.decalage &&
+      a.largeur === b.largeur &&
+      a.fantome?.gauche === b.fantome?.gauche &&
+      a.fantome?.haut === b.fantome?.haut &&
+      a.fantome?.largeur === b.fantome?.largeur &&
+      a.fantome?.hauteur === b.fantome?.hauteur
+    )
+  }
+
+  /** Change la place visée, mais **seulement** si elle a vraiment changé. */
+  const viser = (nouveau: Depot | null) =>
+    setDepot((precedent) => (memeDepot(precedent, nouveau) ? precedent : nouveau))
   const vientDeGlisser = useRef(false)
   /** Dernière position connue du pointeur, relue par le défilement automatique. */
   const dernierPoint = useRef<{ x: number; y: number } | null>(null)
@@ -455,7 +540,7 @@ export function EditeurPage({
       const avant = toile.scrollTop
       toile.scrollTop += pas
       // La page a bougé sous le pointeur : la cible visée n'est plus la même.
-      if (toile.scrollTop !== avant) setDepot(depotDepuisPoint(point.x, point.y, glisse.id))
+      if (toile.scrollTop !== avant) viser(depotDepuisPoint(point.x, point.y, glisse.id))
     }, 16)
   }
 
@@ -468,15 +553,24 @@ export function EditeurPage({
    * que « clientX / clientY ». (Ce ne serait pas vrai avec « transform ».)
    */
   const depotDepuisPoint = (x: number, y: number, cleGlisse: string): Depot | null => {
-    const dessous = document.elementFromPoint(x, y) as HTMLElement | null
-    const emplacement = dessous?.closest('.emp[data-nom]') as HTMLElement | null
+    // « elementsFromPoint » au pluriel : le bloc qu'on tient suit le doigt, il
+    // est donc en permanence sous le pointeur. On regarde **à travers** lui,
+    // sinon plus aucune cible ne serait jamais atteinte.
+    const dessous = document.elementsFromPoint(x, y) as HTMLElement[]
+    const emplacement = dessous
+      .map((element) => element.closest('.emp[data-nom]') as HTMLElement | null)
+      .find(
+        (candidat): candidat is HTMLElement =>
+          candidat !== null && candidat.dataset['nom'] !== cleGlisse,
+      )
     const cle = emplacement?.dataset['nom']
     // Le pointeur ne vise aucun bloc : peut-être le vide laissé à droite d'une
     // rangée. On s'y pose plutôt que de ne rien faire.
     if (!emplacement || !cle) {
-      return dessous?.closest('.mdl') ? depotDansLeVide(x, y, cleGlisse) : null
+      return dessous.some((element) => element.closest('.mdl'))
+        ? depotDansLeVide(x, y, cleGlisse)
+        : null
     }
-    if (cle === cleGlisse) return null
 
     const cadre = emplacement.getBoundingClientRect()
     const fractionX = (x - cadre.left) / cadre.width
@@ -607,6 +701,7 @@ export function EditeurPage({
     const grille = document.querySelector('.edit__apercu .mdl__grille')
     if (!grille) return null
     const cadreGrille = grille.getBoundingClientRect()
+    const echelleGrille = echelleDe(grille as HTMLElement)
     const pas = cadreGrille.width / COLONNES_GRILLE
     if (pas <= 0) return null
 
@@ -648,7 +743,11 @@ export function EditeurPage({
       // gouttière est relue sur la grille plutôt que réécrite ici : les deux ne
       // peuvent donc pas se contredire. « pas » ne suffirait pas — il vaut une
       // colonne **plus sa part de gouttière**, ce qui décalerait le cadre.
-      const gouttiere = parseFloat(getComputedStyle(grille).columnGap) || 0
+      // « columnGap » est lu en pixels **de toile**, la boîte englobante est en
+      // pixels **d'écran** : sans la remise à l'échelle, les deux mesures ne
+      // parlent pas de la même chose et le cadre tombe une dizaine de pixels
+      // trop à gauche, trop étroit.
+      const gouttiere = (parseFloat(getComputedStyle(grille).columnGap) || 0) * echelleGrille
       const colonne = Math.max(
         0,
         (cadreGrille.width - (COLONNES_GRILLE - 1) * gouttiere) / COLONNES_GRILLE,
@@ -663,7 +762,9 @@ export function EditeurPage({
           gauche: cadreGrille.left + debut * (colonne + gouttiere),
           haut,
           largeur: largeur * colonne + (largeur - 1) * gouttiere,
-          hauteur: bas - haut,
+          // La hauteur du bloc qu'on tient, relevée à la saisie — pas celle de
+          // la rangée : le cadre doit avoir la taille du bloc annoncé.
+          hauteur: depart.current?.hauteur || bas - haut,
         },
       }
     }
@@ -779,6 +880,79 @@ export function EditeurPage({
     // encore est celui où elle ne rentre pas : voir juste au-dessus.
 
     return resultat
+  }
+
+  /**
+   * Aperçu du dépôt : la rangée visée telle qu'elle sera **après**, un cadre
+   * par bloc, aux largeurs d'après.
+   *
+   * Sans lui, poser un bloc sur une rangée déjà pleine rétrécit le voisin sans
+   * l'avoir annoncé : on ne l'apprend qu'une fois le doigt levé.
+   *
+   * Les largeurs ne sont **pas** recalculées ici : on demande à
+   * « placerCellule » le contenu tel qu'il serait (elle est pure, rien n'est
+   * enregistré) et on dessine ce qu'elle répond. C'est la seule façon que
+   * l'aperçu ne puisse pas annoncer autre chose que ce qui se produira.
+   *
+   * La bande verticale (haut et hauteur) est celle qu'occupe la rangée
+   * aujourd'hui, relevée dans l'aperçu — comme le fait déjà le cadre fantôme.
+   */
+  const apercuDepot = (cleGlisse: string, vise: Depot): CadreApercu[] => {
+    const grille = document.querySelector('.edit__apercu .mdl__grille')
+    if (!grille) return []
+    const apres = placerCellule(contenu, cleGlisse, vise)
+    if (!apres) return []
+    const rangee = rangeesDe(apres).find((cles) => cles.includes(cleGlisse))
+    if (!rangee) return []
+
+    // Le bloc glissé est mis à part : il est encore à son ancienne place dans
+    // l'aperçu, sa position actuelle fausserait le haut de la rangée.
+    const boites = new Map<string, DOMRect>()
+    for (const cle of rangee) {
+      if (cle === cleGlisse) continue
+      const boite = document
+        .querySelector(`.edit__apercu .emp[data-nom="${cle}"]`)
+        ?.getBoundingClientRect()
+      if (boite) boites.set(cle, boite)
+    }
+    // Le bloc atterrit seul sur sa rangée : il n'y a rien à annoncer d'autre
+    // que sa propre place, dont le cadre fantôme se charge déjà.
+    if (boites.size === 0) return []
+    const haut = Math.min(...[...boites.values()].map((boite) => boite.top))
+    // Hauteur du bloc qu'on tient, relevée à la saisie : pendant le geste il est
+    // réduit, le mesurer maintenant donnerait 45 % de sa taille.
+    const hauteurTenue =
+      depart.current?.hauteur || Math.max(...[...boites.values()].map((boite) => boite.height))
+
+    // Même mesure que dans « depotDansLeVide » : la gouttière est relue sur la
+    // grille, jamais réécrite ici — les deux ne peuvent donc pas se contredire.
+    // Elle est en pixels de toile, les rectangles en pixels d'écran : d'où la
+    // remise à l'échelle.
+    const cadreGrille = grille.getBoundingClientRect()
+    const gouttiere =
+      (parseFloat(getComputedStyle(grille).columnGap) || 0) * echelleDe(grille as HTMLElement)
+    const colonne = Math.max(
+      0,
+      (cadreGrille.width - (COLONNES_GRILLE - 1) * gouttiere) / COLONNES_GRILLE,
+    )
+
+    let curseur = 0
+    return rangee.map((cle) => {
+      const debut = curseur + decalageDeCle(apres, cle)
+      const largeur = colonnesDeCle(apres, cle)
+      curseur = debut + largeur
+      return {
+        cle,
+        gauche: cadreGrille.left + debut * (colonne + gouttiere),
+        haut,
+        largeur: largeur * colonne + (largeur - 1) * gouttiere,
+        // **Chaque cadre a la taille de son bloc**, pas celle de la rangée :
+        // celui du bloc porté fait exactement sa hauteur, celui d'un voisin la
+        // sienne. Une bande commune donnait des cadres qui ne ressemblaient à
+        // aucun des blocs qu'ils annonçaient.
+        hauteur: cle === cleGlisse ? hauteurTenue : (boites.get(cle)?.height ?? hauteurTenue),
+      }
+    })
   }
 
   /** Déplace une cellule existante à l'endroit désigné par le dépôt. */
@@ -929,7 +1103,31 @@ export function EditeurPage({
   const auPointeurDescendu = (evenement: React.PointerEvent<HTMLElement>, nom: string) => {
     // La poignée de largeur a son propre glissement : ne pas le lui voler.
     if ((evenement.target as HTMLElement).closest('.mdl__poignee')) return
-    depart.current = { x: evenement.clientX, y: evenement.clientY, id: nom, actif: false }
+    // Le glissement part parfois du panneau de droite (poignée « ⠿ ») : là, rien
+    // ne suit le doigt, la ligne du panneau resterait coupée par son cadre.
+    const surApercu = evenement.currentTarget.closest('.edit__apercu')
+      ? evenement.currentTarget
+      : null
+    const echelle = surApercu ? echelleDe(surApercu) : 1
+    depart.current = {
+      x: evenement.clientX,
+      y: evenement.clientY,
+      id: nom,
+      actif: false,
+      element: surApercu,
+      echelle,
+      hauteur: surApercu ? surApercu.getBoundingClientRect().height : 0,
+    }
+
+    // Le bloc rétrécit **autour du point saisi** : c'est ce qui fait que
+    // l'endroit qu'on a touché reste sous le doigt au lieu de filer vers un
+    // coin. Posé dès la saisie, avant toute transformation.
+    if (surApercu) {
+      const cadre = surApercu.getBoundingClientRect()
+      surApercu.style.transformOrigin = `${(evenement.clientX - cadre.left) / echelle}px ${
+        (evenement.clientY - cadre.top) / echelle
+      }px`
+    }
   }
 
   const auPointeurDeplace = (evenement: React.PointerEvent<HTMLElement>) => {
@@ -950,11 +1148,22 @@ export function EditeurPage({
     }
 
     dernierPoint.current = { x: evenement.clientX, y: evenement.clientY }
-    setDepot(depotDepuisPoint(evenement.clientX, evenement.clientY, debut.id))
+
+    // Le bloc suit le doigt **tout de suite**, écrit directement dans le style :
+    // aucun rendu React ne s'interpose, le geste ne peut donc pas traîner.
+    if (debut.element) {
+      const dx = (evenement.clientX - debut.x) / debut.echelle
+      const dy = (evenement.clientY - debut.y) / debut.echelle
+      debut.element.style.willChange = 'transform'
+      debut.element.style.transform = `translate(${dx}px, ${dy}px) scale(${ECHELLE_PORTE})`
+    }
+
+    viser(depotDepuisPoint(evenement.clientX, evenement.clientY, debut.id))
   }
 
   const auPointeurRelache = () => {
     const debut = depart.current
+    relacherBlocSuivi()
     depart.current = null
     arreterDefilement()
     dernierPoint.current = null
@@ -1075,6 +1284,11 @@ export function EditeurPage({
     )
   }
 
+  // Mesuré à chaque rendu, donc à chaque mouvement du pointeur : les rectangles
+  // relevés sont ceux de l'aperçu tel qu'il est en ce moment. Un aperçu gardé
+  // en mémoire vieillirait dès le premier défilement.
+  const apercuRangee = glisseId && depot ? apercuDepot(glisseId, depot) : []
+
   return (
     <div className="edit">
       <div
@@ -1093,22 +1307,43 @@ export function EditeurPage({
         </ToileBorne>
       </div>
 
-      {/* Place visée pendant un dépôt dans le vide. Posé hors de l'aperçu et en
+      {/* Place visée pendant un dépôt : la rangée entière telle qu'elle sera,
+          ou à défaut le seul bloc déposé. Posé hors de l'aperçu et en
           « fixed » : les coordonnées relevées par « getBoundingClientRect » sont
           celles de l'écran, il n'y a donc aucune conversion à faire — et rien à
           craindre du « zoom » de la toile, qui ne s'applique pas ici. */}
-      {depot?.fantome ? (
-        <div
-          className="edit__fantome"
-          aria-hidden="true"
-          style={{
-            left: depot.fantome.gauche,
-            top: depot.fantome.haut,
-            width: depot.fantome.largeur,
-            height: depot.fantome.hauteur,
-          }}
-        />
-      ) : null}
+      {apercuRangee.length > 0
+        ? apercuRangee.map((cadre) => (
+            <div
+              key={cadre.cle}
+              className={
+                cadre.cle === glisseId
+                  ? 'edit__fantome'
+                  : 'edit__fantome edit__fantome--voisin'
+              }
+              aria-hidden="true"
+              style={{
+                left: cadre.gauche,
+                top: cadre.haut,
+                width: cadre.largeur,
+                height: cadre.hauteur,
+              }}
+            />
+          ))
+        : depot?.fantome
+          ? (
+              <div
+                className="edit__fantome"
+                aria-hidden="true"
+                style={{
+                  left: depot.fantome.gauche,
+                  top: depot.fantome.haut,
+                  width: depot.fantome.largeur,
+                  height: depot.fantome.hauteur,
+                }}
+              />
+            )
+          : null}
 
       <aside className="pan">
         <div className="pan__couleurs">
@@ -1694,6 +1929,12 @@ function BarreMiseEnForme({
   surStyle: (transformation: (style: StyleBloc) => StyleBloc) => void
 }) {
   const [roue, setRoue] = useState<'fond' | 'couleur' | null>(null)
+  /**
+   * Ce qu'on est en train de taper dans la case de la taille, tant qu'on n'a pas
+   * validé. Sans cet état, « 1 » (le début de « 150 ») serait aussitôt ramené
+   * dans les bornes et l'on ne pourrait plus rien écrire.
+   */
+  const [tailleSaisie, setTailleSaisie] = useState<string | null>(null)
 
   const basculer = (champ: 'gras' | 'italique' | 'souligne') => {
     if (texteRiche) commandesTexte.current?.basculer(champ)
@@ -1723,6 +1964,45 @@ function BarreMiseEnForme({
       else copie.opacite = 100 - valeur
       return copie
     })
+
+  // Taille du texte du bloc, en pourcentage. Ramenée à 100, elle sort du
+  // fichier : un bloc qu'on remet à sa taille normale ne laisse pas de trace.
+  const taille = style.taille ?? 100
+  // Le pas est compté sur la valeur **rangée dans le contenu**, pas sur celle
+  // qu'affiche la barre : deux appuis rapprochés partiraient sinon tous les deux
+  // du même point de départ, et l'un des deux serait perdu (constaté).
+  const poserTaille = (valeur: number) =>
+    surStyle((precedent) => {
+      const borne = Math.min(TAILLE_TEXTE_MAX, Math.max(TAILLE_TEXTE_MIN, Math.round(valeur)))
+      const copie = { ...precedent }
+      if (borne === 100) delete copie.taille
+      else copie.taille = borne
+      return copie
+    })
+
+  const changerTaille = (sens: -1 | 1) => {
+    setTailleSaisie(null)
+    surStyle((precedent) => {
+      const vise = (precedent.taille ?? 100) + sens * PAS_TAILLE_TEXTE
+      const borne = Math.min(TAILLE_TEXTE_MAX, Math.max(TAILLE_TEXTE_MIN, vise))
+      const copie = { ...precedent }
+      if (borne === 100) delete copie.taille
+      else copie.taille = borne
+      return copie
+    })
+  }
+
+  // Ce qui a été tapé est appliqué en quittant la case (ou par « Entrée »).
+  // Une case vide ou un texte qui n'est pas un nombre ne change rien : on
+  // retrouve la valeur d'avant plutôt qu'une taille inventée.
+  const validerTaille = () => {
+    const tape = tailleSaisie
+    setTailleSaisie(null)
+    if (tape === null) return
+    const nombre = Number(tape.replace(',', '.'))
+    if (tape.trim() === '' || !Number.isFinite(nombre)) return
+    poserTaille(nombre)
+  }
 
   const alignement = style.alignement ?? 'gauche'
   const alignements: [AlignementBloc, string][] = [
@@ -1787,6 +2067,59 @@ function BarreMiseEnForme({
               <IconeAlignement vers={alignementChoisi} />
             </button>
           ))}
+        </div>
+
+        <span className="ruban__separateur" aria-hidden="true" />
+
+        {/* Taille du texte du bloc. Deux boutons plutôt qu'une liste déroulante :
+            on lit la valeur en même temps qu'on la change, et il n'y a rien à
+            viser au pixel. Le réglage vaut pour tout le bloc — comme
+            l'alignement, et non comme G / I / S sur un texte. */}
+        <div className="ruban__groupe" role="group" aria-label="Taille du texte">
+          <button
+            type="button"
+            className="ruban__bouton"
+            aria-label="Réduire le texte"
+            title="Réduire le texte"
+            disabled={taille <= TAILLE_TEXTE_MIN}
+            onClick={() => changerTaille(-1)}
+          >
+            <span className="ruban__lettre ruban__lettre--petite">A</span>
+          </button>
+          {/* La valeur s'écrit aussi à la main : les deux boutons vont par pas
+              de dix, taper « 145 » est plus court que quatre appuis — et permet
+              une taille qui ne tombe pas sur un pas. */}
+          <span className="ruban__taille">
+            <input
+              type="number"
+              className="ruban__valeur"
+              aria-label="Taille du texte, en pourcentage"
+              title="Taille du texte, en pourcentage"
+              min={TAILLE_TEXTE_MIN}
+              max={TAILLE_TEXTE_MAX}
+              step={PAS_TAILLE_TEXTE}
+              value={tailleSaisie ?? taille}
+              onChange={(evenement) => setTailleSaisie(evenement.target.value)}
+              onBlur={validerTaille}
+              onKeyDown={(evenement) => {
+                if (evenement.key === 'Enter') evenement.currentTarget.blur()
+                if (evenement.key === 'Escape') setTailleSaisie(null)
+              }}
+            />
+            <span className="ruban__unite" aria-hidden="true">
+              %
+            </span>
+          </span>
+          <button
+            type="button"
+            className="ruban__bouton"
+            aria-label="Agrandir le texte"
+            title="Agrandir le texte"
+            disabled={taille >= TAILLE_TEXTE_MAX}
+            onClick={() => changerTaille(1)}
+          >
+            <span className="ruban__lettre ruban__lettre--grande">A</span>
+          </button>
         </div>
 
         <span className="ruban__separateur" aria-hidden="true" />

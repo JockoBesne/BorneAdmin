@@ -54,6 +54,7 @@ const complet = {
             italique: true,
             souligne: true,
             alignement: 'centre',
+            taille: 130,
           },
           image: { recadre: true },
         },

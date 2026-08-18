@@ -54,18 +54,13 @@ si le budget de la session est court, on s'arrêterait au milieu.
 3. **Redimensionner les images à l'import** (canvas) — **en attente exprès** :
    à ne lancer que si le poids des photos devient gênant pour de vrai.
 
-**À reprendre en premier — demandé le 2026-08-12, deux points courts sur
-l'éditeur.** Détail, cause et marche à suivre dans **`A-FAIRE.md` § 1.4 et 1.5** :
-
-- **§ 1.5 — texte de la case « Recadrer la photo » écrasé** sur le côté du
-  panneau (*¼ j*). Cause trouvée : `.pan input { width: 100 % }` l'emporte sur
-  `.perso__bascule input`, même spécificité et déclarée plus loin. Correctif dans
-  `A-FAIRE.md`. **Commencer par là**, c'est un quart d'heure.
-- **§ 1.4 — montrer le redimensionnement avant le dépôt** (*½ j*). Pendant qu'on
-  glisse, on ne voit pas que les blocs **déjà sur la rangée visée** vont changer
-  de largeur (partage des colonnes sur une rangée pleine). Étendre le cadre
-  fantôme à toute la rangée, en le calculant avec `placerCellule` — qui est pure,
-  donc utilisable comme aperçu. **Ne pas** refaire ce calcul à la main.
+**Faits le 2026-08-18** (les deux points d'éditeur demandés le 12 août, § 1.4 et
+1.5 de `A-FAIRE.md`) : la case « Recadrer la photo » ne s'écrase plus, et le
+glissement **montre la rangée telle qu'elle sera** — un cadre par bloc, calculé
+par `placerCellule` (`apercuDepot` dans `EditeurPage.tsx`). Même jour :
+**toucher une photo l'affiche en grand** (`Visionneuse` dans `Visiteur.tsx`, la
+borne écoute enfin `surImage`), et les photos d'une **galerie ne sont plus
+rognées** (`object-fit: contain`).
 
 **Sans objet** : l'ancienne « étape 3 — dossier partagé ». Il n'y a **qu'un seul
 ordinateur**, voir ci-dessous.
@@ -173,13 +168,34 @@ ordinateur**, voir ci-dessous.
   alignement sur le disque (constaté).
 - **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond,
   **transparence du fond** (`opacite`, 0–100, absente = opaque ; elle ne touche
-  que le fond — le texte posé dessus reste net, et sans fond elle ne fait rien)
-  et mise en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
+  que le fond — le texte posé dessus reste net, et sans fond elle ne fait rien),
+  **taille du texte** (`taille`, en pourcentage, 60–200, absente = 100) et mise
+  en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
   clé que partout ailleurs (`titre`, `suite:<id>`). Appliqué par `Habillage`
   dans `rendu/Modeles.tsx`, par où passent tous les blocs. Un bloc sans
   habillage n'est pas enveloppé du tout, et un habillage remis à zéro est retiré
   du fichier (`estStyleVide`, `sansStylesVides`) — il part aussi avec son bloc
   quand on le retire.
+  - **La taille du texte est un facteur, pas une taille en points.** Le rendu
+    pose une variable CSS `--facteur-texte` sur l'habillage ; chaque texte
+    (`.b-h1`, `.b-h3`, `.b-corps`, `.b-petit`, `.b-legende`) multiplie **sa**
+    taille par elle (`calc`). Un `font-size` posé sur l'enveloppe n'aurait rien
+    changé — ces classes portent chacune leur taille en pixels. Conséquence
+    voulue : les écarts entre un titre et un paragraphe sont conservés. Les
+    ateliers (quiz, frise) gardent leurs tailles, leurs commandes étant
+    dimensionnées au doigt.
+  - Un réglage compté au pas (les deux « A » de la barre) part de la valeur
+    **rangée dans le contenu**, jamais de celle qu'affiche la barre : deux
+    appuis rapprochés partiraient sinon du même point et l'un serait perdu.
+    Constaté, corrigé le 2026-08-18.
+  - La taille **s'écrit aussi à la main** dans la barre. Deux points : ce qui
+    est tapé vit dans un état à part tant qu'on n'a pas validé (sinon « 1 »,
+    début de « 150 », serait aussitôt ramené à 60), et la case est nommée
+    `.ruban input.ruban__valeur` — sans cette double mention, `.pan input` lui
+    donnerait toute la largeur du panneau.
+  - **L'aller-retour par clé USB est couvert** (`transfert.test.ts`) : la page
+    est écrite, relue par le schéma puis réimportée, et son habillage doit
+    ressortir entier. C'est le passage où un champ non déclaré disparaît.
 - **`ordre`** = **la** liste des cellules d'une page, de haut en bas,
   emplacements du modèle et blocs ajoutés **mélangés** (`titre`, `suite:<id>`…).
   Elle décide de l'**ordre** et de la **présence** : un emplacement absent de la
@@ -311,6 +327,32 @@ Ce qu'il faut savoir avant d'y toucher :
 - **Pas de conversion de coordonnées à faire** : la toile utilise `zoom`, donc
   `getBoundingClientRect` et `clientX/clientY` sont dans le même repère. (Ce ne
   serait pas vrai avec `transform`.)
+- **Mais tout ce qui vient d'une feuille de style, si.** `getComputedStyle` rend
+  des pixels **de toile** (la gouttière de la grille, par exemple), les
+  rectangles des pixels **d'écran** : mélanger les deux décale les cadres d'une
+  dizaine de pixels et les rétrécit. Multiplier par `echelleDe(element)`
+  (`currentCSSZoom`, mesuré à défaut). Même chose pour déplacer un bloc à la
+  main : une distance d'écran se **divise** par cette échelle. Défaut constaté
+  et corrigé le 2026-08-18.
+- **Le bloc qu'on tient suit le doigt**, par une transformation écrite
+  directement dans son style (`element.style.transform`), sans passer par React :
+  un rendu par mouvement de pointeur ferait traîner le geste. Conséquence : le
+  bloc est en permanence sous le pointeur, d'où `document.elementsFromPoint`
+  (au pluriel) pour regarder **à travers** lui.
+- **Il est porté réduit** (`ECHELLE_PORTE`, 45 %), et le rétrécissement se fait
+  **autour du point saisi** (`transformOrigin` posé à la saisie) pour que
+  l'endroit touché reste sous le doigt. À sa taille réelle, un bloc pleine
+  largeur recouvrait la page et masquait les cadres qui annoncent le résultat —
+  reproche fait au geste, corrigé le 2026-08-18. La place réelle est dite par
+  les cadres, pas par le bloc porté.
+- **Chaque cadre a la taille de son bloc** : largeur d'après le dépôt (calculée
+  par `placerCellule`), hauteur du bloc lui-même. Celle du bloc porté est
+  **relevée à la saisie** — le mesurer pendant le geste rendrait 45 % de sa
+  taille. Une hauteur commune à toute la rangée donnait des cadres qui ne
+  ressemblaient à aucun des blocs qu'ils annonçaient.
+- **Ne changer l'état du dépôt que s'il a vraiment changé** (`memeDepot`,
+  `viser`) : sinon chaque mouvement remplace l'état par un objet équivalent et
+  redessine tout l'éditeur pour rien.
 - `document.elementFromPoint` **ne voit que la zone visible** — d'où le
   défilement automatique, sans lequel une cible hors écran est inatteignable.
 - La **poignée de largeur** (`.mdl__poignee`) a son propre glissement : ne pas le
