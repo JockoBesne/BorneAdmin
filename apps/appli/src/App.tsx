@@ -18,16 +18,31 @@ export function App() {
    * Elle sert au passage en administration : on entre alors directement dans la
    * modification de **cette** page. C'est le geste attendu — on répare ce qu'on
    * est en train de regarder, on ne le recherche pas dans une liste de douze.
+   *
+   * Elle sert aussi au retour : l'administration la renvoie en se fermant, et
+   * la borne rouvre la page qu'on venait de modifier. Aller et retour par le
+   * même fil.
    */
   const [pageVisitee, setPageVisitee] = useState<string | null>(null)
 
   if (mode === 'admin') {
-    return <Admin surFermeture={() => setMode('visiteur')} pageInitiale={pageVisitee} />
+    return (
+      <Admin
+        pageInitiale={pageVisitee}
+        // Et le chemin inverse : on revient à la borne **sur la page qu'on
+        // était en train de modifier**. Fermer depuis la liste des pages ramène
+        // à l'accueil, comme avant.
+        surFermeture={(page) => {
+          setPageVisitee(page)
+          setMode('visiteur')
+        }}
+      />
+    )
   }
 
   return (
     <>
-      <Visiteur surPageOuverte={setPageVisitee} />
+      <Visiteur pageInitiale={pageVisitee} surPageOuverte={setPageVisitee} />
       <AccesAdmin surReussite={() => setMode('admin')} />
     </>
   )

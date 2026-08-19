@@ -42,7 +42,12 @@ donc `minimize` et remonte la fenêtre (`restore`, `focus`, et **le niveau
 
 **Deux façons de fermer la borne**, arrivées par deux chemins et conservées
 toutes les deux : **Ctrl + Maj + A** depuis l'écran d'administration (elle
-enregistre d'abord, c'est celle à donner au musée) et **Ctrl + Alt + Maj + Q**
+enregistre d'abord, c'est celle à donner au musée — et depuis le 2026-08-19 un
+bouton **« Enregistrer et fermer l'application »** fait exactement la même
+chose, par le même `quitter()` : la salle n'a pas toujours un clavier. Il est
+dans la fenêtre **« Réglages »**, dans un encart à lui : posé dans la barre du
+haut, il voisinait « Fermer », qui ne fait que revenir à la borne — on fermait
+l'application en croyant fermer le menu) et **Ctrl + Alt + Maj + Q**
 n'importe où, y compris devant un visiteur — la sortie de maintenance, à garder
 pour vous. Les deux passent par `sortieAutorisee` dans `principal.cjs`.
 
@@ -133,13 +138,46 @@ ordinateur**, voir ci-dessous.
     **entière** (`object-fit: contain`), sur un fond fait de la même image
     floutée et assombrie (`.hub__fond`). Rognée (« cover »), une carte ou une
     planche de signaux devenait une bande illisible ; montrée entière sans ce
-    fond, elle flottait au milieu d'un grand vide.
+    fond, elle flottait au milieu d'un grand vide. (Essayé en « cover » le
+    2026-08-19 sur un malentendu, remis aussitôt.)
+    Le panneau « Écran d'accueil » est aussi le seul endroit d'où l'on **écrit
+    le grand titre et le sous-titre** (`reglages.titreVeille` et
+    `sousTitreVeille` — nom d'origine, il s'agit bien de l'accueil) : ils
+    vivaient dans le fichier sans que personne puisse les changer.
+    Son panneau règle aussi l'**apparence des trois textes de l'accueil**
+    (2026-08-19) : le grand titre, le sous-titre, et la barre de titre au bas
+    des cartes — couleur pour chacun, taille en pourcentage, plus un fond pour
+    la barre. Sept champs facultatifs de `reglages` (`hubTitreCouleur`,
+    `hubTitreTaille`, `hubSousTitreCouleur`, `hubSousTitreTaille`, `hubNomFond`,
+    `hubNomCouleur`, `hubNomTaille`), posés en **variables CSS avec valeur de
+    repli** par `variablesHub` (`couleurs.ts`) sur `.hub` : tant que rien n'est
+    réglé, aucune variable n'est écrite et l'accueil est celui d'avant. Même
+    méthode que le bandeau des pages, et même raison — rien à migrer. La taille
+    est un **facteur** (`calc`), les trois textes gardent donc leurs écarts, et
+    une taille ramenée à 100 sort du fichier. Le bouton « Remettre l'apparence
+    d'origine » efface les neuf réglages d'un coup.
   - `src/AccesAdmin.tsx` — accès caché (coin, appui 5 s, code PIN).
     Entrer dans l'administration **depuis une page** ouvre droit sa
     modification : `Visiteur` dit la page ouverte à `App` (`surPageOuverte`),
     qui la passe à `Admin` (`pageInitiale`). Depuis l'accueil, rien n'est passé
-    et c'est la liste des pages, comme avant.
-  - `src/Admin.tsx` — liste des pages, panneau « Apparence », enregistrement auto.
+    et c'est la liste des pages, comme avant. **Le retour suit le même fil** :
+    « Fermer » renvoie la page en cours (`surFermeture(pageOuverte)`) et la
+    borne rouvre cette page (`Visiteur.pageInitiale`) — on va voir ce qu'on
+    vient de corriger. Fermé depuis la liste, on retombe sur l'accueil.
+  - **« Apparence généralisée » l'emporte sur tout ce qui a été réglé avant.**
+    Changer la couleur de fond ou de texte générale **efface** celle des pages
+    et de l'accueil qui s'en étaient donné une (`changerCouleur` dans
+    `Admin.tsx`) : la **dernière modification en date** gagne, et non la page
+    par principe. Sans cela, le réglage général ne changeait rien aux pages
+    personnalisées et passait pour cassé. Réversible par Ctrl + Z, comme tout le
+    reste. Chaque fenêtre de réglages porte une ligne (`.voile__note`) qui dit
+    ce qu'elle change et ce qu'elle ne change pas.
+  - `src/Admin.tsx` — liste des pages, panneaux « Apparence », « Écran
+    d'accueil » et « Réglages », enregistrement auto. « Réglages » tient le
+    **code d'accès** (modifiable depuis le 2026-08-19) et la fermeture de
+    l'application. Le code n'est écrit dans le contenu **qu'une fois les quatre
+    chiffres tapés** (état `pinSaisi` à part) : incomplet, il serait refusé par
+    le schéma à l'enregistrement et plus rien ne s'enregistrerait.
     Le panneau « Écran d'accueil » règle aussi le **délai avant le retour
     automatique** (`minutesAvantVeille`, 1 à 60 minutes) : le réglage vivait dans
     le fichier de contenu sans que personne puisse le voir.
@@ -422,6 +460,12 @@ ordinateur**, voir ci-dessous.
   tient en mémoire, rien ne peut se désynchroniser. Trois points à connaître :
   - tout passe par `modifier()`, seul endroit qui écrit le contenu — c'est ce
     qui rend l'historique complet sans le câbler action par action ;
+  - l'historique est rangé **hors du composant** (`HISTORIQUE`, module
+    `Admin.tsx`) : il survit à un aller-retour par la borne, puisque c'est en
+    regardant le résultat qu'on se dit qu'on préférait l'état d'avant. Sans
+    danger (rien d'autre n'écrit le contenu, et tout est enregistré avant de
+    rendre la main) et sans poids (50 pas au plus, dont les objets sont
+    partagés). Il part avec l'application ;
   - les modifications espacées de moins de 600 ms ne font **qu'un** pas :
     sinon annuler une phrase demanderait autant d'appuis que de lettres ;
   - dans un champ de saisie, le raccourci est laissé au navigateur (on annule
@@ -430,7 +474,13 @@ ordinateur**, voir ci-dessous.
     texte enrichi : sans lui, un texte annulé resterait affiché à l'écran.
 - **Accès admin** : coin haut-droit invisible, appui **5 s**, puis code PIN
   (`reglages.pinAdmin`, défaut **1975**). Raccourci équivalent au clavier :
-  **Ctrl + Alt + A**. Le code est **en clair** dans `contenu.json` : il écarte un
+  **Ctrl + Alt + A**. Le code se tape au pavé à l'écran **ou au clavier**
+  (« Retour arrière » pour corriger ; pas « Échap », que la borne intercepte
+  avant la page). **On lit la touche pressée (`code`), pas le caractère produit
+  (`key`)** : pavé numérique avec Verr. Num. éteint, la touche « 1 » envoie
+  « Fin » ; sur AZERTY, la rangée du haut écrit « & é " » sans Maj. Dans les
+  deux cas, `code` vaut toujours « Numpad1 » ou « Digit1 ». Défaut constaté et
+  corrigé le 2026-08-19. Le code est **en clair** dans `contenu.json` : il écarte un
   visiteur curieux, **ce n'est pas une sécurité** — ne jamais le présenter comme
   telle au musée.
 
@@ -501,6 +551,14 @@ Ce qu'il faut savoir avant d'y toucher :
 
 ## Pièges d'affichage déjà rencontrés
 
+- **La gouttière de barre de défilement se voit.** `.toile` réserve la place de
+  la barre **des deux côtés** (`scrollbar-gutter: stable both-edges`) pour que
+  l'échelle d'une page n'oscille pas selon qu'elle défile ou non. Sur l'accueil,
+  qui ne défile jamais, elle laissait deux bandes de 14 px du fond de
+  l'application le long des bords de l'écran — invisibles tant que l'accueil
+  avait la couleur de la borne, criantes dès qu'il en a une à lui. D'où
+  `scrollbar-gutter: auto` sur `.toile--accueil`, classe que l'aperçu de
+  l'administration porte aussi.
 - **`box-sizing: border-box` est posé sur tout** dans `appli.css`, comme dans
   `modeles.css`. Sans lui, un champ en `width: 100 %` dépasse son conteneur de
   26 px — c'est ce qui faisait sortir les champs du quiz et de la frise du

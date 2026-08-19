@@ -1,14 +1,18 @@
 {
   "version": 1,
-  "genereLe": "2026-08-19T11:20:27.589Z",
+  "genereLe": "2026-08-19T13:25:33.749Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Troisième étage — de l'Antiquité aux années 1970",
     "minutesAvantVeille": 3,
-    "couleurFond": "#0e2237",
+    "couleurFond": "#3c7ecc",
     "couleurTexte": "#f5f7fa",
-    "hubCouleurFond": "#081422",
-    "hubCouleurTexte": "#f5f7fa",
+    "hubCouleurTexte": "#fafbff",
+    "hubTitreCouleur": "#fcfcff",
+    "hubSousTitreCouleur": "#3b311d",
+    "hubNomFond": "#3b311d",
+    "hubNomCouleur": "#f6f6ff",
+    "hubNomTaille": 90,
     "pinAdmin": "1975"
   },
   "pages": [
@@ -18,7 +22,6 @@
       "modele": "t1",
       "ordre": 1,
       "vignette": "media-tambours-garde",
-      "couleurFond": "#0d2035",
       "couleurBandeau": "#0d2035",
       "contenu": {
         "modele": "t1",
@@ -168,7 +171,6 @@
       "modele": "t1",
       "ordre": 2,
       "vignette": "media-tours-signaux-chaine",
-      "couleurFond": "#0a1a2b",
       "couleurBandeau": "#0a1a2b",
       "contenu": {
         "modele": "t1",
@@ -383,7 +385,7 @@
       "modele": "t1",
       "ordre": 3,
       "vignette": "media-chappe-telegraphe",
-      "couleurFond": "#123049",
+      "couleurTexte": "#ffffff",
       "couleurBandeau": "#123049",
       "contenu": {
         "modele": "t1",
@@ -588,7 +590,6 @@
       "modele": "t1",
       "ordre": 4,
       "vignette": "media-morse-manipulateur",
-      "couleurFond": "#0e2237",
       "couleurBandeau": "#0e2237",
       "contenu": {
         "modele": "t1",
@@ -798,7 +799,6 @@
       "modele": "t1",
       "ordre": 5,
       "vignette": "media-telephone-bell-1876",
-      "couleurFond": "#143b58",
       "couleurBandeau": "#143b58",
       "contenu": {
         "modele": "t1",
@@ -985,7 +985,6 @@
       "modele": "t1",
       "ordre": 6,
       "vignette": "media-tour-eiffel-1914",
-      "couleurFond": "#10283e",
       "couleurBandeau": "#10283e",
       "contenu": {
         "modele": "t1",
@@ -1211,7 +1210,6 @@
       "modele": "t1",
       "ordre": 7,
       "vignette": "media-telegraphistes-croquis-1916",
-      "couleurFond": "#0a1826",
       "couleurBandeau": "#0a1826",
       "contenu": {
         "modele": "t1",
@@ -1395,7 +1393,6 @@
       "modele": "t1",
       "ordre": 8,
       "vignette": "media-pigeon-1914",
-      "couleurFond": "#123049",
       "couleurBandeau": "#123049",
       "contenu": {
         "modele": "t1",
@@ -1650,7 +1647,6 @@
       "modele": "t1",
       "ordre": 9,
       "vignette": "media-station-radio-1930",
-      "couleurFond": "#17415e",
       "couleurBandeau": "#17415e",
       "contenu": {
         "modele": "t1",
@@ -1770,7 +1766,6 @@
       "modele": "t1",
       "ordre": 10,
       "vignette": "media-merlinette-violette-camps",
-      "couleurFond": "#0b1d2e",
       "couleurBandeau": "#0b1d2e",
       "contenu": {
         "modele": "t1",
@@ -1931,7 +1926,6 @@
       "modele": "t1",
       "ordre": 11,
       "vignette": "media-enigma-m4",
-      "couleurFond": "#071320",
       "couleurBandeau": "#071320",
       "contenu": {
         "modele": "t1",
@@ -2135,7 +2129,6 @@
       "modele": "t1",
       "ordre": 12,
       "vignette": "media-baird-televisor",
-      "couleurFond": "#15496b",
       "couleurBandeau": "#15496b",
       "contenu": {
         "modele": "t1",

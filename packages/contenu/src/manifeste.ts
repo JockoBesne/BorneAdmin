@@ -243,6 +243,22 @@ export const schemaReglages = z.object({
   hubCouleurFond: z.string().regex(COULEUR).optional(),
   hubCouleurTexte: z.string().regex(COULEUR).optional(),
   /**
+   * Apparence des trois textes de l'accueil : le grand titre, le sous-titre
+   * juste dessous, et la barre de titre au bas de chaque carte.
+   *
+   * Toutes facultatives, comme le bandeau d'une page : absentes, l'accueil
+   * garde exactement l'aspect d'avant ce réglage, et rien n'est à migrer. La
+   * taille est un **pourcentage** de la taille d'origine, pas une taille en
+   * points : les écarts entre les trois textes sont donc conservés.
+   */
+  hubTitreCouleur: z.string().regex(COULEUR).optional(),
+  hubTitreTaille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
+  hubSousTitreCouleur: z.string().regex(COULEUR).optional(),
+  hubSousTitreTaille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
+  hubNomFond: z.string().regex(COULEUR).optional(),
+  hubNomCouleur: z.string().regex(COULEUR).optional(),
+  hubNomTaille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
+  /**
    * Image de fond de l'accueil (identifiant d'un média). Facultative : absente,
    * l'accueil garde son aplat de couleur.
    */

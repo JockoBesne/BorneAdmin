@@ -23,11 +23,21 @@ import { couleursEffectives, couleursHub, stylesCouleurs } from './couleurs.js'
  * sans imposer de fil — on peut toujours remonter à l'accueil et sauter où l'on
  * veut (voir « Voisine » plus bas).
  */
-export function Visiteur({ surPageOuverte }: { surPageOuverte?: (id: string | null) => void }) {
+export function Visiteur({
+  pageInitiale,
+  surPageOuverte,
+}: {
+  /**
+   * Page à ouvrir d'emblée — celle qu'on vient de modifier dans
+   * l'administration. Absente : l'accueil, le point d'entrée ordinaire.
+   */
+  pageInitiale?: string | null
+  surPageOuverte?: (id: string | null) => void
+}) {
   const [manifeste, setManifeste] = useState<Manifeste | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
   /** Page ouverte, ou « null » quand on est sur l'accueil. */
-  const [ouverte, setOuverte] = useState<string | null>(null)
+  const [ouverte, setOuverte] = useState<string | null>(pageInitiale ?? null)
   /** Photo affichée en grand par-dessus la page, ou « null ». */
   const [visionneuse, setVisionneuse] = useState<string | null>(null)
 
