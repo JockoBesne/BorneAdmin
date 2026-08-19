@@ -2214,13 +2214,20 @@ button {
    comme la page elle-même — pas en « vw », qui vaudrait pour la fenêtre.
    Les marges de côté sont celles de la page (96 px), pour que les boutons
    tombent sur les mêmes bords que les blocs. */
+/* Les deux boutons de fin de page.
+ *
+ * Ils ne sont pas la suite du contenu : ils en sont la sortie. Collés au dernier
+ * bloc, ils se lisaient comme un paragraphe de plus. Une marge haute franche et
+ * un filet les détachent — on comprend d'un coup d'œil que la page est finie. */
 .voisines {
   flex: none;
   display: flex;
   align-items: stretch;
   gap: 40px;
-  padding: 0 96px 72px;
+  margin-top: 120px;
+  padding: 64px 96px 96px;
   background: var(--b-fond);
+  border-top: 1px solid color-mix(in srgb, var(--b-texte) 14%, transparent);
 }
 
 .voisine {
