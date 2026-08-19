@@ -429,11 +429,13 @@
    dans la hauteur, au lieu d'être collé en haut avec le vide sous lui. La
    classe n'est posée que si une hauteur existe : une page qui n'en règle
    aucune garde exactement la mise en page d'avant, sans passer par flex.
-   L'habillage, quand il y en a un, est le seul enfant de la cellule : c'est
-   alors lui qui doit centrer, sinon il remplirait la hauteur et son texte
-   resterait en haut. */
+   L'habillage, quand il y en a un, remplit la hauteur (c'est ce qui fait
+   descendre son fond jusqu'en bas) : c'est donc **lui** qui doit centrer, sinon
+   son texte resterait collé en haut. Sélecteur **descendant** et non « > » :
+   dans l'éditeur, l'habillage est enveloppé du bloc cliquable « .emp », qui
+   s'intercale entre la cellule et lui. */
 .mdl__cellule--hauteur,
-.mdl__cellule--hauteur > .b-hab {
+.mdl__cellule--hauteur .b-hab {
   display: flex;
   flex-direction: column;
   justify-content: center;

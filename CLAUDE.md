@@ -336,8 +336,11 @@ ordinateur**, voir ci-dessous.
     la hauteur a été réglée, le contenu est **centré en hauteur** plutôt que
     collé en haut (`.mdl__cellule--hauteur`, posée seulement si une hauteur
     existe — sans quoi toutes les cellules passeraient en flex pour rien ; et
-    reprise sur `.b-hab`, qui remplit la cellule et centrerait donc à sa
-    place). Rangée dans
+    reprise sur `.b-hab`, qui remplit la cellule et doit donc centrer lui-même
+    son texte). **Piège** : le sélecteur de l'habillage doit être *descendant*,
+    pas `>` — dans l'éditeur, `.emp` (le bloc cliquable) s'intercale entre la
+    cellule et l'habillage, et le centrage ne marchait que côté borne. Rangée
+    dans
     `hauteur` (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de toile,
     lue par le rendu via la variable CSS `--hauteur-bloc`. Absente, la galerie
     fait 260 px.
