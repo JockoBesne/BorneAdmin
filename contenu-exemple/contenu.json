@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-19T10:35:52.665Z",
+  "genereLe": "2026-08-19T11:20:27.589Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Troisième étage — de l'Antiquité aux années 1970",
@@ -74,8 +74,8 @@
           },
           {
             "id": "b4",
-            "colonnes": 6,
-            "hauteur": 200,
+            "colonnes": 12,
+            "hauteur": 160,
             "valeur": {
               "type": "texte",
               "valeur": "**3 000 ans**\n\nde l'Antiquité aux années 1970, en un seul étage"
@@ -84,6 +84,7 @@
           {
             "id": "b5",
             "colonnes": 6,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "**Un seul fil conducteur**\n\nDe la trompette au poste de télévision, la question ne change jamais : comment faire parvenir une information à quelqu'un qui n'est pas là ? Ce sont les réponses qui changent."
@@ -91,7 +92,7 @@
           },
           {
             "id": "b6",
-            "colonnes": 6,
+            "colonnes": 12,
             "hauteur": 380,
             "valeur": {
               "type": "texte",
@@ -131,13 +132,13 @@
           "titre",
           "image",
           "texte",
-          "suite:b1",
           "suite:b2",
+          "suite:b1",
           "suite:b3",
-          "suite:b6",
           "suite:b5",
           "suite:b4",
-          "suite:b7"
+          "suite:b7",
+          "suite:b6"
         ],
         "styles": {
           "image": {
@@ -1166,6 +1167,7 @@
             "italique": true,
             "alignement": "centre",
             "opacite": 9,
+            "remplir": true,
             "taille": 105
           },
           "image": {

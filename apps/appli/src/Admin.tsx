@@ -21,6 +21,7 @@ import {
 } from './contenu.js'
 import { couleursHub, stylesCouleurs } from './couleurs.js'
 import { EditeurPage } from './EditeurPage.jsx'
+import { BoutonFermer } from './Voile.jsx'
 import { RoueCouleur } from './RoueCouleur.jsx'
 
 /**
@@ -51,10 +52,21 @@ const TEXTES_ETAT: Record<EtatEnregistrement, string> = {
   echec: '⚠ Échec de l’enregistrement — nouvel essai à la prochaine modification',
 }
 
-export function Admin({ surFermeture }: { surFermeture: () => void }) {
+export function Admin({
+  surFermeture,
+  pageInitiale,
+}: {
+  surFermeture: () => void
+  /**
+   * Page à ouvrir d'emblée, quand on entre dans l'administration depuis une
+   * page de la borne. Absente (entrée depuis l'accueil) : la liste des pages,
+   * comme avant.
+   */
+  pageInitiale?: string | null
+}) {
   const [manifeste, setManifeste] = useState<Manifeste | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
-  const [pageOuverte, setPageOuverte] = useState<string | null>(null)
+  const [pageOuverte, setPageOuverte] = useState<string | null>(pageInitiale ?? null)
   const [choixModele, setChoixModele] = useState(false)
   const [apparenceOuverte, setApparenceOuverte] = useState(false)
   const [accueilOuvert, setAccueilOuvert] = useState(false)
@@ -676,6 +688,7 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
       {choixModele ? (
         <div className="voile" role="dialog" aria-modal="true" aria-label="Choisir un modèle">
           <div className="voile__boite">
+            <BoutonFermer surFermeture={() => setChoixModele(false)} libelle="Fermer" />
             <h2 className="voile__titre">Quel modèle pour la nouvelle page ?</h2>
             <ul className="modeles">
               {LISTE_MODELES.map((modele) => (
@@ -711,6 +724,7 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
       {apparenceOuverte && manifeste ? (
         <div className="voile" role="dialog" aria-modal="true" aria-label="Apparence généralisée">
           <div className="voile__boite voile__boite--large">
+            <BoutonFermer surFermeture={() => setApparenceOuverte(false)} libelle="Fermer" />
             <h2 className="voile__titre">Apparence généralisée</h2>
 
             <div className="apparence">
@@ -772,6 +786,7 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
       {accueilOuvert && manifeste ? (
         <div className="voile" role="dialog" aria-modal="true" aria-label="Écran d'accueil">
           <div className="voile__boite voile__boite--large">
+            <BoutonFermer surFermeture={() => setAccueilOuvert(false)} libelle="Fermer" />
             <h2 className="voile__titre">Écran d'accueil</h2>
 
             <div className="apparence">

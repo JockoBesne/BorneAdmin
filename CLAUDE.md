@@ -32,6 +32,14 @@ blocs — **complet** depuis le 2026-08-05, menu d'ajout compris. Depuis le
 clé USB (voir `DECISIONS.md`), le **retour automatique à l'accueil** et les
 **sauvegardes** de `contenu.json`.
 
+**Rien ne doit ramener au bureau.** Aux touches déjà bloquées (F11, F5, Échap,
+Alt+F4, Ctrl+R/W/N…) s'ajoute le **repli de la fenêtre** : sous Windows, trois
+ou quatre doigts glissés vers le bas replient l'application et découvrent le
+bureau. Le geste ne se désactive pas depuis le code — `principal.cjs` écoute
+donc `minimize` et remonte la fenêtre (`restore`, `focus`, et **le niveau
+« screen-saver » à reposer**, sinon elle revient derrière la barre des tâches).
+`minimize` ne se refuse pas, contrairement à `close` : la fenêtre clignote.
+
 **Deux façons de fermer la borne**, arrivées par deux chemins et conservées
 toutes les deux : **Ctrl + Maj + A** depuis l'écran d'administration (elle
 enregistre d'abord, c'est celle à donner au musée) et **Ctrl + Alt + Maj + Q**
@@ -127,6 +135,10 @@ ordinateur**, voir ci-dessous.
     planche de signaux devenait une bande illisible ; montrée entière sans ce
     fond, elle flottait au milieu d'un grand vide.
   - `src/AccesAdmin.tsx` — accès caché (coin, appui 5 s, code PIN).
+    Entrer dans l'administration **depuis une page** ouvre droit sa
+    modification : `Visiteur` dit la page ouverte à `App` (`surPageOuverte`),
+    qui la passe à `Admin` (`pageInitiale`). Depuis l'accueil, rien n'est passé
+    et c'est la liste des pages, comme avant.
   - `src/Admin.tsx` — liste des pages, panneau « Apparence », enregistrement auto.
     Le panneau « Écran d'accueil » règle aussi le **délai avant le retour
     automatique** (`minutesAvantVeille`, 1 à 60 minutes) : le réglage vivait dans
@@ -137,6 +149,10 @@ ordinateur**, voir ci-dessous.
     personnalisation. Rien en bas de la colonne.
   - `src/ChampTexteRiche.tsx` — saisie du texte mis en forme (gras, italique,
     souligné, listes) sans jamais stocker de HTML.
+  - `src/Voile.tsx` — la **croix de fermeture** des fenêtres de réglages, collée
+    en haut (`position: sticky`) : les panneaux défilent, et le bouton
+    « Terminé » du bas était introuvable sans tout parcourir. Elle ne pousse pas
+    le titre — la place qu'elle prend dans la colonne est reprise en marge basse.
   - `src/RoueCouleur.tsx`, `src/couleurs.ts` — disque de couleur et conversions.
   - `src/contenu.ts` — chargement / enregistrement / import de médias.
 - **`packages/contenu/`** — cœur du produit, partagé.
@@ -492,6 +508,14 @@ Ce qu'il faut savoir avant d'y toucher :
 - **Barre de défilement des champs texte** : habillée par `::-webkit-scrollbar`,
   ce qui **retire les boutons par défaut** — les flèches sont redessinées en
   SVG, et `:single-button` évite qu'une paire apparaisse à chaque bout.
+- **Un fond en `position: absolute` s'échappe de son cadre** si le cadre n'est
+  pas `position: relative` — et `overflow: hidden` ne le retient pas : il ne
+  rogne que ce qui se cale sur lui. Rencontré le 2026-08-19 : les miniatures de
+  « Image de chaque page » (panneau « Écran d'accueil ») affichent `ApercuPage`,
+  donc `.hub__fond`, qui s'est calé sur `.voile` (fixe, plein écran) — douze
+  images floutées et assombries recouvraient tout le panneau, il ne restait
+  visible que l'aperçu, dessiné après elles. Le repère manquait sur
+  `.apparence__miniature`.
 - **`.roue__hex` est nommé à part** dans la règle des champs : le disque de
   couleur sert aussi hors du panneau, où le champ garderait sinon le fond blanc
   du navigateur.

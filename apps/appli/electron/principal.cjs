@@ -495,6 +495,23 @@ function creerFenetre() {
     if (interdite) evenement.preventDefault()
   })
 
+  // Windows a ses propres gestes : trois ou quatre doigts vers le bas replient
+  // la fenêtre (ou tout le bureau), et le visiteur se retrouve devant le bureau
+  // de Windows. Le geste ne se désactive pas depuis l'application — on remonte
+  // donc la fenêtre aussitôt qu'elle est repliée. C'est la même règle que pour
+  // les touches : rien ne doit ramener au bureau.
+  //
+  // « minimize » ne se refuse pas (contrairement à « close ») : la fenêtre
+  // descend puis remonte, le clignotement est le prix à payer.
+  fenetre.on('minimize', () => {
+    if (sortieAutorisee) return
+    fenetre.restore()
+    fenetre.focus()
+    // Le repli a fait perdre le niveau « écran de veille » : sans cela, la
+    // fenêtre remonte **derrière** la barre des tâches.
+    fenetre.setAlwaysOnTop(true, 'screen-saver')
+  })
+
   // Alt+F4 est parfois traité par Windows avant d'arriver à la page : le refus
   // de fermeture est la garde qui tient dans tous les cas.
   fenetre.on('close', (evenement) => {

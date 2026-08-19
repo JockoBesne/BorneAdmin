@@ -75,6 +75,7 @@ import {
   type Couleurs,
 } from './couleurs.js'
 import { RoueCouleur } from './RoueCouleur.jsx'
+import { BoutonFermer } from './Voile.jsx'
 
 /**
  * Éditeur d'une page.
@@ -3067,6 +3068,7 @@ function SelecteurMedia({
   return (
     <div className="voile" role="dialog" aria-modal="true" aria-label="Bibliothèque des médias">
       <div className="voile__boite">
+        <BoutonFermer surFermeture={surFermeture} libelle="Fermer la bibliothèque" />
         <h2 className="voile__titre">
           {type === 'image' ? 'Choisir une photo' : 'Choisir une vidéo'}
         </h2>

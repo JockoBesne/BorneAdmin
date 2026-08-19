@@ -12,14 +12,22 @@ import { Visiteur } from './Visiteur.jsx'
  */
 export function App() {
   const [mode, setMode] = useState<'visiteur' | 'admin'>('visiteur')
+  /**
+   * Page que le visiteur a sous les yeux, ou « null » sur l'accueil.
+   *
+   * Elle sert au passage en administration : on entre alors directement dans la
+   * modification de **cette** page. C'est le geste attendu — on répare ce qu'on
+   * est en train de regarder, on ne le recherche pas dans une liste de douze.
+   */
+  const [pageVisitee, setPageVisitee] = useState<string | null>(null)
 
   if (mode === 'admin') {
-    return <Admin surFermeture={() => setMode('visiteur')} />
+    return <Admin surFermeture={() => setMode('visiteur')} pageInitiale={pageVisitee} />
   }
 
   return (
     <>
-      <Visiteur />
+      <Visiteur surPageOuverte={setPageVisitee} />
       <AccesAdmin surReussite={() => setMode('admin')} />
     </>
   )

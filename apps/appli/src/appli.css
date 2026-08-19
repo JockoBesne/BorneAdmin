@@ -1375,6 +1375,44 @@ button {
   font-family: var(--b-titre-police);
   font-size: 24px;
   color: var(--b-texte);
+  /* Réserve la place de la croix : le titre ne passe jamais dessous. */
+  padding-right: 52px;
+}
+
+/* Croix de fermeture, en haut à droite de la fenêtre.
+ *
+ * « sticky » : la fenêtre défile, la croix reste. Sans elle, il fallait
+ * parcourir tout le panneau pour retrouver le bouton « Terminé » du bas.
+ *
+ * Elle ne pousse pas le titre vers le bas : la place qu'elle prend dans la
+ * colonne — sa hauteur, plus l'espacement de la boîte — est reprise en marge
+ * basse. C'est ce qui la fait tenir sur la même ligne que le titre. */
+.voile__fermer {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  align-self: flex-end;
+  margin-bottom: -64px;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--b-trait);
+  border-radius: 999px;
+  background: var(--b-surface-haute);
+  color: var(--b-texte);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.voile__fermer:hover,
+.voile__fermer:focus-visible {
+  background: var(--b-accent);
+  color: #1a1206;
 }
 
 .modeles {
@@ -1620,7 +1658,18 @@ button {
   gap: 10px;
 }
 
+/* Miniature d'une page dans la liste « Image de chaque page ».
+ *
+ * « position: relative » n'est pas décoratif : la miniature affiche le même
+ * composant que les cartes de l'accueil (`ApercuPage`), dont le fond flouté est
+ * en `position: absolute`. Sans repère ici, ce fond va se caler sur le premier
+ * ancêtre positionné — la fenêtre du panneau — et recouvre alors **tout**
+ * l'écran d'une image floutée et assombrie : il ne reste visible que ce qui est
+ * dessiné après lui, c'est-à-dire l'aperçu. Le « overflow: hidden » ci-dessous
+ * ne le retenait pas, il ne rogne que ce qui se cale sur la miniature.
+ * Constaté et corrigé le 2026-08-19. */
 .apparence__miniature {
+  position: relative;
   flex: none;
   width: 56px;
   height: 56px;
