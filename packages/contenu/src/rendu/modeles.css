@@ -418,6 +418,25 @@
   padding-left: calc(
     (100% + var(--gouttiere-grille)) * var(--decalage, 0) / var(--travee, 1)
   );
+  /* Hauteur réglée à la poignée : un **plancher**, pas un plafond. Le bloc
+     s'agrandit, mais ne descend jamais sous son contenu — sans quoi un texte
+     trop long déborderait sur la rangée suivante. Variable absente : rien ne
+     change, comme avant ce réglage. */
+  min-height: var(--hauteur-bloc, 0);
+}
+
+/* Bloc dont la hauteur a été réglée à la poignée : son contenu est **centré**
+   dans la hauteur, au lieu d'être collé en haut avec le vide sous lui. La
+   classe n'est posée que si une hauteur existe : une page qui n'en règle
+   aucune garde exactement la mise en page d'avant, sans passer par flex.
+   L'habillage, quand il y en a un, est le seul enfant de la cellule : c'est
+   alors lui qui doit centrer, sinon il remplirait la hauteur et son texte
+   resterait en haut. */
+.mdl__cellule--hauteur,
+.mdl__cellule--hauteur > .b-hab {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* Une galerie n'a pas de hauteur propre : sans plafond, elle prendrait la
@@ -427,14 +446,17 @@
 }
 
 /* Une vidéo ajoutée prend un cadre 16/9 : sa hauteur découle de sa largeur et
-   suit donc la poignée. */
+   suit donc la poignée. Une hauteur réglée à la main l'emporte sur le cadre —
+   il faut alors une vraie hauteur (et non le seul plancher), sinon le lecteur,
+   qui se dit « height: 100 % », n'aurait rien contre quoi se mesurer. */
 .mdl__cellule--video {
   aspect-ratio: 16 / 9;
+  height: var(--hauteur-bloc, auto);
 }
 
-/* Poignées de hauteur : même principe, sur les bords haut et bas, et seulement
-   pour les images et les galeries — la hauteur d'un texte découle de son
-   contenu. Elles passent **au-dessus** des poignées de largeur (z-index) : aux
+/* Poignées de hauteur : même principe, sur les bords haut et bas. Tous les
+   blocs en ont, sauf une photo non recadrée — elle est entière et son bloc suit
+   ses proportions (voir « hauteurReglable »). Elles passent **au-dessus** des poignées de largeur (z-index) : aux
    quatre coins, les deux se recouvrent, et c'est le geste vertical qui gagne. */
 .mdl__poignee-hauteur {
   position: absolute;
@@ -1050,6 +1072,10 @@
   /* Même hauteur que l'enveloppe de l'éditeur : les blocs qui comptent sur la
      hauteur de leur cadre (galerie, vidéo) la retrouvent à l'identique. */
   height: 100%;
+  /* La cellule n'ayant qu'un plancher, « 100 % » ne vaut rien : l'habillage
+     lit donc la même hauteur qu'elle, sans quoi le fond d'un bloc agrandi
+     s'arrêterait au bas du texte. */
+  min-height: var(--hauteur-bloc, 0);
 }
 
 /* Un fond a besoin d'air : sans marge intérieure, le texte collerait au bord.

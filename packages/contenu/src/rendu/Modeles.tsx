@@ -203,9 +203,10 @@ function PoigneeLargeur({
 }
 
 /**
- * Poignée de hauteur, sur le bord **bas** ou **haut** — images et galeries
- * seulement : la hauteur d'un texte découle de son contenu, celle d'une vidéo
- * de ses proportions.
+ * Poignée de hauteur, sur le bord **bas** ou **haut** — sur tout bloc, sauf
+ * une photo non recadrée (voir « hauteurReglable »). Sur un bloc qui s'écoule
+ * (texte, quiz, frise), la hauteur réglée est un plancher : elle ajoute de la
+ * place, elle n'en retire jamais.
  *
  * Les deux poignées règlent la **même** hauteur, en sens inverse : tirer le
  * bord bas vers le bas agrandit, tirer le bord haut vers le haut agrandit
@@ -337,7 +338,9 @@ function RenduGrille({
   ) => (
     <div
       key={cle}
-      className={`mdl__cellule${classe ? ` ${classe}` : ''}`}
+      className={`mdl__cellule${classe ? ` ${classe}` : ''}${
+        hauteur === undefined ? '' : ' mdl__cellule--hauteur'
+      }`}
       style={{
         // La cellule occupe le décalage **et** le bloc : les colonnes vides
         // sont à l'intérieur d'elle, en marge gauche (voir « modeles.css »).

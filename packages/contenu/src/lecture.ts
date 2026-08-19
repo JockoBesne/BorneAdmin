@@ -285,17 +285,21 @@ export function ordreCellules(
 }
 
 /**
- * Un bloc dont la hauteur est réglable : une galerie, toujours ; une photo,
- * seulement si on a demandé à la **recadrer**.
+ * Un bloc dont la hauteur est réglable : **tous**, sauf la photo — elle ne
+ * l'est que si on a demandé à la **recadrer**.
  *
- * Sans cela, une photo n'a pas de hauteur du tout : elle est entière et son bloc
- * suit ses proportions. Les poignées haute et basse n'apparaissent donc sur une
- * photo qu'après avoir coché « Recadrer » — ce qui rend impossible de couper une
- * photo par accident, et explique aussi pourquoi ces poignées apparaissent.
+ * La photo reste l'exception : sans recadrage elle n'a pas de hauteur du tout,
+ * elle est entière et son bloc suit ses proportions. Les poignées haute et
+ * basse n'apparaissent donc sur une photo qu'après avoir coché « Recadrer » —
+ * ce qui rend impossible de couper une photo par accident.
+ *
+ * Partout ailleurs (texte, titre, galerie, vidéo, quiz, frise), la hauteur
+ * réglée est un **plancher** : le bloc ne descend jamais sous son contenu (voir
+ * « min-height » dans modeles.css), il ne peut donc pas couper un texte.
  */
 export function hauteurReglable(type: string, recadre = false): boolean {
-  if (type === 'galerie') return true
-  return type === 'image' && recadre
+  if (type === 'image') return recadre
+  return true
 }
 
 function borneHauteur(valeur: number | undefined): number | undefined {

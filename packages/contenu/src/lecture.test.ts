@@ -74,10 +74,14 @@ test('une photo n’est recadrée que si on l’a demandé', () => {
   )
 })
 
-test('une galerie garde sa hauteur réglable, elle', () => {
+test('tous les autres blocs ont une hauteur réglable', () => {
   const contenu: ContenuPage = { modele: 't1', emplacements: {} }
   assert.equal(hauteurReglable('galerie'), true)
   assert.equal(hauteurCellule(contenu, 'galerie', 'galerie', 400), 400)
-  // La hauteur d'un texte, elle, ne se règle pas : elle découle de son contenu.
-  assert.equal(hauteurCellule(contenu, 'texte', 'texte', 400), undefined)
+  // Depuis le 2026-08-19, un texte aussi : la hauteur y est un plancher, le
+  // bloc s'agrandit sans jamais rogner son contenu.
+  assert.equal(hauteurReglable('texte'), true)
+  assert.equal(hauteurCellule(contenu, 'texte', 'texte', 400), 400)
+  // Rien de réglé : aucune hauteur imposée, la page est celle d'avant.
+  assert.equal(hauteurCellule(contenu, 'texte', 'texte', undefined), undefined)
 })

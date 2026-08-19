@@ -324,9 +324,20 @@ ordinateur**, voir ci-dessous.
     par la clé (`suite:<id>` ou le nom).
   - L'ancien champ `largeur: 'pleine' | 'moitie'` n'est plus écrit mais **reste
     lu** : ne pas le supprimer.
-  - **Hauteur** : les galeries en ont une réglable, les photos **seulement si on
-    a coché « Recadrer »** (`hauteurReglable(type, recadre)`) — la hauteur d'un
-    texte découle de son contenu, celle d'une vidéo de son cadre 16/9. Rangée dans
+  - **Hauteur** : **tout bloc** en a une réglable aux poignées haute et basse,
+    sauf une photo — elle n'en a une que si on a coché « Recadrer »
+    (`hauteurReglable(type, recadre)`). Depuis le 2026-08-19, sur un bloc qui
+    s'écoule (texte, titre, quiz, frise) la hauteur est un **plancher**
+    (`min-height` sur `.mdl__cellule` **et** sur `.b-hab`, qui sinon laisserait
+    le fond s'arrêter au bas du texte) : elle ajoute de la place, elle n'en
+    retire jamais — un texte ne peut donc pas être rogné ni déborder sur la
+    rangée suivante. Galerie et photo recadrée gardent leur vraie hauteur, et
+    une vidéo troque son cadre 16/9 contre la hauteur réglée. Dans un bloc dont
+    la hauteur a été réglée, le contenu est **centré en hauteur** plutôt que
+    collé en haut (`.mdl__cellule--hauteur`, posée seulement si une hauteur
+    existe — sans quoi toutes les cellules passeraient en flex pour rien ; et
+    reprise sur `.b-hab`, qui remplit la cellule et centrerait donc à sa
+    place). Rangée dans
     `hauteur` (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de toile,
     lue par le rendu via la variable CSS `--hauteur-bloc`. Absente, la galerie
     fait 260 px.
