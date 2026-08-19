@@ -301,6 +301,16 @@ ordinateur**, voir ci-dessous.
     - **Exception explicite** : la case « Recadrer la photo » du panneau du bloc
       (`StyleBloc.recadre`). Cochée, le bloc reçoit une hauteur (poignées haute et
       basse) et la photo la remplit en se recadrant autour de son point focal.
+      **On déplace alors la photo dans son cadre** (2026-08-19) : on sélectionne
+      le bloc, puis on fait glisser la photo — le cadrage est rangé par bloc
+      (`StyleBloc.focalX / focalY`, en %), la **même** photo peut donc être
+      cadrée autrement ailleurs. Trois points : le geste n'existe que sur le
+      bloc **sélectionné** (sinon il volerait le glisser-déposer, qui déplace le
+      bloc), la photo suit le doigt par `image.style.objectPosition` sans passer
+      par React (un rendu par mouvement traînerait), et le contenu n'est écrit
+      **qu'au relâchement** — un seul pas d'annulation. La course du geste est
+      ce qui dépasse du cadre (`cover`), cadre et débordement étant tous deux en
+      pixels d'écran, le zoom de la toile ne s'en mêle pas.
       Cocher la case **mesure d'abord la hauteur qu'occupe déjà la photo** : rien
       ne bouge, rien n'est coupé tant qu'on n'a pas tiré une poignée.
     - `hauteurCellule` est le seul passage : une photo non recadrée n'a jamais de
@@ -339,8 +349,26 @@ ordinateur**, voir ci-dessous.
     reprise sur `.b-hab`, qui remplit la cellule et doit donc centrer lui-même
     son texte). **Piège** : le sélecteur de l'habillage doit être *descendant*,
     pas `>` — dans l'éditeur, `.emp` (le bloc cliquable) s'intercale entre la
-    cellule et l'habillage, et le centrage ne marchait que côté borne. Rangée
-    dans
+    cellule et l'habillage, et le centrage ne marchait que côté borne.
+    **Chaque poignée retient son bord opposé** : celle du bas laisse le haut en
+    place (le bloc descend), celle du haut pose `StyleBloc.ancre = 'bas'`, d'où
+    `align-self: end` sur la cellule — le bas ne bouge plus, c'est le haut qui
+    monte. Limite assumée : un bloc qui est déjà le plus grand de sa rangée n'a
+    rien à reprendre au-dessus de lui, la rangée grandit alors vers le bas.
+    L'ancre s'écrit dans le **même** pas d'historique que la hauteur.
+    **La hauteur réserve de la place, elle ne gonfle pas le bloc** : l'habillage
+    n'a exprès *pas* de `min-height` (il l'a eu une demi-journée, le 2026-08-19 :
+    le fond remplissait toute la hauteur et collait le bloc à ses voisins). Le
+    bloc garde la taille de son contenu, il est centré dans la place réservée,
+    et le vide au-dessus et au-dessous **est** l'espace entre les blocs — le
+    seul moyen d'en régler un. Galerie et vidéo font exception : leur cellule a
+    une hauteur ferme, elles remplissent. **Le choix est laissé** par la case
+    « Le fond remplit toute la hauteur » (`StyleBloc.remplir`, `.b-hab--remplir`,
+    dans le disque du fond) : cochée, l'aplat de couleur descend jusqu'aux bords
+    de la place réservée ; décochée (le défaut, et l'état des pages existantes),
+    le fond épouse le texte et la hauteur reste de l'espace. Elle n'apparaît
+    qu'une fois un fond choisi — sans fond, elle ne changerait rien à l'œil.
+    Rangée dans
     `hauteur` (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de toile,
     lue par le rendu via la variable CSS `--hauteur-bloc`. Absente, la galerie
     fait 260 px.

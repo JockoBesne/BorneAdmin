@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-19T08:04:48.649Z",
+  "genereLe": "2026-08-19T10:35:52.665Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Troisième étage — de l'Antiquité aux années 1970",
@@ -28,7 +28,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420
+          "image": 420,
+          "texte": 440
         },
         "emplacements": {
           "titre": {
@@ -65,6 +66,7 @@
           {
             "id": "b3",
             "colonnes": 6,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "**Le saviez-vous ?**\n\n« Céleustique » vient du grec _keleustikós_, « relatif au commandement », lui-même tiré de _keleúein_ : ordonner, donner le signal.\n\nDans l'Antiquité, le _kéleustès_ donne la cadence aux rameurs, à la voix ou à l'instrument. C'est la première forme connue d'un son qui commande un geste collectif."
@@ -73,6 +75,7 @@
           {
             "id": "b4",
             "colonnes": 6,
+            "hauteur": 200,
             "valeur": {
               "type": "texte",
               "valeur": "**3 000 ans**\n\nde l'Antiquité aux années 1970, en un seul étage"
@@ -89,6 +92,7 @@
           {
             "id": "b6",
             "colonnes": 6,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "**Comment lire cet étage**\n\nLes pages suivent l'ordre du temps. Les cartes dorées les plus vives portent un chiffre à retenir ; les encarts plus doux, une anecdote ou une parole d'époque."
@@ -130,9 +134,9 @@
           "suite:b1",
           "suite:b2",
           "suite:b3",
-          "suite:b4",
-          "suite:b5",
           "suite:b6",
+          "suite:b5",
+          "suite:b4",
           "suite:b7"
         ],
         "styles": {
@@ -151,7 +155,8 @@
           },
           "suite:b6": {
             "fond": "#f3dd7a",
-            "opacite": 13
+            "opacite": 13,
+            "remplir": true
           }
         }
       }
@@ -168,14 +173,15 @@
         "modele": "t1",
         "largeurs": {
           "titre": 12,
-          "image": 11,
-          "texte": 9
+          "image": 12,
+          "texte": 10
         },
         "decalages": {
           "texte": 1
         },
         "hauteurs": {
-          "image": 660
+          "image": 920,
+          "titre": 160
         },
         "emplacements": {
           "titre": {
@@ -213,6 +219,7 @@
           {
             "id": "b3",
             "colonnes": 6,
+            "hauteur": 280,
             "valeur": {
               "type": "texte",
               "valeur": "**XVIIIe siècle**\n\nla dernière époque où l'on transmet par le feu"
@@ -221,17 +228,10 @@
           {
             "id": "b4",
             "colonnes": 6,
+            "hauteur": 300,
             "valeur": {
               "type": "texte",
               "valeur": "**Sa limite**\n\nCes communications restent bornées à des messages simples, définis à l'avance. On peut dire « l'ennemi approche ». On ne peut dire ni combien ils sont, ni par où ils viennent."
-            }
-          },
-          {
-            "id": "b5",
-            "colonnes": 6,
-            "valeur": {
-              "type": "texte",
-              "valeur": "**XVIIIe siècle**\n\nla dernière époque où l'on transmet par le feu"
             }
           },
           {
@@ -255,6 +255,7 @@
           {
             "id": "b8",
             "colonnes": 6,
+            "hauteur": 400,
             "valeur": {
               "type": "texte",
               "valeur": "**Il fallait autre chose**\n\nSur de courtes distances, comme entre cités grecques, le messager à pied suffit. Sur des routes bien plus longues, il faut inventer un système — et ce système sera le cheval, relayé.\n\nDès le VIe siècle avant notre ère, l'empire perse organise les premiers relais de poste, bientôt suivi par la Chine et Rome."
@@ -278,7 +279,7 @@
           },
           {
             "id": "b11",
-            "colonnes": 6,
+            "colonnes": 12,
             "valeur": {
               "type": "texte",
               "valeur": "**Pourquoi sept lieues**\n\nLe relais n'est pas posé au hasard : c'est la distance qu'un cheval couvre à vive allure sans devoir s'arrêter. Au-delà, il faudrait le ménager, et tout le réseau ralentirait.\n\n**34 km**\n\nentre deux relais : la distance calculée pour un cheval"
@@ -308,6 +309,7 @@
           {
             "id": "b13",
             "colonnes": 6,
+            "hauteur": 200,
             "valeur": {
               "type": "texte",
               "valeur": "Avec le développement des chemins de fer, les relais de poste s'effacent. Ils disparaissent officiellement en 1873."
@@ -330,7 +332,6 @@
           "suite:b2",
           "suite:b3",
           "suite:b4",
-          "suite:b5",
           "suite:b6",
           "suite:b7",
           "suite:b8",
@@ -349,9 +350,6 @@
             "opacite": 9,
             "taille": 105
           },
-          "image": {
-            "recadre": true
-          },
           "suite:b3": {
             "fond": "#f3dd7a",
             "alignement": "centre",
@@ -362,12 +360,6 @@
             "fond": "#f3dd7a",
             "opacite": 13
           },
-          "suite:b5": {
-            "fond": "#f3dd7a",
-            "alignement": "centre",
-            "opacite": 24,
-            "taille": 118
-          },
           "suite:b7": {
             "recadre": true
           },
@@ -377,6 +369,9 @@
             "alignement": "centre",
             "opacite": 9,
             "taille": 105
+          },
+          "image": {
+            "recadre": true
           }
         }
       }
@@ -397,7 +392,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420
+          "image": 420,
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -426,6 +422,7 @@
           {
             "id": "b2",
             "colonnes": 6,
+            "hauteur": 260,
             "valeur": {
               "type": "texte",
               "valeur": "Les stationnaires recopient des figures dont ils ignorent le sens. Seuls les directeurs de ligne, au départ et à l'arrivée, possèdent le livre de codes."
@@ -442,6 +439,7 @@
           {
             "id": "b4",
             "colonnes": 6,
+            "hauteur": 240,
             "valeur": {
               "type": "texte",
               "valeur": "**10 minutes**\n\nParis-Lille par le télégraphe Chappe, contre deux jours à cheval"
@@ -495,6 +493,7 @@
           {
             "id": "b8",
             "colonnes": 6,
+            "hauteur": 300,
             "valeur": {
               "type": "texte",
               "valeur": "**Dix minutes au lieu de deux jours**\n\nLa première ligne, Paris-Lille, est inaugurée en 1794. Un message y passe en moins de dix minutes, contre environ deux jours à cheval. Le réseau s'étend alors à toute la France, notamment sous Napoléon."
@@ -549,8 +548,8 @@
           "texte",
           "suite:b1",
           "suite:b2",
-          "suite:b3",
           "suite:b4",
+          "suite:b3",
           "suite:b5",
           "suite:b6",
           "suite:b7",
@@ -598,7 +597,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420
+          "image": 420,
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -619,6 +619,7 @@
           {
             "id": "b1",
             "colonnes": 6,
+            "hauteur": 480,
             "valeur": {
               "type": "texte",
               "valeur": "**Les débuts de l'électricité**\n\nEn 1800, Volta met au point la première pile électrique :\n- une couche de cuivre\n- une couche de tissu imbibé d'eau salée\n- une couche de zinc\n\nPour la première fois, on dispose d'un courant continu, stable, que l'on peut transporter."
@@ -661,6 +662,7 @@
           {
             "id": "b6",
             "colonnes": 6,
+            "hauteur": 200,
             "valeur": {
               "type": "texte",
               "valeur": "**2 signes**\n\nun point et un trait : tout l'alphabet du Morse"
@@ -685,6 +687,7 @@
           {
             "id": "b9",
             "colonnes": 6,
+            "hauteur": 300,
             "valeur": {
               "type": "texte",
               "valeur": "**Lire à l'oreille**\n\nUn télégraphiste exercé n'a pas besoin de la bande de papier : il entend les points et les traits et les écrit directement, aussi vite qu'on lit un texte à voix haute."
@@ -730,6 +733,7 @@
           {
             "id": "b13",
             "colonnes": 6,
+            "hauteur": 340,
             "valeur": {
               "type": "texte",
               "valeur": "**Ce que le télégraphe change vraiment**\n\nPour la première fois, l'information va plus vite que celui qui la porte. Une nouvelle peut arriver à Paris avant le train qui l'apporte.\n\nCette séparation entre le message et le messager est peut-être la rupture la plus profonde de tout cet étage."
@@ -744,8 +748,8 @@
           "suite:b2",
           "suite:b3",
           "suite:b4",
-          "suite:b5",
           "suite:b6",
+          "suite:b5",
           "suite:b7",
           "suite:b8",
           "suite:b9",
@@ -803,7 +807,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420
+          "image": 540,
+          "texte": 580
         },
         "emplacements": {
           "titre": {
@@ -824,6 +829,7 @@
           {
             "id": "b1",
             "colonnes": 6,
+            "hauteur": 460,
             "valeur": {
               "type": "texte",
               "valeur": "**Comment la voix devient courant**\n\n- Côté émetteur, la voix fait vibrer une membrane reliée à un dispositif électrique.\n- Ces variations deviennent un courant qui parcourt le fil.\n- À l'arrivée, le phénomène inverse : une membrane vibre et reproduit la voix.\n\nCe n'est plus un code qui voyage. C'est la personne."
@@ -842,6 +848,7 @@
           {
             "id": "b3",
             "colonnes": 6,
+            "hauteur": 440,
             "valeur": {
               "type": "texte",
               "valeur": "**Les demoiselles du téléphone**\n\nDans la vitrine, le téléphone Marty 1910 n'a ni clavier ni cadran. Pour appeler, on actionne une manivelle qui produit un courant et signale l'appel au standard.\n\nEn décrochant, on tombe sur une opératrice — la « demoiselle du téléphone ». On lui donne un nom, un numéro ; elle relie les deux lignes à la main, sur son standard. Chaque conversation commence donc par une troisième personne."
@@ -860,6 +867,7 @@
           {
             "id": "b5",
             "colonnes": 6,
+            "hauteur": 660,
             "valeur": {
               "type": "texte",
               "valeur": "**1889**\n\nStrowger invente le central automatique : la fin des demoiselles"
@@ -868,7 +876,7 @@
           {
             "id": "b6",
             "colonnes": 6,
-            "hauteur": 420,
+            "hauteur": 620,
             "valeur": {
               "type": "image",
               "mediaId": "media-telephone-demoiselles-1892",
@@ -878,6 +886,7 @@
           {
             "id": "b7",
             "colonnes": 12,
+            "hauteur": 940,
             "valeur": {
               "type": "quiz",
               "question": "Vers 1900, que fallait-il faire pour téléphoner à quelqu'un ? (plusieurs réponses possibles)",
@@ -932,8 +941,8 @@
           "texte",
           "suite:b1",
           "suite:b2",
-          "suite:b3",
           "suite:b4",
+          "suite:b3",
           "suite:b5",
           "suite:b6",
           "suite:b7",
@@ -956,12 +965,15 @@
             "opacite": 24,
             "taille": 118
           },
-          "suite:b6": {
-            "recadre": true
-          },
           "suite:b9": {
             "fond": "#f3dd7a",
             "opacite": 13
+          },
+          "suite:b7": {
+            "ancre": "bas"
+          },
+          "suite:b6": {
+            "recadre": true
           }
         }
       }
@@ -982,7 +994,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420
+          "image": 420,
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -1003,6 +1016,7 @@
           {
             "id": "b1",
             "colonnes": 6,
+            "hauteur": 440,
             "valeur": {
               "type": "texte",
               "valeur": "**Popov et Marconi**\n\nEn Russie, Alexandre Popov met au point un récepteur radio performant, d'abord employé comme détecteur d'orages.\n\nDe son côté, Guglielmo Marconi développe un système complet qu'il exploite à grande échelle : en 1899, il réalise la première liaison radio à travers la Manche, sur environ 46 kilomètres."
@@ -1031,6 +1045,7 @@
           {
             "id": "b4",
             "colonnes": 6,
+            "hauteur": 420,
             "valeur": {
               "type": "texte",
               "valeur": "**La TSF entre à l'armée**\n\nAprès la défaite de 1870 face à la Prusse, l'armée française prend conscience de l'importance stratégique des communications. Cette maîtrise était l'un des atouts majeurs des Prussiens.\n\nUne spécialité nouvelle naît au sein du génie : les « sapeurs-télégraphistes ». D'abord 24e bataillon, ils deviennent le 8e régiment du génie, au Mont-Valérien."
@@ -1039,6 +1054,7 @@
           {
             "id": "b5",
             "colonnes": 6,
+            "hauteur": 300,
             "valeur": {
               "type": "texte",
               "valeur": "**Le général Gustave Ferrié**\n\nGustave Ferrié (1868-1932) joue un rôle central. Il fait de la tour Eiffel un support d'antenne, permettant dès 1907 des communications à très longue distance, et améliore l'ampoule triode de Lee de Forest — gagnant en réception et en stabilité.\n\nDiplômé de Polytechnique comme Gustave Eiffel, il demande à ce dernier l'usage de la tour. Elle ne devait durer que vingt ans : son utilité militaire la sauve du démontage."
@@ -1047,6 +1063,7 @@
           {
             "id": "b6",
             "colonnes": 6,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "Ferrié a aussi mis les horloges du monde à l'heure : ses travaux diffusent l'heure exacte par signaux radio, et fondent la coordination des fuseaux horaires."
@@ -1055,6 +1072,7 @@
           {
             "id": "b7",
             "colonnes": 6,
+            "hauteur": 280,
             "valeur": {
               "type": "texte",
               "valeur": "**46 km**\n\nla première liaison radio à travers la Manche, en 1899"
@@ -1079,6 +1097,7 @@
           {
             "id": "b10",
             "colonnes": 6,
+            "hauteur": 200,
             "valeur": {
               "type": "texte",
               "valeur": "**Une tour sauvée par la radio**\n\nSans Ferrié, la tour Eiffel aurait été démontée au terme de sa concession. C'est son antenne militaire qui l'a rendue indispensable — et l'a laissée debout."
@@ -1137,8 +1156,8 @@
           "suite:b6",
           "suite:b7",
           "suite:b8",
-          "suite:b9",
           "suite:b10",
+          "suite:b9",
           "suite:b11"
         ],
         "styles": {
@@ -1200,7 +1219,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420
+          "image": 420,
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -1221,6 +1241,7 @@
           {
             "id": "b1",
             "colonnes": 6,
+            "hauteur": 460,
             "valeur": {
               "type": "texte",
               "valeur": "**De 7 000 à 55 000 hommes**\n\nIl faut former de nouveaux sapeurs-télégraphistes, et vite. Le régiment passe de 7 000 hommes à la mobilisation générale à 55 000 au début de l'année 1918.\n\nEn quatre ans, une armée entière apprend un métier qui n'existait presque pas."
@@ -1247,6 +1268,7 @@
           {
             "id": "b4",
             "colonnes": 6,
+            "hauteur": 320,
             "valeur": {
               "type": "texte",
               "valeur": "**Le téléphone dans la boue**\n\nDes postes centraux mobiles sont déployés, notamment avec le modèle « Marty 1910 ». Des kilomètres de fil sont tirés jusqu'aux premières lignes, coupés par les obus, réparés sous le feu.\n\nLa guerre familiarise toute une génération avec ces techniques."
@@ -1255,6 +1277,7 @@
           {
             "id": "b5",
             "colonnes": 6,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "**Tout ce qui fonctionne**\n\nAucun moyen ne suffit seul. On double, on triple, on garde le pigeon en réserve derrière le téléphone et la radio. La redondance devient une doctrine — elle l'est restée."
@@ -1281,6 +1304,7 @@
           {
             "id": "b8",
             "colonnes": 6,
+            "hauteur": 160,
             "valeur": {
               "type": "texte",
               "valeur": "« Hâtez l'approvisionnement en munitions. Le faire même de jour tant qu'on n'est pas vu. »"
@@ -1288,7 +1312,7 @@
           },
           {
             "id": "b9",
-            "colonnes": 6,
+            "colonnes": 12,
             "valeur": {
               "type": "texte",
               "valeur": "**Ce que ce message a changé**\n\nIl permet au général Foch d'identifier la zone de l'attaque, près de Compiègne. L'offensive est stoppée, et cette réussite contribue à la victoire finale.\n\nElle restera secrète jusqu'en 1973 : pendant cinquante-cinq ans, personne ne sut à quoi tenait ce succès."
@@ -1296,7 +1320,7 @@
           },
           {
             "id": "b10",
-            "colonnes": 6,
+            "colonnes": 12,
             "valeur": {
               "type": "quiz",
               "question": "Que révèle la Première Guerre mondiale, du point de vue des transmissions ?",
@@ -1333,8 +1357,8 @@
           "suite:b4",
           "suite:b5",
           "suite:b6",
-          "suite:b7",
           "suite:b8",
+          "suite:b7",
           "suite:b9",
           "suite:b10"
         ],
@@ -1357,6 +1381,7 @@
             "italique": true,
             "alignement": "centre",
             "opacite": 9,
+            "ancre": "bas",
             "taille": 105
           }
         }
@@ -1378,7 +1403,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420
+          "image": 420,
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -1425,6 +1451,7 @@
           {
             "id": "b4",
             "colonnes": 6,
+            "hauteur": 320,
             "valeur": {
               "type": "texte",
               "valeur": "Vaillant est cité à l'ordre de la Nation pour son acte de bravoure."
@@ -1433,6 +1460,7 @@
           {
             "id": "b5",
             "colonnes": 6,
+            "hauteur": 280,
             "valeur": {
               "type": "texte",
               "valeur": "**Un message, pas un miracle**\n\nVaillant a franchi les lignes. Mais un pigeon ne porte que ce qu'on lui confie : quelques lignes, une seule fois, sans réponse possible."
@@ -1449,6 +1477,7 @@
           {
             "id": "b7",
             "colonnes": 6,
+            "hauteur": 160,
             "valeur": {
               "type": "texte",
               "valeur": "**4 pigeons**\n\nce que le commandant Reynal emporte au fort de Vaux"
@@ -1502,7 +1531,7 @@
           {
             "id": "b11",
             "colonnes": 6,
-            "hauteur": 420,
+            "hauteur": 480,
             "valeur": {
               "type": "image",
               "mediaId": "media-neubronner-pigeon",
@@ -1597,6 +1626,7 @@
             "fond": "#f3dd7a",
             "alignement": "centre",
             "opacite": 24,
+            "ancre": "bas",
             "taille": 118
           },
           "suite:b10": {
@@ -1649,6 +1679,7 @@
           {
             "id": "b1",
             "colonnes": 6,
+            "hauteur": 280,
             "valeur": {
               "type": "texte",
               "valeur": "La paix semblait s'enraciner, et la Première Guerre mondiale devait rester à tout jamais la « Der des Ders »."
@@ -1689,6 +1720,7 @@
           {
             "id": "b6",
             "colonnes": 6,
+            "hauteur": 320,
             "valeur": {
               "type": "texte",
               "valeur": "**1921**\n\nFerrié lance la radiodiffusion depuis la tour Eiffel"

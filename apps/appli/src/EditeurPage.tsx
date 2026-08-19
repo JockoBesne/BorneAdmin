@@ -22,6 +22,7 @@ import {
   ordreCellules,
   controlerContenu,
   DEFS_BLOCS_LIBRES,
+  estAncreBas,
   estStyleVide,
   lignesDeTexte,
   lireStyle,
@@ -311,11 +312,30 @@ export function EditeurPage({
     if (actif && zone && echelle > 0) redimensionnerHauteur(nom, zone.height / echelle)
   }
 
-  /** Hauteur d'une image ou d'une galerie, en pixels de toile. */
-  const redimensionnerHauteur = (cle: string, hauteur: number) => {
+  /** Pose ou retire l'ancre basse d'un bloc, sans toucher au reste de son habillage. */
+  const avecAncre = (contenuPage: ContenuPage, cle: string, ancre?: 'bas'): ContenuPage => {
+    if (estAncreBas(contenuPage, cle) === (ancre === 'bas')) return contenuPage
+    const styles = { ...(contenuPage.styles ?? {}) }
+    const style = { ...(styles[cle] ?? {}) }
+    if (ancre === 'bas') style.ancre = 'bas'
+    else delete style.ancre
+    if (estStyleVide(style)) delete styles[cle]
+    else styles[cle] = style
+    return { ...contenuPage, styles }
+  }
+
+  /**
+   * Hauteur d'un bloc, en pixels de toile.
+   *
+   * L'ancre vient de la poignée employée : celle du haut retient le bas du bloc
+   * (`ancre: 'bas'`), celle du bas remet l'ancrage ordinaire. Les deux sont
+   * écrites dans le **même** pas de modification que la hauteur — sinon annuler
+   * un glissement laisserait l'ancre derrière lui.
+   */
+  const redimensionnerHauteur = (cle: string, hauteur: number, ancre?: 'bas') => {
     const borne = Math.min(HAUTEUR_MAX, Math.max(HAUTEUR_MIN, Math.round(hauteur)))
     surModification((precedente) => {
-      const contenuPage = precedente.contenu as ContenuPage
+      const contenuPage = avecAncre(precedente.contenu as ContenuPage, cle, ancre)
 
       if (cle.startsWith('suite:')) {
         const id = cle.slice('suite:'.length)
@@ -1141,9 +1161,97 @@ export function EditeurPage({
    */
   const PREFIXE_NEUF = 'nouveau:'
 
+  /**
+   * Cadrage d'une photo recadrée : on fait glisser la photo **dans** son cadre
+   * pour choisir la partie qui reste visible.
+   *
+   * Le geste n'existe que sur le bloc **sélectionné** : partout ailleurs, tirer
+   * une photo déplace le bloc, comme avant. C'est ce qui évite de voler le
+   * glisser-déposer — on choisit le bloc, puis on cadre sa photo.
+   */
+  const cadrage = useRef<{
+    x: number
+    y: number
+    nom: string
+    focalX: number
+    focalY: number
+    /** Ce qui dépasse du cadre, en pixels d'écran : la course du geste. */
+    debordX: number
+    debordY: number
+    /** La photo elle-même : elle suit le doigt sans passer par React. */
+    image: HTMLImageElement
+  } | null>(null)
+
+  const commencerCadrage = (
+    evenement: React.PointerEvent<HTMLElement>,
+    nom: string,
+    zone: HTMLElement,
+  ): boolean => {
+    const image = zone.querySelector('img')
+    if (!image || !image.naturalWidth || !image.naturalHeight) return false
+    const cadre = zone.getBoundingClientRect()
+    // « object-fit: cover » : la photo est agrandie jusqu'à couvrir le cadre,
+    // et ce qui dépasse est la course du geste. Cadre et débordement sont tous
+    // deux en pixels d'écran : leur rapport ne dépend pas du zoom de la toile.
+    const echelle = Math.max(cadre.width / image.naturalWidth, cadre.height / image.naturalHeight)
+    const style = lireStyle(contenu, nom)
+    cadrage.current = {
+      x: evenement.clientX,
+      y: evenement.clientY,
+      nom,
+      focalX: style?.focalX ?? 50,
+      focalY: style?.focalY ?? 50,
+      debordX: image.naturalWidth * echelle - cadre.width,
+      debordY: image.naturalHeight * echelle - cadre.height,
+      image,
+    }
+    try {
+      evenement.currentTarget.setPointerCapture(evenement.pointerId)
+    } catch {
+      /* capture indisponible : le glissement reste possible sans elle */
+    }
+    return true
+  }
+
+  /** Dernier cadrage visé pendant le geste, enregistré au relâchement. */
+  const dernierCadrage = useRef<{ focalX: number; focalY: number } | null>(null)
+
+  /** Où en est le cadrage pendant le geste : calculé ici, enregistré au relâchement. */
+  const cadrageDepuis = (evenement: React.PointerEvent<HTMLElement>) => {
+    const debut = cadrage.current
+    if (!debut) return null
+    // Tirer la photo vers la droite montre ce qui était à gauche : le
+    // pourcentage baisse. D'où le signe. Un axe qui ne déborde pas ne bouge pas.
+    const pourcent = (ecart: number, debord: number, depart: number) =>
+      debord <= 0 ? depart : Math.min(100, Math.max(0, Math.round(depart - (ecart / debord) * 100)))
+    return {
+      focalX: pourcent(evenement.clientX - debut.x, debut.debordX, debut.focalX),
+      focalY: pourcent(evenement.clientY - debut.y, debut.debordY, debut.focalY),
+    }
+  }
+
+  const glisserCadrage = (evenement: React.PointerEvent<HTMLElement>): boolean => {
+    const debut = cadrage.current
+    const vise = cadrageDepuis(evenement)
+    if (!debut || !vise) return false
+    // La photo suit le doigt **tout de suite**, écrit dans son style : comme
+    // pour le déplacement d'un bloc, un rendu React par mouvement de pointeur
+    // ferait traîner le geste. Le contenu, lui, n'est écrit qu'au relâchement —
+    // le cadrage tient donc en un seul pas d'annulation.
+    debut.image.style.objectPosition = `${vise.focalX}% ${vise.focalY}%`
+    dernierCadrage.current = vise
+    return true
+  }
+
+
   const auPointeurDescendu = (evenement: React.PointerEvent<HTMLElement>, nom: string) => {
     // La poignée de largeur a son propre glissement : ne pas le lui voler.
     if ((evenement.target as HTMLElement).closest('.mdl__poignee')) return
+    // La photo du bloc sélectionné non plus : là, le geste cadre la photo.
+    const zone = (evenement.target as HTMLElement).closest('.b-image__zone')
+    if (selection === nom && estRecadre(contenu, nom) && zone instanceof HTMLElement) {
+      if (commencerCadrage(evenement, nom, zone)) return
+    }
     // Le glissement part parfois du panneau de droite (poignée « ⠿ ») : là, rien
     // ne suit le doigt, la ligne du panneau resterait coupée par son cadre.
     const surApercu = evenement.currentTarget.closest('.edit__apercu')
@@ -1172,6 +1280,7 @@ export function EditeurPage({
   }
 
   const auPointeurDeplace = (evenement: React.PointerEvent<HTMLElement>) => {
+    if (glisserCadrage(evenement)) return
     const debut = depart.current
     if (!debut) return
 
@@ -1203,6 +1312,19 @@ export function EditeurPage({
   }
 
   const auPointeurRelache = () => {
+    // Fin d'un cadrage : c'est ici qu'on enregistre, une fois.
+    if (cadrage.current) {
+      const nom = cadrage.current.nom
+      const vise = dernierCadrage.current
+      cadrage.current = null
+      dernierCadrage.current = null
+      if (vise) modifierStyle(nom, (style) => ({ ...style, ...vise }))
+      vientDeGlisser.current = true
+      setTimeout(() => {
+        vientDeGlisser.current = false
+      }, 0)
+      return
+    }
     const debut = depart.current
     relacherBlocSuivi()
     depart.current = null
@@ -2298,6 +2420,35 @@ function BarreMiseEnForme({
             </label>
           ) : null}
 
+          {/* Le choix demandé : un aplat de couleur de la hauteur réglée, ou un
+              fond qui épouse le texte avec l'espace autour. Il ne s'affiche
+              qu'une fois un fond choisi — sans fond, la case ne changerait rien
+              à l'écran. */}
+          {roue === 'fond' && style.fond !== undefined ? (
+            <label className="perso__bascule">
+              <input
+                type="checkbox"
+                checked={style.remplir === true}
+                onChange={(evenement) =>
+                  surStyle((precedent) => {
+                    const copie = { ...precedent }
+                    if (evenement.target.checked) copie.remplir = true
+                    else delete copie.remplir
+                    return copie
+                  })
+                }
+              />
+              <span>
+                <strong>Le fond remplit toute la hauteur</strong>
+                <span className="pan__aide">
+                  {style.remplir === true
+                    ? 'Le fond descend jusqu’aux bords de la hauteur réglée aux poignées.'
+                    : 'Le fond épouse le texte : la hauteur réglée aux poignées reste en espace libre au-dessus et au-dessous du bloc.'}
+                </span>
+              </span>
+            </label>
+          ) : null}
+
           {(roue === 'fond' ? style.fond : style.couleur) !== undefined ? (
             <button
               type="button"
@@ -2517,7 +2668,7 @@ function FormulaireBloc({
               <strong>Recadrer la photo</strong>
               <span className="pan__aide">
                 {style.recadre === true
-                  ? 'La photo remplit un cadre dont vous réglez la hauteur (poignées en haut et en bas du bloc). Ce qui dépasse est coupé.'
+                  ? 'La photo remplit un cadre dont vous réglez la hauteur (poignées en haut et en bas du bloc). Ce qui dépasse est coupé. Faites glisser la photo dans son cadre pour choisir la partie visible.'
                   : 'La photo est montrée entière. Cochez pour choisir vous-même la hauteur du bloc : la photo remplira le cadre et ce qui dépasse sera coupé.'}
               </span>
             </span>

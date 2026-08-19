@@ -93,7 +93,19 @@ test("l'habillage d'un bloc traverse la clé USB, taille du texte comprise", () 
     bandeauMasque: true,
     contenu: {
       ...modele.contenu,
-      styles: { image: { taille: 145, fond: '#112233', opacite: 60, alignement: 'centre' } },
+      styles: {
+        image: {
+          taille: 145,
+          fond: '#112233',
+          opacite: 60,
+          alignement: 'centre',
+          ancre: 'bas',
+          recadre: true,
+          focalX: 30,
+          focalY: 70,
+          remplir: true,
+        },
+      },
     },
   }
 
@@ -105,11 +117,27 @@ test("l'habillage d'un bloc traverse la clé USB, taille du texte comprise", () 
   const fusion = integrerImport(manifeste([], [media('m1', 'aaa', 'onde.jpg')]), relu, {})
 
   const contenu = fusion.pages[0]!.contenu as {
-    styles?: Record<string, { taille?: number; fond?: string; opacite?: number }>
+    styles?: Record<
+      string,
+      {
+        taille?: number
+        fond?: string
+        opacite?: number
+        ancre?: string
+        focalX?: number
+        focalY?: number
+        remplir?: boolean
+      }
+    >
   }
   assert.equal(contenu.styles?.image?.taille, 145, 'la taille du texte a survécu')
   assert.equal(contenu.styles?.image?.fond, '#112233')
   assert.equal(contenu.styles?.image?.opacite, 60)
+  assert.equal(contenu.styles?.image?.ancre, 'bas', "l'ancre basse a survécu")
+  // Le cadrage d'une photo : c'est le passage où un champ non déclaré disparaît.
+  assert.equal(contenu.styles?.image?.focalX, 30, 'le cadrage de la photo a survécu')
+  assert.equal(contenu.styles?.image?.focalY, 70)
+  assert.equal(contenu.styles?.image?.remplir, true, 'le fond pleine hauteur a survécu')
   const arrivee = fusion.pages[0]!
   assert.equal(arrivee.couleurBandeau, '#3a1f10', 'le fond du bandeau a survécu')
   assert.equal(arrivee.couleurBandeauTexte, '#ffe9c4')

@@ -50,5 +50,5 @@ export interface PropsModele {
    * de toile. Seuls ces deux types en ont une réglable — la hauteur d'un texte
    * découle de son contenu, celle d'une vidéo de ses proportions.
    */
-  surHauteur?: (cle: string, hauteur: number) => void
+  surHauteur?: (cle: string, hauteur: number, ancre?: 'bas') => void
 }

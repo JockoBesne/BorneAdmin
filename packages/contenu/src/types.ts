@@ -378,6 +378,43 @@ export interface StyleBloc {
    */
   recadre?: boolean
   /**
+   * Bord qui reste en place quand on change la hauteur du bloc.
+   *
+   * Absent (le cas normal) : le bloc est accroché en **haut** de sa rangée, et
+   * c'est son bas qui descend quand on l'agrandit — le sens d'une page qui
+   * s'écoule vers le bas.
+   *
+   * `'bas'` : le bloc est accroché au **bas** de sa rangée, posé par la poignée
+   * du haut. Tirer ce bord fait alors monter le haut du bloc sans que son bas
+   * ne bouge, tant que la rangée a de la place (un voisin plus grand). Tirer la
+   * poignée du bas remet l'ancrage ordinaire.
+   */
+  ancre?: 'bas'
+  /**
+   * **Photos recadrées seulement** : la partie de la photo qu'on garde dans le
+   * cadre, en pourcentage (0 = bord gauche / haut, 100 = bord droit / bas,
+   * 50 = le centre).
+   *
+   * Absent : le point focal du média (le centre, sauf réglage). Présent, il
+   * l'emporte — la même photo peut donc être cadrée autrement d'un bloc à
+   * l'autre, ce qui est le but : on choisit la partie qui parle.
+   */
+  focalX?: number
+  focalY?: number
+  /**
+   * Le fond du bloc **remplit toute la hauteur réglée**, au lieu d'épouser son
+   * contenu.
+   *
+   * Absent (le cas normal) : la hauteur réglée à la poignée réserve de la place
+   * et le bloc garde la taille de son contenu — le vide qui reste au-dessus et
+   * au-dessous est l'espace entre les blocs.
+   *
+   * Présent : le fond descend jusqu'aux bords de la place réservée. C'est le
+   * choix à faire quand on veut un aplat de couleur d'une hauteur donnée plutôt
+   * qu'un blanc autour du texte. Sans `fond`, il ne change rien à l'œil.
+   */
+  remplir?: boolean
+  /**
    * Taille du texte du bloc, en pourcentage de sa taille normale (100 = celle
    * du modèle). Absente = 100 : un bloc jamais réglé s'écrit comme avant.
    *

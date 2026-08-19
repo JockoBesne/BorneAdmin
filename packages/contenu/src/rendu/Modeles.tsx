@@ -4,8 +4,10 @@ import {
   colonnesEmplacement,
   decalageDe,
   decalageEmplacement,
+  estAncreBas,
   estBlocLibreVide,
   estRecadre,
+  focalDe,
   hauteurDe,
   hauteurEmplacement,
   hauteurReglable,
@@ -56,6 +58,8 @@ function Habillage({ style, children }: { style: StyleBloc | undefined; children
 
   const classes = ['b-hab']
   if (style.fond) classes.push('b-hab--fond')
+  // Remplir la hauteur réglée, au lieu de la laisser en espace autour du bloc.
+  if (style.remplir) classes.push('b-hab--remplir')
   if (style.couleur) classes.push('b-hab--couleur')
   if (style.gras) classes.push('b-hab--gras')
   if (style.italique) classes.push('b-hab--italique')
@@ -210,9 +214,14 @@ function PoigneeLargeur({
  *
  * Les deux poignées règlent la **même** hauteur, en sens inverse : tirer le
  * bord bas vers le bas agrandit, tirer le bord haut vers le haut agrandit
- * aussi. Le haut d'un bloc, lui, est décidé par la rangée où il se trouve : on
- * ne peut pas le déplacer, donc c'est le bas qui bouge. C'est la seule
- * traduction honnête du geste dans une page qui s'écoule de haut en bas.
+ * aussi. Chacune retient **son** bord opposé : la poignée du bas laisse le haut
+ * du bloc en place, celle du haut pose l'ancre en bas (`StyleBloc.ancre`) et
+ * fait donc monter le haut sans que le bas ne bouge.
+ *
+ * Ce que l'ancre ne peut pas faire : si le bloc est le plus grand de sa rangée,
+ * il n'y a rien au-dessus de lui à reprendre — la rangée elle-même grandit, et
+ * elle ne peut grandir que vers le bas, une page s'écoulant de haut en bas.
+ * L'ancre joue tant qu'un voisin plus grand laisse de la place.
  */
 function PoigneeHauteur({
   cle,
@@ -224,7 +233,7 @@ function PoigneeHauteur({
   /** Hauteur courante, ou « undefined » tant qu'elle n'a jamais été réglée. */
   hauteur: number | undefined
   cote: 'haut' | 'bas'
-  surHauteur: (cle: string, hauteur: number) => void
+  surHauteur: (cle: string, hauteur: number, ancre?: 'bas') => void
 }) {
   const poignee = useRef<HTMLButtonElement>(null)
   const depart = useRef<{ y: number; hauteur: number; echelle: number } | null>(null)
@@ -252,6 +261,9 @@ function PoigneeHauteur({
 
   // Le bord haut travaille à l'envers du bord bas : monter le doigt agrandit.
   const sens = cote === 'bas' ? 1 : -1
+  // …et il retient le bas du bloc, quand la rangée le permet. Le bord bas, lui,
+  // remet l'ancrage ordinaire : c'est ainsi qu'on revient en arrière.
+  const ancre = cote === 'haut' ? ('bas' as const) : undefined
 
   const borner = (brute: number): number =>
     Math.min(HAUTEUR_MAX, Math.max(HAUTEUR_MIN, Math.round(brute / HAUTEUR_PAS) * HAUTEUR_PAS))
@@ -261,7 +273,7 @@ function PoigneeHauteur({
     if (!debut) return
     const ecart = ((evenement.clientY - debut.y) / debut.echelle) * sens
     const cible = borner(debut.hauteur + ecart)
-    if (cible !== hauteur) surHauteur(cle, cible)
+    if (cible !== hauteur) surHauteur(cle, cible, ancre)
   }
 
   const finir = () => {
@@ -281,11 +293,11 @@ function PoigneeHauteur({
         const base = hauteur ?? 620
         if (evenement.key === 'ArrowUp') {
           evenement.preventDefault()
-          surHauteur(cle, borner(base - HAUTEUR_PAS * sens))
+          surHauteur(cle, borner(base - HAUTEUR_PAS * sens), ancre)
         }
         if (evenement.key === 'ArrowDown') {
           evenement.preventDefault()
-          surHauteur(cle, borner(base + HAUTEUR_PAS * sens))
+          surHauteur(cle, borner(base + HAUTEUR_PAS * sens), ancre)
         }
       }}
       aria-label={`Bord ${cote}. Hauteur : ${hauteur ?? 'automatique'}. Flèches haut et bas pour ajuster.`}
@@ -340,7 +352,7 @@ function RenduGrille({
       key={cle}
       className={`mdl__cellule${classe ? ` ${classe}` : ''}${
         hauteur === undefined ? '' : ' mdl__cellule--hauteur'
-      }`}
+      }${estAncreBas(contenu, cle) ? ' mdl__cellule--bas' : ''}`}
       style={{
         // La cellule occupe le décalage **et** le bloc : les colonnes vides
         // sont à l'intérieur d'elle, en marge gauche (voir « modeles.css »).
@@ -462,6 +474,7 @@ function renduEmplacement(
           profil="grand"
           libelleVide="Image"
           surImage={surImage}
+          focal={focalDe(contenu, nom)}
         />,
       )
     case 'galerie':
@@ -502,7 +515,7 @@ function renduBlocLibre(
   ctx: Pick<PropsModele, 'contenu' | 'media' | 'surImage' | 'lecteurVideo'>,
   env: EnveloppeEmplacement,
 ): ReactNode {
-  const { media, surImage, lecteurVideo } = ctx
+  const { contenu, media, surImage, lecteurVideo } = ctx
   const nom = `suite:${bloc.id}`
   // Éditeur : les vidéos et les ateliers sont affichés mais inertes, sinon
   // toucher une réponse répondrait au quiz au lieu de sélectionner le bloc.
@@ -525,6 +538,7 @@ function renduBlocLibre(
           profil="grand"
           libelleVide="Photo ajoutée (vide)"
           surImage={surImage}
+          focal={focalDe(contenu, nom)}
         />,
       )
     case 'galerie':

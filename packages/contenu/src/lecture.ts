@@ -85,13 +85,39 @@ export function estStyleVide(style: StyleBloc): boolean {
     (style.alignement === undefined || style.alignement === 'gauche') &&
     (style.opacite === undefined || style.opacite === 100) &&
     (style.taille === undefined || style.taille === 100) &&
-    !style.recadre
+    !style.recadre &&
+    style.ancre === undefined &&
+    style.focalX === undefined &&
+    style.focalY === undefined &&
+    !style.remplir
   )
+}
+
+/**
+ * Partie de la photo gardée dans un cadre recadré, en pourcentage, ou
+ * « undefined » si ce bloc n'en a pas choisi — le point focal du média sert
+ * alors, comme avant ce réglage.
+ */
+export function focalDe(
+  contenu: ContenuPage,
+  nom: string,
+): { x: number; y: number } | undefined {
+  const style = lireStyle(contenu, nom)
+  if (!style || (style.focalX === undefined && style.focalY === undefined)) return undefined
+  return { x: style.focalX ?? 50, y: style.focalY ?? 50 }
 }
 
 /** Une photo qu'on a demandé à recadrer. Faux partout ailleurs. */
 export function estRecadre(contenu: ContenuPage, nom: string): boolean {
   return lireStyle(contenu, nom)?.recadre === true
+}
+
+/**
+ * Bloc accroché au **bas** de sa rangée : sa hauteur a été réglée par la
+ * poignée du haut, c'est donc son bas qui reste en place.
+ */
+export function estAncreBas(contenu: ContenuPage, nom: string): boolean {
+  return lireStyle(contenu, nom)?.ancre === 'bas'
 }
 
 /**

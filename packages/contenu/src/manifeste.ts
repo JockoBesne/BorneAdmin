@@ -159,6 +159,16 @@ export const schemaStyleBloc = z.object({
   // Photos : recadrer dans un cadre de hauteur choisie plutôt que montrer la
   // photo entière. Absent = entière, jamais coupée.
   recadre: z.boolean().optional(),
+  // Bord qui reste en place quand on règle la hauteur : « bas » quand la
+  // poignée du haut a servi. Absent = le bloc est accroché en haut, comme avant.
+  ancre: z.enum(['bas']).optional(),
+  // Photo recadrée : la partie gardée dans le cadre, en pourcentage. Absents =
+  // le point focal du média.
+  focalX: z.number().int().min(0).max(100).optional(),
+  focalY: z.number().int().min(0).max(100).optional(),
+  // Le fond remplit la hauteur réglée au lieu d'épouser le contenu. Absent =
+  // le bloc garde sa taille et la hauteur devient de l'espace autour.
+  remplir: z.boolean().optional(),
   // Taille du texte, en pourcentage de la taille normale. Absente = 100.
   taille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
 })

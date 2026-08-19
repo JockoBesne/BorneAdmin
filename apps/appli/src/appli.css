@@ -1238,6 +1238,13 @@ button {
   outline: 4px solid var(--b-accent);
 }
 
+/* Photo recadrée du bloc sélectionné : le glissement la cadre au lieu de
+   déplacer le bloc (voir « commencerCadrage »). Le curseur l'annonce ; au doigt,
+   c'est l'aide du panneau qui le dit. */
+.mdl__cellule--hauteur .emp--actif .b-image__zone {
+  cursor: move;
+}
+
 /* ── Glisser-déposer d'un bloc sur l'aperçu ──────────────────────────────── */
 
 /* Un bloc ajouté s'attrape ; « touch-action: none » empêche la dalle tactile
