@@ -60,7 +60,8 @@ glissement **montre la rangée telle qu'elle sera** — un cadre par bloc, calcu
 par `placerCellule` (`apercuDepot` dans `EditeurPage.tsx`). Même jour :
 **toucher une photo l'affiche en grand** (`Visionneuse` dans `Visiteur.tsx`, la
 borne écoute enfin `surImage`), et les photos d'une **galerie ne sont plus
-rognées** (`object-fit: contain`).
+rognées** (`object-fit: contain`). Enfin, le **bandeau du haut se règle page par
+page** (voir « Bandeau du haut » dans les concepts).
 
 **Sans objet** : l'ancienne « étape 3 — dossier partagé ». Il n'y a **qu'un seul
 ordinateur**, voir ci-dessous.
@@ -199,7 +200,11 @@ ordinateur**, voir ci-dessous.
   alignement sur le disque (constaté).
 - **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond,
   **transparence du fond** (`opacite`, 0–100, absente = opaque ; elle ne touche
-  que le fond — le texte posé dessus reste net, et sans fond elle ne fait rien),
+  que le fond — le texte et les photos posés dessus restent nets). Son curseur
+  s'affiche **dès l'ouverture du disque du fond**, avant qu'une couleur ait été
+  choisie : le bouger en pose une (celle qu'affiche le disque, c'est-à-dire
+  celle de la page), faute de quoi il n'aurait rien à rendre translucide et
+  passerait pour cassé — reproche fait le 2026-08-18, sur une galerie,
   **taille du texte** (`taille`, en pourcentage, 60–200, absente = 100) et mise
   en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
   clé que partout ailleurs (`titre`, `suite:<id>`). Appliqué par `Habillage`
@@ -207,6 +212,18 @@ ordinateur**, voir ci-dessous.
   habillage n'est pas enveloppé du tout, et un habillage remis à zéro est retiré
   du fichier (`estStyleVide`, `sansStylesVides`) — il part aussi avec son bloc
   quand on le retire.
+  - **Les fonds décoratifs cèdent à l'habillage.** Les cases d'une galerie
+    (`.b-galerie__zone`) deviennent transparentes dès que le bloc a un fond :
+    sans quoi chaque photo restait posée sur `--b-surface`, teinte fixe de la
+    palette, et la couleur choisie ne se voyait que dans les gouttières. Même
+    famille de défaut sur l'encart du modèle 3, dont le cadre portait la palette
+    d'origine **recopiée en dur** (`rgba(14, 34, 55, 0.86)` = `#0e2237` à 86 %) :
+    il lit maintenant `--b-fond`, `--b-accent` et `--b-texte`, donc il suit les
+    couleurs de la page. Aspect par défaut inchangé dans les deux cas. Enfin la
+    **barre de défilement de la toile** (`.toile::-webkit-scrollbar`), qui
+    portait l'or de l'accent et un bleu fixe : curseur en `--b-texte-doux`,
+    piste en `color-mix` du texte et du fond — elle suit donc la page ouverte,
+    y compris dans l'aperçu de l'éditeur.
   - **La taille du texte est un facteur, pas une taille en points.** Le rendu
     pose une variable CSS `--facteur-texte` sur l'habillage ; chaque texte
     (`.b-h1`, `.b-h3`, `.b-corps`, `.b-petit`, `.b-legende`) multiplie **sa**
@@ -227,6 +244,30 @@ ordinateur**, voir ci-dessous.
   - **L'aller-retour par clé USB est couvert** (`transfert.test.ts`) : la page
     est écrite, relue par le schéma puis réimportée, et son habillage doit
     ressortir entier. C'est le passage où un champ non déclaré disparaît.
+- **Bandeau du haut** = la barre `.monde__barre` du mode visiteur (« ← Accueil »
+  et le titre). Elle se règle **par page**, dans le panneau « Apparence de la
+  page » de l'éditeur : quatre champs facultatifs sur la page —
+  `couleurBandeau`, `couleurBandeauTexte`, `hauteurBandeau` (72–200 px) et
+  `bandeauMasque`. Tous absents = le bandeau d'origine, inchangé.
+  - Le rendu passe par des **variables CSS avec valeur de repli**
+    (`var(--b-bandeau, #081726)`, posées par `stylesCouleurs` dans
+    `couleurs.ts`) : tant que rien n'est réglé, aucune variable n'est écrite et
+    la feuille de style garde son apparence d'avant. C'est ce qui évite d'avoir
+    à migrer les contenus existants.
+  - **La couleur du texte se calcule d'elle-même** (`surFondLisible`, luminance
+    perçue) : presque noir sur un bandeau clair, presque blanc sur un sombre.
+    Sans cela, un bandeau clair garderait le texte clair de la page — illisible,
+    et personne au musée n'aurait le moyen de le rattraper. Une couleur choisie
+    à la main l'emporte, et l'éditeur montre toujours celle qui s'affichera.
+  - **Masqué, le bandeau ne disparaît pas** : il devient transparent et ne garde
+    que le bouton de retour, posé sur la page (`.monde__barre--masque`). La
+    sortie ne se retire jamais — sinon un visiteur entré sur cette page
+    attendrait le retour automatique.
+  - Le bandeau est **hors de la toile** : l'aperçu de l'éditeur ne le montre pas
+    (il est en pixels d'écran, la toile en pixels de toile). Le réglage ne se
+    voit qu'en mode visiteur — c'est assumé, un faux bandeau dans l'aperçu ne
+    serait ni à la bonne échelle ni à la bonne place.
+
 - **`ordre`** = **la** liste des cellules d'une page, de haut en bas,
   emplacements du modèle et blocs ajoutés **mélangés** (`titre`, `suite:<id>`…).
   Elle décide de l'**ordre** et de la **présence** : un emplacement absent de la

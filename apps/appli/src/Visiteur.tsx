@@ -137,7 +137,10 @@ export function Visiteur() {
   } else if (page) {
     contenu = (
       <div className="monde" key={page.id}>
-        <div className="monde__barre">
+        {/* Masqué, le bandeau ne disparaît pas : il devient transparent et ne
+            garde que le bouton de retour, posé par-dessus la page (voir
+            « .monde__barre--masque »). La sortie ne se retire pas. */}
+        <div className={`monde__barre${page.bandeauMasque ? ' monde__barre--masque' : ''}`}>
           <button type="button" className="monde__retour" onClick={() => setOuverte(null)}>
             ← Accueil
           </button>

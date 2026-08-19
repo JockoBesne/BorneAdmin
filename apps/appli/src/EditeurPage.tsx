@@ -29,6 +29,9 @@ import {
   modelePar,
   sansMiseEnForme,
   texteBrut,
+  HAUTEUR_BANDEAU_DEFAUT,
+  HAUTEUR_BANDEAU_MAX,
+  HAUTEUR_BANDEAU_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
   FRISE_DETAIL_MAX_SIGNES,
   FRISE_LIBELLE_MAX_SIGNES,
@@ -63,7 +66,13 @@ import {
 } from '@borne/contenu/rendu'
 import { ChampTexteRiche, type CommandesTexteRiche } from './ChampTexteRiche.jsx'
 import { importerMedias, resolveurMedias } from './contenu.js'
-import { couleursEffectives, stylesCouleurs, type Couleurs } from './couleurs.js'
+import {
+  BANDEAU_DEFAUT,
+  couleursEffectives,
+  stylesCouleurs,
+  surFondLisible,
+  type Couleurs,
+} from './couleurs.js'
 import { RoueCouleur } from './RoueCouleur.jsx'
 
 /**
@@ -208,8 +217,25 @@ export function EditeurPage({
 
   // ── Couleurs propres à la page ─────────────────────────────────────────────
 
-  const changerCouleurPage = (champ: 'couleurFond' | 'couleurTexte', hex: string) =>
-    surModification((p) => ({ ...p, [champ]: hex }))
+  const changerCouleurPage = (
+    champ: 'couleurFond' | 'couleurTexte' | 'couleurBandeau' | 'couleurBandeauTexte',
+    hex: string,
+  ) => surModification((p) => ({ ...p, [champ]: hex }))
+
+  // Hauteur du bandeau. Une saisie vide ou illisible ne change rien : on ne
+  // remplace pas un réglage par « 0 » pendant que l'utilisateur efface le champ.
+  const changerHauteurBandeau = (saisie: string) =>
+    surModification((p) => {
+      const pixels = Number.parseInt(saisie, 10)
+      if (!Number.isFinite(pixels)) return p
+      return {
+        ...p,
+        hauteurBandeau: Math.min(HAUTEUR_BANDEAU_MAX, Math.max(HAUTEUR_BANDEAU_MIN, pixels)),
+      }
+    })
+
+  const masquerBandeau = (actif: boolean) =>
+    surModification((p) => ({ ...p, bandeauMasque: actif || undefined }))
 
   // Revenir au thème global : on retire les couleurs propres à la page.
   const suivreThemeGlobal = () =>
@@ -217,11 +243,26 @@ export function EditeurPage({
       const copie = { ...p }
       delete copie.couleurFond
       delete copie.couleurTexte
+      delete copie.couleurBandeau
+      delete copie.couleurBandeauTexte
+      delete copie.hauteurBandeau
+      delete copie.bandeauMasque
       return copie
     })
 
   const couleursPage = couleursEffectives(manifeste.reglages, page)
-  const pagePersonnalisee = page.couleurFond !== undefined || page.couleurTexte !== undefined
+
+  // Couleur du texte du bandeau telle que la borne l'affichera : celle qu'on a
+  // choisie, ou celle qu'elle calcule d'après le fond.
+  const texteBandeau =
+    page.couleurBandeauTexte ?? surFondLisible(page.couleurBandeau ?? BANDEAU_DEFAUT)
+  const pagePersonnalisee =
+    page.couleurFond !== undefined ||
+    page.couleurTexte !== undefined ||
+    page.couleurBandeau !== undefined ||
+    page.couleurBandeauTexte !== undefined ||
+    page.hauteurBandeau !== undefined ||
+    page.bandeauMasque !== undefined
 
   // Règle la largeur d'un bloc, en colonnes sur la grille de 12. Appelé par la
   // poignée de l'aperçu (glissement) comme par le bouton du panneau (clavier).
@@ -1353,7 +1394,7 @@ export function EditeurPage({
             aria-expanded={couleursOuvertes}
             onClick={() => setCouleursOuvertes((v) => !v)}
           >
-            <span>Couleurs de la page</span>
+            <span>Apparence de la page</span>
             <span aria-hidden="true">{couleursOuvertes ? '▲' : '▼'}</span>
           </button>
 
@@ -1381,9 +1422,67 @@ export function EditeurPage({
                 />
               </div>
 
+              {/* ── Le bandeau du haut ────────────────────────────────────
+                  La barre « ← Accueil » du mode visiteur. Elle est **hors de la
+                  toile** : l'aperçu de gauche ne la montre pas, ces réglages ne
+                  se voient qu'en mode visiteur. */}
+              <h3 className="pan__sous-titre">Bandeau du haut</h3>
+
+              <label className="perso__bascule">
+                <input
+                  type="checkbox"
+                  checked={page.bandeauMasque === true}
+                  onChange={(evenement) => masquerBandeau(evenement.target.checked)}
+                />
+                <span>
+                  <strong>Masquer le bandeau</strong>
+                  <span className="pan__aide">
+                    {page.bandeauMasque === true
+                      ? 'La page prend toute la hauteur de l’écran. Le bouton « ← Accueil » reste, posé dans le coin : le visiteur garde toujours une sortie.'
+                      : 'La barre du haut affiche le retour à l’accueil et le titre de la page.'}
+                  </span>
+                </span>
+              </label>
+
+              {page.bandeauMasque === true ? null : (
+                <>
+                  <div className="apparence__couleur">
+                    <span className="champ__libelle">Fond du bandeau</span>
+                    <RoueCouleur
+                      valeur={couleursPage.couleurBandeau ?? BANDEAU_DEFAUT}
+                      surChangement={(hex) => changerCouleurPage('couleurBandeau', hex)}
+                    />
+                  </div>
+
+                  {/* Tant qu'aucune couleur n'est choisie ici, le disque montre
+                      celle que la borne calcule d'elle-même d'après le fond :
+                      ce qu'on voit est bien ce qui s'affiche. */}
+                  <div className="apparence__couleur">
+                    <span className="champ__libelle">Texte du bandeau</span>
+                    <RoueCouleur
+                      valeur={texteBandeau}
+                      surChangement={(hex) => changerCouleurPage('couleurBandeauTexte', hex)}
+                    />
+                  </div>
+
+                  <div className="apparence__veille">
+                    <span className="champ__libelle">Hauteur du bandeau</span>
+                    <input
+                      type="number"
+                      min={HAUTEUR_BANDEAU_MIN}
+                      max={HAUTEUR_BANDEAU_MAX}
+                      step={4}
+                      value={page.hauteurBandeau ?? HAUTEUR_BANDEAU_DEFAUT}
+                      onChange={(evenement) => changerHauteurBandeau(evenement.target.value)}
+                    />
+                    <span>pixels</span>
+                  </div>
+                </>
+              )}
+
               {pagePersonnalisee ? (
                 <button type="button" className="abtn abtn--discret" onClick={suivreThemeGlobal}>
-                  Suivre le thème général
+                  Revenir à l’apparence par défaut
                 </button>
               ) : null}
             </div>
@@ -1961,7 +2060,14 @@ function BarreMiseEnForme({
     surStyle((precedent) => {
       const copie = { ...precedent }
       if (valeur <= 0) delete copie.opacite
-      else copie.opacite = 100 - valeur
+      else {
+        // Rendre translucide suppose un fond. Tant qu'aucun n'a été choisi, on
+        // pose **celui que le disque affiche** — la couleur de la page. Sans
+        // cela, le curseur ne pouvait rien faire tant qu'on n'avait pas touché
+        // au disque, ce qui le faisait passer pour cassé.
+        if (copie.fond === undefined) copie.fond = couleursPage.couleurFond
+        copie.opacite = 100 - valeur
+      }
       return copie
     })
 
@@ -2172,11 +2278,13 @@ function BarreMiseEnForme({
           <RoueCouleur valeur={couleurRoue} surChangement={(hex) => changerCouleur(roue, hex)} />
 
           {/* La transparence est rangée avec le fond, et non ailleurs dans la
-              barre : elle ne rend translucide que lui, et n'a donc aucun sens
-              tant qu'aucun fond n'est posé. Le curseur porte son propre
-              libellé, avec le nombre — sinon on ne saurait pas où on en est une
-              fois le doigt levé. */}
-          {roue === 'fond' && style.fond !== undefined ? (
+              barre : elle ne rend translucide que lui. Elle est montrée dès que
+              le disque du fond est ouvert, avant même qu'une couleur ait été
+              choisie — la cacher jusque-là la rendait introuvable, surtout sur
+              une galerie, dont les cases ont déjà un fond visible. Le curseur
+              porte son propre libellé, avec le nombre — sinon on ne saurait pas
+              où on en est une fois le doigt levé. */}
+          {roue === 'fond' ? (
             <label className="perso__glissiere">
               <span>Transparence du fond : {transparence} %</span>
               <input

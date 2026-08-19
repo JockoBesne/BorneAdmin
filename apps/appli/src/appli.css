@@ -589,7 +589,18 @@ button {
   color: var(--b-texte);
 }
 
-/* Section repliable « Couleurs de la page ». */
+/* Séparation à l'intérieur du panneau d'apparence : « Bandeau du haut » ouvre
+   une deuxième famille de réglages, qui ne touche pas la page elle-même. */
+.pan__sous-titre {
+  margin: 6px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--b-trait);
+  font-family: var(--b-titre-police);
+  font-size: 15px;
+  color: var(--b-texte);
+}
+
+/* Section repliable « Apparence de la page ». */
 .pan__couleurs {
   border: 1px solid var(--b-trait);
   border-radius: 12px;
@@ -2106,6 +2117,9 @@ button {
   height: 100%;
   display: flex;
   flex-direction: column;
+  /* Repère du bouton de retour quand le bandeau est masqué : il se pose alors
+     par-dessus la page, sans quoi il chercherait la fenêtre entière. */
+  position: relative;
   background: var(--b-fond);
   /* On entre dans la page : elle se rapproche légèrement en apparaissant. */
   animation: monde-entre 300ms cubic-bezier(0.2, 0, 0.2, 1);
@@ -2130,10 +2144,36 @@ button {
   display: flex;
   align-items: center;
   gap: 24px;
-  height: 96px;
+  height: var(--b-bandeau-hauteur, 96px);
   padding: 0 3vw;
-  background: #081726;
+  /* Réglable par page (« Couleurs de la page »). Sans réglage, le bleu sombre
+     d'origine — c'est la valeur de repli du « var() ». */
+  background: var(--b-bandeau, #081726);
   border-bottom: 1px solid rgba(245, 247, 250, 0.08);
+}
+
+/* Bandeau masqué : la page prend toute la hauteur, et il ne reste que le bouton
+   de retour, posé par-dessus. On ne le supprime jamais — sans lui, un visiteur
+   entré sur cette page n'aurait plus de sortie avant le retour automatique. */
+.monde__barre--masque {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  height: auto;
+  padding: 18px 3vw;
+  background: transparent;
+  border-bottom: none;
+}
+
+.monde__barre--masque .monde__titre {
+  display: none;
+}
+
+/* Le bouton n'a plus le bandeau derrière lui : il porte son propre fond, sinon
+   il se perdrait sur une photo pleine largeur. */
+.monde__barre--masque .monde__retour {
+  background: rgba(8, 23, 38, 0.72);
 }
 
 .monde__retour {
@@ -2141,10 +2181,10 @@ button {
   min-height: 56px;
   min-width: 180px;
   padding: 0 26px;
-  border: 2px solid rgba(233, 180, 76, 0.5);
+  border: 2px solid var(--b-bandeau-texte, rgba(233, 180, 76, 0.5));
   border-radius: 999px;
   background: transparent;
-  color: var(--b-accent);
+  color: var(--b-bandeau-texte, var(--b-accent));
   font-family: inherit;
   font-size: clamp(15px, 1.15vw, 22px);
   font-weight: 600;
@@ -2161,7 +2201,7 @@ button {
   flex: 1;
   font-size: clamp(15px, 1.2vw, 24px);
   font-weight: 600;
-  color: var(--b-texte);
+  color: var(--b-bandeau-texte, var(--b-texte));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

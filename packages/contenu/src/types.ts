@@ -224,6 +224,14 @@ export const HAUTEUR_MAX = 1400
 /** Pas d'aimantation : assez fin pour ajuster, assez gros pour ne pas trembler. */
 export const HAUTEUR_PAS = 20
 
+/* Hauteur du bandeau du haut (la barre « ← Accueil » du mode visiteur), en
+ * pixels d'écran — le bandeau est hors de la toile. Le minimum laisse passer le
+ * bouton de retour, dont la cible fait 56 px : en dessous, on ne le viserait
+ * plus au doigt. Réglée par page ; absente, c'est la valeur d'origine. */
+export const HAUTEUR_BANDEAU_MIN = 72
+export const HAUTEUR_BANDEAU_MAX = 200
+export const HAUTEUR_BANDEAU_DEFAUT = 96
+
 /**
  * Hauteur qu'on cherche à ne pas dépasser pour une photo, en pixels de toile.
  *

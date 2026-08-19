@@ -5,6 +5,8 @@ import {
   COLONNES_GRILLE,
   COLONNES_MIN,
   DECALAGE_MAX,
+  HAUTEUR_BANDEAU_MAX,
+  HAUTEUR_BANDEAU_MIN,
   HAUTEUR_MAX,
   HAUTEUR_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
@@ -171,6 +173,24 @@ export const schemaPageManifeste = z.object({
   // global (`reglages`). Présentes, elles l'emportent.
   couleurFond: z.string().regex(COULEUR).optional(),
   couleurTexte: z.string().regex(COULEUR).optional(),
+  /*
+   * Bandeau du haut : la barre « ← Accueil » du mode visiteur. Tout est
+   * facultatif, et tout absent = le bandeau d'origine — une page écrite avant
+   * ces réglages garde donc exactement son apparence.
+   */
+  couleurBandeau: z.string().regex(COULEUR).optional(),
+  // Absente, la couleur du texte est calculée d'après le fond (voir
+  // « surFondLisible » dans l'application) : claire sur sombre, sombre sur clair.
+  couleurBandeauTexte: z.string().regex(COULEUR).optional(),
+  hauteurBandeau: z
+    .number()
+    .int()
+    .min(HAUTEUR_BANDEAU_MIN)
+    .max(HAUTEUR_BANDEAU_MAX)
+    .optional(),
+  // Masqué, il ne reste que le bouton de retour, posé par-dessus la page : on ne
+  // laisse jamais un visiteur sans sortie.
+  bandeauMasque: z.boolean().optional(),
   contenu: z.object({
     modele: z.enum(['t0', 't1', 't2', 't3']),
     // Largeurs des emplacements réglées à la poignée. Déclaré ici sans quoi le

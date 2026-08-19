@@ -87,6 +87,10 @@ test("l'habillage d'un bloc traverse la clé USB, taille du texte comprise", () 
   const modele = page('p1', 'm1')
   const habillee: PageManifeste = {
     ...modele,
+    couleurBandeau: '#3a1f10',
+    couleurBandeauTexte: '#ffe9c4',
+    hauteurBandeau: 140,
+    bandeauMasque: true,
     contenu: {
       ...modele.contenu,
       styles: { image: { taille: 145, fond: '#112233', opacite: 60, alignement: 'centre' } },
@@ -106,6 +110,11 @@ test("l'habillage d'un bloc traverse la clé USB, taille du texte comprise", () 
   assert.equal(contenu.styles?.image?.taille, 145, 'la taille du texte a survécu')
   assert.equal(contenu.styles?.image?.fond, '#112233')
   assert.equal(contenu.styles?.image?.opacite, 60)
+  const arrivee = fusion.pages[0]!
+  assert.equal(arrivee.couleurBandeau, '#3a1f10', 'le fond du bandeau a survécu')
+  assert.equal(arrivee.couleurBandeauTexte, '#ffe9c4')
+  assert.equal(arrivee.hauteurBandeau, 140)
+  assert.equal(arrivee.bandeauMasque, true)
 })
 
 test('un média déjà présent est réutilisé, pas recopié', () => {
