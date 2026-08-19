@@ -1,4 +1,11 @@
-import { COLONNES_GRILLE, COLONNES_MIN, HAUTEUR_MAX, HAUTEUR_MIN } from './types.js'
+import {
+  COLONNES_GRILLE,
+  COLONNES_MIN,
+  HAUTEUR_MAX,
+  HAUTEUR_MIN,
+  HAUTEUR_PHOTO_VISEE,
+  largeurEnPixels,
+} from './types.js'
 import type {
   BlocLibre,
   ContenuPage,
@@ -76,8 +83,41 @@ export function estStyleVide(style: StyleBloc): boolean {
     !style.italique &&
     !style.souligne &&
     (style.alignement === undefined || style.alignement === 'gauche') &&
-    (style.opacite === undefined || style.opacite === 100)
+    (style.opacite === undefined || style.opacite === 100) &&
+    (style.taille === undefined || style.taille === 100) &&
+    !style.recadre
   )
+}
+
+/** Une photo qu'on a demandé à recadrer. Faux partout ailleurs. */
+export function estRecadre(contenu: ContenuPage, nom: string): boolean {
+  return lireStyle(contenu, nom)?.recadre === true
+}
+
+/**
+ * Largeur en colonnes qu'il faut donner au bloc d'une photo pour qu'elle ne
+ * dépasse pas la hauteur visée — jamais plus large que ce qu'il est déjà.
+ *
+ * C'est ce qui évite les « formats bizarres » au moment où l'on choisit une
+ * photo : une photo en hauteur mise en pleine largeur ferait deux écrans de haut.
+ * On réduit la largeur du bloc, on ne touche pas à la photo : elle reste entière.
+ * Dimensions du média inconnues : on ne change rien.
+ */
+export function colonnesPourPhoto(
+  largeurMedia: number | null,
+  hauteurMedia: number | null,
+  colonnesActuelles: number,
+): number {
+  if (!largeurMedia || !hauteurMedia || largeurMedia <= 0) return colonnesActuelles
+  const proportions = hauteurMedia / largeurMedia
+  let colonnes = colonnesActuelles
+  while (
+    colonnes > COLONNES_MIN &&
+    largeurEnPixels(colonnes) * proportions > HAUTEUR_PHOTO_VISEE
+  ) {
+    colonnes -= 1
+  }
+  return colonnes
 }
 
 /**
@@ -150,6 +190,33 @@ export function colonnesEmplacement(
 }
 
 /**
+ * Colonnes laissées vides à gauche d'une cellule — ce qui la pousse vers la
+ * droite et laisse un trou derrière elle.
+ *
+ * Bornées ici, comme les largeurs : un contenu.json retouché à la main ne doit
+ * pas pouvoir pousser un bloc hors de la page. Le plafond tient compte de la
+ * largeur du bloc, pour qu'il reste toujours quelque chose à afficher.
+ */
+function borneDecalage(valeur: unknown, colonnes: number): number {
+  if (typeof valeur !== 'number' || !Number.isFinite(valeur)) return 0
+  return Math.min(COLONNES_GRILLE - colonnes, Math.max(0, Math.round(valeur)))
+}
+
+/** Décalage d'un bloc ajouté, en colonnes vides à sa gauche. 0 = collé. */
+export function decalageDe(bloc: BlocLibre): number {
+  return borneDecalage(bloc.decalage, colonnesDe(bloc))
+}
+
+/** Décalage d'un emplacement du modèle, en colonnes vides à sa gauche. */
+export function decalageEmplacement(
+  contenu: ContenuPage,
+  nom: string,
+  colonnes: number,
+): number {
+  return borneDecalage(contenu.decalages?.[nom], colonnes)
+}
+
+/**
  * Ordre réel des cellules d'une page, du haut vers le bas.
  *
  * Une cellule est soit un emplacement du modèle (« titre »), soit un bloc
@@ -217,9 +284,18 @@ export function ordreCellules(
   return cles
 }
 
-/** Un bloc dont la hauteur est réglable : image ou galerie seulement. */
-export function hauteurReglable(type: string): boolean {
-  return type === 'image' || type === 'galerie'
+/**
+ * Un bloc dont la hauteur est réglable : une galerie, toujours ; une photo,
+ * seulement si on a demandé à la **recadrer**.
+ *
+ * Sans cela, une photo n'a pas de hauteur du tout : elle est entière et son bloc
+ * suit ses proportions. Les poignées haute et basse n'apparaissent donc sur une
+ * photo qu'après avoir coché « Recadrer » — ce qui rend impossible de couper une
+ * photo par accident, et explique aussi pourquoi ces poignées apparaissent.
+ */
+export function hauteurReglable(type: string, recadre = false): boolean {
+  if (type === 'galerie') return true
+  return type === 'image' && recadre
 }
 
 function borneHauteur(valeur: number | undefined): number | undefined {
@@ -227,14 +303,39 @@ function borneHauteur(valeur: number | undefined): number | undefined {
   return Math.min(HAUTEUR_MAX, Math.max(HAUTEUR_MIN, Math.round(valeur)))
 }
 
+/**
+ * Hauteur imposée à une cellule, ou « undefined » si sa hauteur est libre.
+ *
+ * Un seul passage pour les blocs ajoutés et les emplacements du modèle : c'est
+ * lui qui garantit qu'une photo non recadrée n'a **jamais** de hauteur imposée,
+ * quoi qu'il traîne dans le fichier. Les hauteurs enregistrées avant l'arrivée
+ * du recadrage sont ainsi ignorées au lieu de couper les photos existantes.
+ *
+ * Une photo recadrée sans hauteur enregistrée reçoit la hauteur visée : le cadre
+ * existe toujours, il n'est jamais plat.
+ */
+export function hauteurCellule(
+  contenu: ContenuPage,
+  nom: string,
+  type: string,
+  brute: number | undefined,
+): number | undefined {
+  if (!hauteurReglable(type, estRecadre(contenu, nom))) return undefined
+  return borneHauteur(brute) ?? (type === 'image' ? HAUTEUR_PHOTO_VISEE : undefined)
+}
+
 /** Hauteur imposée à un bloc ajouté, ou « undefined » pour la hauteur d'origine. */
-export function hauteurDe(bloc: BlocLibre): number | undefined {
-  return hauteurReglable(bloc.valeur.type) ? borneHauteur(bloc.hauteur) : undefined
+export function hauteurDe(contenu: ContenuPage, bloc: BlocLibre): number | undefined {
+  return hauteurCellule(contenu, `suite:${bloc.id}`, bloc.valeur.type, bloc.hauteur)
 }
 
 /** Hauteur imposée à un emplacement du modèle, ou « undefined ». */
-export function hauteurEmplacement(contenu: ContenuPage, nom: string): number | undefined {
-  return borneHauteur(contenu.hauteurs?.[nom])
+export function hauteurEmplacement(
+  contenu: ContenuPage,
+  nom: string,
+  type: string,
+): number | undefined {
+  return hauteurCellule(contenu, nom, type, contenu.hauteurs?.[nom])
 }
 
 /** Tous les identifiants de médias référencés par une page (index d'usage, §9.4). */

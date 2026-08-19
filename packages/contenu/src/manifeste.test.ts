@@ -42,6 +42,7 @@ const complet = {
       contenu: {
         modele: 't1',
         largeurs: { titre: 12, image: 6 },
+        decalages: { image: 3 },
         hauteurs: { image: 480 },
         ordre: ['titre', 'suite:b1', 'image'],
         styles: {
@@ -53,7 +54,9 @@ const complet = {
             italique: true,
             souligne: true,
             alignement: 'centre',
+            taille: 130,
           },
+          image: { recadre: true },
         },
         emplacements: {
           titre: { type: 'titre', valeur: 'Les ondes' },
@@ -65,6 +68,7 @@ const complet = {
             apres: 'corps',
             largeur: 'moitie',
             colonnes: 6,
+            decalage: 3,
             hauteur: 320,
             valeur: {
               type: 'texte',

@@ -362,6 +362,23 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
     hex: string,
   ) => modifier((m) => ({ ...m, reglages: { ...m.reglages, [champ]: hex } }))
 
+  /**
+   * Délai avant le retour automatique à l'accueil, en minutes.
+   *
+   * Borné à la lecture comme le schéma le demande (1 à 60) : une case vidée ou
+   * une valeur aberrante tapée à la main ne doit pas produire un contenu que
+   * l'enregistrement refuserait ensuite.
+   */
+  const changerVeille = (saisie: string) =>
+    modifier((m) => {
+      const minutes = Number.parseInt(saisie, 10)
+      if (!Number.isFinite(minutes)) return m
+      return {
+        ...m,
+        reglages: { ...m.reglages, minutesAvantVeille: Math.min(60, Math.max(1, minutes)) },
+      }
+    })
+
   // Retire les couleurs propres à l'accueil : il reprend alors celles de la
   // borne. « undefined » disparaît du fichier à l'écriture.
   const retablirCouleursHub = () =>
@@ -781,6 +798,30 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                 <button type="button" className="abtn abtn--discret" onClick={retablirCouleursHub}>
                   Remettre les couleurs de la borne
                 </button>
+
+                {/* Retour automatique. Le réglage vivait dans le fichier de
+                    contenu sans que personne puisse le voir : il se règle ici. */}
+                <div className="apparence__couleur">
+                  <label className="champ__libelle" htmlFor="veille">
+                    Revenir à l'accueil après
+                  </label>
+                  <div className="apparence__veille">
+                    <input
+                      id="veille"
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={manifeste.reglages.minutesAvantVeille}
+                      onChange={(evenement) => changerVeille(evenement.target.value)}
+                    />
+                    <span>minutes</span>
+                  </div>
+                  <p className="apparence__encart-note">
+                    Sans que personne ne touche l'écran, la page ouverte se referme sur
+                    l'accueil : le visiteur suivant ne tombe pas au milieu de la lecture d'un
+                    autre. Une vidéo en cours de lecture repousse le retour.
+                  </p>
+                </div>
 
                 {/* Image de fond de tout l'écran d'accueil. */}
                 <div className="apparence__couleur">

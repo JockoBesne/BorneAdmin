@@ -1,8 +1,11 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import {
   colonnesDe,
   colonnesEmplacement,
+  decalageDe,
+  decalageEmplacement,
   estBlocLibreVide,
+  estRecadre,
   hauteurDe,
   hauteurEmplacement,
   hauteurReglable,
@@ -59,6 +62,8 @@ function Habillage({ style, children }: { style: StyleBloc | undefined; children
   if (style.souligne) classes.push('b-hab--souligne')
   if (style.alignement === 'centre') classes.push('b-hab--centre')
   if (style.alignement === 'droite') classes.push('b-hab--droite')
+  const taille = style.taille !== undefined && style.taille !== 100 ? style.taille : null
+  if (taille !== null) classes.push('b-hab--taille')
   if (classes.length === 1) return <>{children}</>
 
   // Transparence : elle ne touche que le **fond**, mélangé à du transparent —
@@ -69,8 +74,21 @@ function Habillage({ style, children }: { style: StyleBloc | undefined; children
       ? `color-mix(in srgb, ${style.fond} ${style.opacite}%, transparent)`
       : style.fond
 
+  // La taille passe par une variable CSS plutôt que par « font-size » : les
+  // textes du rendu ont chacun leur taille en pixels, qu'un « font-size » posé
+  // au-dessus n'atteindrait pas. Chaque texte multiplie la sienne par ce
+  // facteur — leurs écarts sont donc conservés.
   return (
-    <div className={classes.join(' ')} style={{ background: fond, color: style.couleur }}>
+    <div
+      className={classes.join(' ')}
+      style={
+        {
+          background: fond,
+          color: style.couleur,
+          ...(taille !== null ? { '--facteur-texte': taille / 100 } : {}),
+        } as CSSProperties
+      }
+    >
       {children}
     </div>
   )
@@ -99,12 +117,17 @@ function TexteOuVide({ valeur, secours }: { valeur: ValeurTexte; secours: string
 
 
 /**
- * Poignée de largeur d'un bloc.
+ * Poignée de largeur d'un bloc, sur son bord **droit**.
  *
  * On l'attrape et on tire : la largeur suit le doigt, mais s'aimante sur une
  * colonne de la grille. Le geste est celui d'un logiciel de présentation ; la
- * grille, elle, garantit qu'une page ne peut ni se trouer ni faire se
- * chevaucher deux blocs.
+ * grille, elle, garantit que deux blocs ne peuvent pas se chevaucher.
+ *
+ * **Pas de poignée à gauche.** Elle a été essayée dans les deux sens — déplacer
+ * le bord gauche, puis déplacer le bloc entier — et retirée : le glisser-déposer
+ * place déjà un bloc où l'on veut, y compris dans le vide d'une rangée. Une
+ * poignée de plus sur le bord opposé ne servait qu'à créer de la confusion, en
+ * restant immobile pendant que le bloc, lui, se déplaçait.
  *
  * Le pas est mesuré sur la grille affichée, pas calculé à partir des 1920 px
  * de la toile : l'aperçu de l'éditeur est réduit, et un pas en pixels de toile
@@ -113,15 +136,22 @@ function TexteOuVide({ valeur, secours }: { valeur: ValeurTexte; secours: string
 function PoigneeLargeur({
   cle,
   colonnes,
+  decalage,
   surRedimensionner,
 }: {
   /** Identifie ce qu'on redimensionne : « suite:<id> » ou un nom d'emplacement. */
   cle: string
   colonnes: number
+  /** Colonnes vides à gauche du bloc : elles mangent sa largeur possible. */
+  decalage: number
   surRedimensionner: (cle: string, colonnes: number) => void
 }) {
   const poignee = useRef<HTMLButtonElement>(null)
   const depart = useRef<{ x: number; colonnes: number; pas: number } | null>(null)
+
+  /** Largeur voulue, bornée : jamais sous le minimum, jamais hors de la page. */
+  const bornee = (voulue: number): number =>
+    Math.min(COLONNES_GRILLE - decalage, Math.max(COLONNES_MIN, voulue))
 
   const commencer = (evenement: React.PointerEvent<HTMLButtonElement>) => {
     const grille = poignee.current?.closest('.mdl__grille')
@@ -139,8 +169,7 @@ function PoigneeLargeur({
   const glisser = (evenement: React.PointerEvent<HTMLButtonElement>) => {
     const debut = depart.current
     if (!debut) return
-    const ecart = Math.round((evenement.clientX - debut.x) / debut.pas)
-    const cible = Math.min(COLONNES_GRILLE, Math.max(COLONNES_MIN, debut.colonnes + ecart))
+    const cible = bornee(debut.colonnes + Math.round((evenement.clientX - debut.x) / debut.pas))
     if (cible !== colonnes) surRedimensionner(cle, cible)
   }
 
@@ -160,17 +189,13 @@ function PoigneeLargeur({
       // Alternative au clavier : le glissement ne doit jamais être le seul
       // moyen de régler une largeur (§6.9 de la conception).
       onKeyDown={(evenement) => {
-        if (evenement.key === 'ArrowLeft') {
-          evenement.preventDefault()
-          surRedimensionner(cle, Math.max(COLONNES_MIN, colonnes - 1))
-        }
-        if (evenement.key === 'ArrowRight') {
-          evenement.preventDefault()
-          surRedimensionner(cle, Math.min(COLONNES_GRILLE, colonnes + 1))
-        }
+        const sens = evenement.key === 'ArrowLeft' ? -1 : evenement.key === 'ArrowRight' ? 1 : 0
+        if (sens === 0) return
+        evenement.preventDefault()
+        surRedimensionner(cle, bornee(colonnes + sens))
       }}
-      aria-label={`Largeur : ${colonnes} colonnes sur ${COLONNES_GRILLE}. Flèches gauche et droite pour ajuster.`}
-      title="Tirer pour changer la largeur"
+      aria-label={`Taille. Largeur : ${colonnes} colonnes sur ${COLONNES_GRILLE}. Flèches gauche et droite pour ajuster.`}
+      title="Tirer pour changer la taille"
     >
       <span className="mdl__poignee-barre" aria-hidden="true" />
     </button>
@@ -178,20 +203,26 @@ function PoigneeLargeur({
 }
 
 /**
- * Poignée de hauteur, sur le bord bas — images et galeries seulement.
+ * Poignée de hauteur, sur le bord **bas** ou **haut** — images et galeries
+ * seulement : la hauteur d'un texte découle de son contenu, celle d'une vidéo
+ * de ses proportions.
  *
- * Une image est plafonnée en hauteur (620 px par défaut) : sur une cellule
- * large, c'est ce plafond, et non la largeur, qui l'empêche de grandir.
- * Le relever la laisse occuper toute la place disponible.
+ * Les deux poignées règlent la **même** hauteur, en sens inverse : tirer le
+ * bord bas vers le bas agrandit, tirer le bord haut vers le haut agrandit
+ * aussi. Le haut d'un bloc, lui, est décidé par la rangée où il se trouve : on
+ * ne peut pas le déplacer, donc c'est le bas qui bouge. C'est la seule
+ * traduction honnête du geste dans une page qui s'écoule de haut en bas.
  */
 function PoigneeHauteur({
   cle,
   hauteur,
+  cote,
   surHauteur,
 }: {
   cle: string
   /** Hauteur courante, ou « undefined » tant qu'elle n'a jamais été réglée. */
   hauteur: number | undefined
+  cote: 'haut' | 'bas'
   surHauteur: (cle: string, hauteur: number) => void
 }) {
   const poignee = useRef<HTMLButtonElement>(null)
@@ -218,15 +249,17 @@ function PoigneeHauteur({
     }
   }
 
+  // Le bord haut travaille à l'envers du bord bas : monter le doigt agrandit.
+  const sens = cote === 'bas' ? 1 : -1
+
+  const borner = (brute: number): number =>
+    Math.min(HAUTEUR_MAX, Math.max(HAUTEUR_MIN, Math.round(brute / HAUTEUR_PAS) * HAUTEUR_PAS))
+
   const glisser = (evenement: React.PointerEvent<HTMLButtonElement>) => {
     const debut = depart.current
     if (!debut) return
-    const ecart = (evenement.clientY - debut.y) / debut.echelle
-    const brute = debut.hauteur + ecart
-    const cible = Math.min(
-      HAUTEUR_MAX,
-      Math.max(HAUTEUR_MIN, Math.round(brute / HAUTEUR_PAS) * HAUTEUR_PAS),
-    )
+    const ecart = ((evenement.clientY - debut.y) / debut.echelle) * sens
+    const cible = borner(debut.hauteur + ecart)
     if (cible !== hauteur) surHauteur(cle, cible)
   }
 
@@ -238,7 +271,7 @@ function PoigneeHauteur({
     <button
       ref={poignee}
       type="button"
-      className="mdl__poignee-bas"
+      className={`mdl__poignee-hauteur mdl__poignee--${cote}`}
       onPointerDown={commencer}
       onPointerMove={glisser}
       onPointerUp={finir}
@@ -247,15 +280,17 @@ function PoigneeHauteur({
         const base = hauteur ?? 620
         if (evenement.key === 'ArrowUp') {
           evenement.preventDefault()
-          surHauteur(cle, Math.max(HAUTEUR_MIN, base - HAUTEUR_PAS))
+          surHauteur(cle, borner(base - HAUTEUR_PAS * sens))
         }
         if (evenement.key === 'ArrowDown') {
           evenement.preventDefault()
-          surHauteur(cle, Math.min(HAUTEUR_MAX, base + HAUTEUR_PAS))
+          surHauteur(cle, borner(base + HAUTEUR_PAS * sens))
         }
       }}
-      aria-label={`Hauteur : ${hauteur ?? 'automatique'}. Flèches haut et bas pour ajuster.`}
-      title="Tirer pour changer la hauteur"
+      aria-label={`Bord ${cote}. Hauteur : ${hauteur ?? 'automatique'}. Flèches haut et bas pour ajuster.`}
+      title={
+        cote === 'bas' ? 'Tirer pour changer la hauteur' : 'Tirer vers le haut pour agrandir'
+      }
     >
       <span className="mdl__poignee-barre" aria-hidden="true" />
     </button>
@@ -297,24 +332,50 @@ function RenduGrille({
     enfant: React.ReactNode,
     type: string,
     hauteur: number | undefined,
+    decalage: number,
+    recadre: boolean,
   ) => (
     <div
       key={cle}
       className={`mdl__cellule${classe ? ` ${classe}` : ''}`}
       style={{
-        gridColumn: `span ${colonnes}`,
+        // La cellule occupe le décalage **et** le bloc : les colonnes vides
+        // sont à l'intérieur d'elle, en marge gauche (voir « modeles.css »).
+        // C'est ce qui laisse un trou sans déplacer les blocs suivants.
+        gridColumn: `span ${decalage + colonnes}`,
+        ...(decalage === 0
+          ? {}
+          : {
+              ['--decalage' as string]: decalage,
+              ['--travee' as string]: decalage + colonnes,
+            }),
         // Variable lue par le rendu : plafond de l'image, hauteur de la
         // galerie. Absente, chacun garde sa valeur d'origine.
         ...(hauteur === undefined ? {} : { ['--hauteur-bloc' as string]: `${hauteur}px` }),
       }}
     >
       {enfant}
+      {/* Bord droit : la largeur. Bords haut et bas : la hauteur, pour les blocs
+          qui en ont une. Rien à gauche — le glisser-déposer s'en charge. */}
       {surRedimensionner ? (
-        <PoigneeLargeur cle={cle} colonnes={colonnes} surRedimensionner={surRedimensionner} />
+        <PoigneeLargeur
+          cle={cle}
+          colonnes={colonnes}
+          decalage={decalage}
+          surRedimensionner={surRedimensionner}
+        />
       ) : null}
-      {surHauteur && hauteurReglable(type) ? (
-        <PoigneeHauteur cle={cle} hauteur={hauteur} surHauteur={surHauteur} />
-      ) : null}
+      {surHauteur && hauteurReglable(type, recadre)
+        ? (['haut', 'bas'] as const).map((cote) => (
+            <PoigneeHauteur
+              key={cote}
+              cle={cle}
+              hauteur={hauteur}
+              cote={cote}
+              surHauteur={surHauteur}
+            />
+          ))
+        : null}
     </div>
   )
 
@@ -338,7 +399,9 @@ function RenduGrille({
               : '',
           renduBlocLibre(bloc, { contenu, media, surImage, lecteurVideo }, env),
           bloc.valeur.type,
-          hauteurDe(bloc),
+          hauteurDe(contenu, bloc),
+          decalageDe(bloc),
+          estRecadre(contenu, cle),
         ),
       )
       continue
@@ -346,14 +409,17 @@ function RenduGrille({
 
     const def = modele.emplacements[cle]
     if (!def) continue
+    const colonnes = colonnesEmplacement(contenu, cle, def.colonnes)
     cellules.push(
       enveloppeCellule(
         cle,
-        colonnesEmplacement(contenu, cle, def.colonnes),
+        colonnes,
         def.type === 'galerie' ? 'mdl__cellule--galerie' : '',
         renduEmplacement(cle, def.type, { contenu, media, surImage, lecteurVideo }, env),
         def.type,
-        hauteurEmplacement(contenu, cle),
+        hauteurEmplacement(contenu, cle, def.type),
+        decalageEmplacement(contenu, cle, colonnes),
+        estRecadre(contenu, cle),
       ),
     )
   }
@@ -549,6 +615,7 @@ function GrilleBlocsAjoutes({
     <div className="mdl__grille">
       {blocs.map((bloc) => {
         const colonnes = colonnesDe(bloc)
+        const decalage = decalageDe(bloc)
         return (
           <div
             key={bloc.id}
@@ -559,13 +626,22 @@ function GrilleBlocsAjoutes({
                   ? ' mdl__cellule--video'
                   : ''
             }`}
-            style={{ gridColumn: `span ${colonnes}` }}
+            style={{
+              gridColumn: `span ${decalage + colonnes}`,
+              ...(decalage === 0
+                ? {}
+                : {
+                    ['--decalage' as string]: decalage,
+                    ['--travee' as string]: decalage + colonnes,
+                  }),
+            }}
           >
             {renduBlocLibre(bloc, { contenu, media, surImage, lecteurVideo }, env)}
             {surRedimensionner ? (
               <PoigneeLargeur
                 cle={`suite:${bloc.id}`}
                 colonnes={colonnes}
+                decalage={decalage}
                 surRedimensionner={surRedimensionner}
               />
             ) : null}

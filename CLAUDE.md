@@ -54,6 +54,15 @@ si le budget de la session est court, on s'arrêterait au milieu.
 3. **Redimensionner les images à l'import** (canvas) — **en attente exprès** :
    à ne lancer que si le poids des photos devient gênant pour de vrai.
 
+**Faits le 2026-08-18** (les deux points d'éditeur demandés le 12 août, § 1.4 et
+1.5 de `A-FAIRE.md`) : la case « Recadrer la photo » ne s'écrase plus, et le
+glissement **montre la rangée telle qu'elle sera** — un cadre par bloc, calculé
+par `placerCellule` (`apercuDepot` dans `EditeurPage.tsx`). Même jour :
+**toucher une photo l'affiche en grand** (`Visionneuse` dans `Visiteur.tsx`, la
+borne écoute enfin `surImage`), et les photos d'une **galerie ne sont plus
+rognées** (`object-fit: contain`). Enfin, le **bandeau du haut se règle page par
+page** (voir « Bandeau du haut » dans les concepts).
+
 **Sans objet** : l'ancienne « étape 3 — dossier partagé ». Il n'y a **qu'un seul
 ordinateur**, voir ci-dessous.
 
@@ -105,8 +114,23 @@ ordinateur**, voir ci-dessous.
   - `src/Visiteur.tsx` — borne : **sommaire d'accueil** (`.hub`) puis les pages.
     Une page ouverte se referme sur l'accueil après `minutesAvantVeille` sans
     contact — sauf pendant la lecture d'une vidéo, où le retour est repoussé.
+    Barre du haut : le retour à l'accueil. **Au bout de la page**, dans la toile
+    et non dans un bandeau (`.voisines`, composant `Voisine`) : les pages
+    **précédente** et **suivante**, dans l'ordre du sommaire — on ne les atteint
+    qu'en descendant, et elles ne mangent aucune hauteur d'écran le reste du
+    temps. Aux deux bouts du parcours, le bouton reste en place mais éteint : la
+    position des cibles ne bouge jamais d'une page à l'autre. Étant dans la
+    toile, leurs tailles sont en **pixels de toile**, pas en `vw`.
+  - `src/Accueil.tsx` — le sommaire. La vignette d'une carte est montrée
+    **entière** (`object-fit: contain`), sur un fond fait de la même image
+    floutée et assombrie (`.hub__fond`). Rognée (« cover »), une carte ou une
+    planche de signaux devenait une bande illisible ; montrée entière sans ce
+    fond, elle flottait au milieu d'un grand vide.
   - `src/AccesAdmin.tsx` — accès caché (coin, appui 5 s, code PIN).
   - `src/Admin.tsx` — liste des pages, panneau « Apparence », enregistrement auto.
+    Le panneau « Écran d'accueil » règle aussi le **délai avant le retour
+    automatique** (`minutesAvantVeille`, 1 à 60 minutes) : le réglage vivait dans
+    le fichier de contenu sans que personne puisse le voir.
   - `src/EditeurPage.tsx` — **le gros fichier** : aperçu fidèle à gauche,
     panneau des blocs à droite, glisser-déposer, formulaires. Cliquer un bloc
     déplie **sous lui** son panneau (`PanneauBloc`) : contenu puis
@@ -130,7 +154,23 @@ ordinateur**, voir ci-dessous.
     **Le même rendu sert la borne et l'aperçu de l'admin** : l'aperçu est fidèle
     par construction — ne jamais dupliquer le rendu côté admin.
 - **`contenu-exemple/`** — jeu de test lu/écrit par défaut (`BORNE_CONTENU` pour
-  en pointer un autre).
+  en pointer un autre). Depuis le 2026-08-18, c'est aussi la **démonstration de
+  présentation** : les 12 pages du 3ᵉ étage, refaites pour montrer tous les
+  outils de mise en page (les quatre modèles, grille et décalages, hauteurs et
+  recadrage, habillages, textes enrichis, quiz et frises, couleurs par page).
+  L'état d'avant est gardé dans `contenu.json.avant-refonte-demo`.
+  - **Piège, rencontré et payé cher : les légendes des médias ne décrivaient pas
+    les fichiers.** « chappe-tour » est une *carte* du réseau, pas une tour ;
+    « morse-manipulateur » est l'*alphabet* Morse ; « radio-philips » était le
+    *logo* de la marque ; « pigeon-vitrine-1/2 » montrent l'appareil photo de
+    Neubronner. Une démonstration bâtie sur ces légendes présente chaque pièce
+    pour ce qu'elle n'est pas. **Regarder les fichiers avant de les placer** :
+    on ouvre les images (une planche-contact injectée dans la fenêtre suffit),
+    on relève ce qu'elles montrent, et seulement ensuite on écrit la page.
+  - L'illustration générée par IA (`tours-signaux-chaine.png`) et le logo
+    Philips ont été retirés de la bibliothèque ; les fichiers restent sur le
+    disque. Deux pages n'ont donc **aucune photo** (l'entre-deux-guerres, la
+    télévision) : il manque des clichés pris au musée.
 - **`packages/ui/`** — composants génériques, peu utilisés.
 - `apps/api`, `apps/admin`, `apps/borne` — **réservoir** de code de l'ancienne
   architecture. Ne tournent plus, ne sont plus installés, mais restent une
@@ -160,13 +200,74 @@ ordinateur**, voir ci-dessous.
   alignement sur le disque (constaté).
 - **Habillage** (`StyleBloc`) = l'apparence propre à **un bloc** : fond,
   **transparence du fond** (`opacite`, 0–100, absente = opaque ; elle ne touche
-  que le fond — le texte posé dessus reste net, et sans fond elle ne fait rien)
-  et mise en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
+  que le fond — le texte et les photos posés dessus restent nets). Son curseur
+  s'affiche **dès l'ouverture du disque du fond**, avant qu'une couleur ait été
+  choisie : le bouger en pose une (celle qu'affiche le disque, c'est-à-dire
+  celle de la page), faute de quoi il n'aurait rien à rendre translucide et
+  passerait pour cassé — reproche fait le 2026-08-18, sur une galerie,
+  **taille du texte** (`taille`, en pourcentage, 60–200, absente = 100) et mise
+  en forme de son texte. Rangé dans `contenu.styles`, par nom de bloc — même
   clé que partout ailleurs (`titre`, `suite:<id>`). Appliqué par `Habillage`
   dans `rendu/Modeles.tsx`, par où passent tous les blocs. Un bloc sans
   habillage n'est pas enveloppé du tout, et un habillage remis à zéro est retiré
   du fichier (`estStyleVide`, `sansStylesVides`) — il part aussi avec son bloc
   quand on le retire.
+  - **Les fonds décoratifs cèdent à l'habillage.** Les cases d'une galerie
+    (`.b-galerie__zone`) deviennent transparentes dès que le bloc a un fond :
+    sans quoi chaque photo restait posée sur `--b-surface`, teinte fixe de la
+    palette, et la couleur choisie ne se voyait que dans les gouttières. Même
+    famille de défaut sur l'encart du modèle 3, dont le cadre portait la palette
+    d'origine **recopiée en dur** (`rgba(14, 34, 55, 0.86)` = `#0e2237` à 86 %) :
+    il lit maintenant `--b-fond`, `--b-accent` et `--b-texte`, donc il suit les
+    couleurs de la page. Aspect par défaut inchangé dans les deux cas. Enfin la
+    **barre de défilement de la toile** (`.toile::-webkit-scrollbar`), qui
+    portait l'or de l'accent et un bleu fixe : curseur en `--b-texte-doux`,
+    piste en `color-mix` du texte et du fond — elle suit donc la page ouverte,
+    y compris dans l'aperçu de l'éditeur.
+  - **La taille du texte est un facteur, pas une taille en points.** Le rendu
+    pose une variable CSS `--facteur-texte` sur l'habillage ; chaque texte
+    (`.b-h1`, `.b-h3`, `.b-corps`, `.b-petit`, `.b-legende`) multiplie **sa**
+    taille par elle (`calc`). Un `font-size` posé sur l'enveloppe n'aurait rien
+    changé — ces classes portent chacune leur taille en pixels. Conséquence
+    voulue : les écarts entre un titre et un paragraphe sont conservés. Les
+    ateliers (quiz, frise) gardent leurs tailles, leurs commandes étant
+    dimensionnées au doigt.
+  - Un réglage compté au pas (les deux « A » de la barre) part de la valeur
+    **rangée dans le contenu**, jamais de celle qu'affiche la barre : deux
+    appuis rapprochés partiraient sinon du même point et l'un serait perdu.
+    Constaté, corrigé le 2026-08-18.
+  - La taille **s'écrit aussi à la main** dans la barre. Deux points : ce qui
+    est tapé vit dans un état à part tant qu'on n'a pas validé (sinon « 1 »,
+    début de « 150 », serait aussitôt ramené à 60), et la case est nommée
+    `.ruban input.ruban__valeur` — sans cette double mention, `.pan input` lui
+    donnerait toute la largeur du panneau.
+  - **L'aller-retour par clé USB est couvert** (`transfert.test.ts`) : la page
+    est écrite, relue par le schéma puis réimportée, et son habillage doit
+    ressortir entier. C'est le passage où un champ non déclaré disparaît.
+- **Bandeau du haut** = la barre `.monde__barre` du mode visiteur (« ← Accueil »
+  et le titre). Elle se règle **par page**, dans le panneau « Apparence de la
+  page » de l'éditeur : quatre champs facultatifs sur la page —
+  `couleurBandeau`, `couleurBandeauTexte`, `hauteurBandeau` (72–200 px) et
+  `bandeauMasque`. Tous absents = le bandeau d'origine, inchangé.
+  - Le rendu passe par des **variables CSS avec valeur de repli**
+    (`var(--b-bandeau, #081726)`, posées par `stylesCouleurs` dans
+    `couleurs.ts`) : tant que rien n'est réglé, aucune variable n'est écrite et
+    la feuille de style garde son apparence d'avant. C'est ce qui évite d'avoir
+    à migrer les contenus existants.
+  - **La couleur du texte se calcule d'elle-même** (`surFondLisible`, luminance
+    perçue) : presque noir sur un bandeau clair, presque blanc sur un sombre.
+    Sans cela, un bandeau clair garderait le texte clair de la page — illisible,
+    et personne au musée n'aurait le moyen de le rattraper. Une couleur choisie
+    à la main l'emporte, et l'éditeur montre toujours celle qui s'affichera.
+  - **Masqué, le bandeau ne disparaît pas** : il devient transparent et ne garde
+    que le bouton de retour, posé sur la page (`.monde__barre--masque`). La
+    sortie ne se retire jamais — sinon un visiteur entré sur cette page
+    attendrait le retour automatique.
+  - Le bandeau est **hors de la toile** : l'aperçu de l'éditeur ne le montre pas
+    (il est en pixels d'écran, la toile en pixels de toile). Le réglage ne se
+    voit qu'en mode visiteur — c'est assumé, un faux bandeau dans l'aperçu ne
+    serait ni à la bonne échelle ni à la bonne place.
+
 - **`ordre`** = **la** liste des cellules d'une page, de haut en bas,
   emplacements du modèle et blocs ajoutés **mélangés** (`titre`, `suite:<id>`…).
   Elle décide de l'**ordre** et de la **présence** : un emplacement absent de la
@@ -178,17 +279,57 @@ ordinateur**, voir ci-dessous.
 - **Grille de 12 colonnes** (`COLONNES_GRILLE`, minimum `COLONNES_MIN` = 3) = la
   mise en page de toute la page. Chaque cellule a une largeur réglée à la
   **poignée** sur son bord droit ; les cellules passent à la ligne d'elles-mêmes,
-  donc une page ne peut ni se trouer ni faire se chevaucher deux blocs.
+  donc deux blocs ne peuvent jamais se chevaucher.
+  - **Décalage** (`decalage` sur un bloc, `contenu.decalages[nom]` pour un
+    emplacement) = colonnes laissées **vides à gauche** d'un bloc. C'est le seul
+    moyen de trouer une rangée, et il faut l'avoir demandé : on glisse un bloc
+    dans le vide à droite de sa rangée, il se pose à la colonne visée. Rendu par
+    la marge intérieure de `.mdl__cellule`, qui englobe le vide (`span décalage +
+    largeur`) — le calcul tombe juste sur la grille, il dépend de
+    `--gouttiere-grille`. Tout autre dépôt le remet à zéro : c'est ainsi qu'on
+    supprime un espace. Absent = 0, le comportement d'avant.
+  - **Trois bords se tirent** : le **droit** (la largeur), le **haut** et le
+    **bas** (la hauteur, images et galeries). **Rien à gauche** — deux versions y
+    ont été essayées, déplacer le bord gauche puis déplacer le bloc entier, et
+    toutes deux **refusées par l'utilisateur** : la poignée restait immobile
+    pendant que le bloc bougeait, et le glisser-déposer fait déjà le travail. Ne
+    pas la remettre.
+  - **Photos : une seule règle, et une case pour l'exception.** Une photo est
+    **entière, jamais coupée**, remplit la largeur de son bloc (`width: 100 %`) et
+    le bloc prend ses proportions. Il n'y a donc ni vide dans le bloc, ni hauteur
+    à régler — les poignées haute et basse n'apparaissent pas.
+    - **Exception explicite** : la case « Recadrer la photo » du panneau du bloc
+      (`StyleBloc.recadre`). Cochée, le bloc reçoit une hauteur (poignées haute et
+      basse) et la photo la remplit en se recadrant autour de son point focal.
+      Cocher la case **mesure d'abord la hauteur qu'occupe déjà la photo** : rien
+      ne bouge, rien n'est coupé tant qu'on n'a pas tiré une poignée.
+    - `hauteurCellule` est le seul passage : une photo non recadrée n'a jamais de
+      hauteur imposée, **même si le fichier en contient une** (les hauteurs
+      écrites du temps où elles servaient de plafond sont ignorées, pas effacées).
+      C'est ce qui a fait apparaître des photos coupées sans que personne ne l'ait
+      demandé — le défaut le plus mal vécu de toute la mise en page.
+    - **Choisir une photo rétrécit le bloc** juste assez pour que la photo ne
+      dépasse pas `HAUTEUR_PHOTO_VISEE` (620 px, l'ancien plafond : la mise en
+      page reste familière) — `colonnesPourPhoto`, jamais en dessous de
+      `COLONNES_MIN`, jamais élargi. Sans quoi une photo en hauteur mise en pleine
+      largeur ferait deux écrans. Le bloc cède, la photo n'est pas touchée.
+      Vérifié par `lecture.test.ts`.
+  - **Le glisser-déposer ne redimensionne pas le bloc déposé**, sauf quand il ne
+    rentre pas (rangée trop pleine : partage des colonnes). Un dépôt au-dessus /
+    en dessous lui donnait autrefois la pleine largeur : supprimé — déplacer
+    n'est pas redimensionner. Un bloc déposé peut donc se retrouver côte à côte
+    avec son voisin si sa largeur le permet.
   - Où est rangée la largeur : un bloc ajouté porte `colonnes` ; un emplacement
     du modèle passe par `contenu.largeurs[nom]`. La poignée distingue les deux
     par la clé (`suite:<id>` ou le nom).
   - L'ancien champ `largeur: 'pleine' | 'moitie'` n'est plus écrit mais **reste
     lu** : ne pas le supprimer.
-  - **Hauteur** : seules les images et galeries en ont une réglable (poignée
-    basse) — la hauteur d'un texte découle de son contenu. Rangée dans `hauteur`
-    (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de toile, lue par
-    le rendu via la variable CSS `--hauteur-bloc`. Absente, l'image garde son
-    plafond de 620 px et la galerie ses 260 px.
+  - **Hauteur** : les galeries en ont une réglable, les photos **seulement si on
+    a coché « Recadrer »** (`hauteurReglable(type, recadre)`) — la hauteur d'un
+    texte découle de son contenu, celle d'une vidéo de son cadre 16/9. Rangée dans
+    `hauteur` (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de toile,
+    lue par le rendu via la variable CSS `--hauteur-bloc`. Absente, la galerie
+    fait 260 px.
   - **Le modèle 3 fait exception** : sa composition vidéo est indivisible, ses
     emplacements ne passent pas par la grille. Ses blocs ajoutés, si.
 - **Toile** (`ToileBorne`) = conteneur de référence **1920 px de large**, mis à
@@ -258,6 +399,32 @@ Ce qu'il faut savoir avant d'y toucher :
 - **Pas de conversion de coordonnées à faire** : la toile utilise `zoom`, donc
   `getBoundingClientRect` et `clientX/clientY` sont dans le même repère. (Ce ne
   serait pas vrai avec `transform`.)
+- **Mais tout ce qui vient d'une feuille de style, si.** `getComputedStyle` rend
+  des pixels **de toile** (la gouttière de la grille, par exemple), les
+  rectangles des pixels **d'écran** : mélanger les deux décale les cadres d'une
+  dizaine de pixels et les rétrécit. Multiplier par `echelleDe(element)`
+  (`currentCSSZoom`, mesuré à défaut). Même chose pour déplacer un bloc à la
+  main : une distance d'écran se **divise** par cette échelle. Défaut constaté
+  et corrigé le 2026-08-18.
+- **Le bloc qu'on tient suit le doigt**, par une transformation écrite
+  directement dans son style (`element.style.transform`), sans passer par React :
+  un rendu par mouvement de pointeur ferait traîner le geste. Conséquence : le
+  bloc est en permanence sous le pointeur, d'où `document.elementsFromPoint`
+  (au pluriel) pour regarder **à travers** lui.
+- **Il est porté réduit** (`ECHELLE_PORTE`, 45 %), et le rétrécissement se fait
+  **autour du point saisi** (`transformOrigin` posé à la saisie) pour que
+  l'endroit touché reste sous le doigt. À sa taille réelle, un bloc pleine
+  largeur recouvrait la page et masquait les cadres qui annoncent le résultat —
+  reproche fait au geste, corrigé le 2026-08-18. La place réelle est dite par
+  les cadres, pas par le bloc porté.
+- **Chaque cadre a la taille de son bloc** : largeur d'après le dépôt (calculée
+  par `placerCellule`), hauteur du bloc lui-même. Celle du bloc porté est
+  **relevée à la saisie** — le mesurer pendant le geste rendrait 45 % de sa
+  taille. Une hauteur commune à toute la rangée donnait des cadres qui ne
+  ressemblaient à aucun des blocs qu'ils annonçaient.
+- **Ne changer l'état du dépôt que s'il a vraiment changé** (`memeDepot`,
+  `viser`) : sinon chaque mouvement remplace l'état par un objet équivalent et
+  redessine tout l'éditeur pour rien.
 - `document.elementFromPoint` **ne voit que la zone visible** — d'où le
   défilement automatique, sans lequel une cible hors écran est inatteignable.
 - La **poignée de largeur** (`.mdl__poignee`) a son propre glissement : ne pas le

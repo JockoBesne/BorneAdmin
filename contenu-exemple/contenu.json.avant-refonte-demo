@@ -1,0 +1,1532 @@
+{
+  "version": 1,
+  "genereLe": "2026-08-18T08:05:01.208Z",
+  "reglages": {
+    "titreVeille": "Musée des Transmissions",
+    "sousTitreVeille": "Troisième étage — de l'Antiquité aux années 1970",
+    "minutesAvantVeille": 3,
+    "couleurFond": "#0e2237",
+    "couleurTexte": "#f5f7fa",
+    "pinAdmin": "1975"
+  },
+  "pages": [
+    {
+      "id": "page-3e-01",
+      "titre": "Trois mille ans pour se parler",
+      "modele": "t1",
+      "ordre": 1,
+      "vignette": null,
+      "contenu": {
+        "modele": "t1",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "Trois mille ans pour se parler"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "L'arme des Transmissions est créée en 1942. Pourtant, la nécessité de communiquer sur le champ de bataille ou à l'intérieur du territoire existe depuis toujours.\n\nCet étage propose un parcours chronologique qui retrace l'histoire des communications, de l'Antiquité jusqu'aux années 1970."
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**La céleustique**\n\nDès l'Antiquité, les armées utilisent des signaux sonores pour transmettre des ordres sur le champ de bataille. Cors, trompettes, fifres et tambours permettent de communiquer malgré la distance et le bruit des combats : c'est ce que l'on appelle la « céleustique ».\n\nAu fil des siècles, ces instruments évoluent et les signaux se codifient. Chaque sonnerie ou rythme correspond alors à un ordre précis, comme la charge, l'avancée ou la retraite des troupes.\n\nLa musique militaire a traversé les époques. Aujourd'hui encore, de nombreuses fanfares et musiques militaires, comme celle des Transmissions, continuent de rythmer les cérémonies et les commémorations."
+            }
+          },
+          {
+            "id": "b2",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le saviez-vous ?**\n\nLe mot céleustique vient du grec ancien _keleustikós_, qui signifie « relatif au commandement ». Il est lui-même dérivé du verbe grec _keleúein_, qui veut dire ordonner, commander, donner le signal.\n\nDans l'Antiquité, le _kéleustès_ est la personne chargée de donner la cadence, notamment sur les navires à rames : il utilise la voix ou un instrument pour synchroniser les rameurs."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "texte",
+          "suite:b1",
+          "suite:b2"
+        ],
+        "styles": {
+          "suite:b2": {
+            "fond": "#17334d"
+          }
+        }
+      }
+    },
+    {
+      "id": "page-3e-02",
+      "titre": "Avant l'électricité : porter, relayer, signaler",
+      "modele": "t3",
+      "ordre": 2,
+      "vignette": "media-tours-signaux-chaine",
+      "contenu": {
+        "modele": "t3",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "Avant l'électricité"
+          },
+          "video": {
+            "type": "video",
+            "mediaId": "media-lotr-feux-alarme",
+            "legende": "Les feux d'alarme"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "Transmettre à distance grâce à des signaux de feu ou de fumée, relayés de tour en tour : le principe est simple, et il traverse les siècles."
+          },
+          "encartTitre": {
+            "type": "titre",
+            "valeur": "Les tours à signaux"
+          },
+          "encartTexte": {
+            "type": "texte",
+            "valeur": "Nées dans l'Antiquité, reprises au Moyen-Âge, elles seront utilisées jusqu'au XVIIIᵉ siècle."
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "colonnes": 8,
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Les tours à signaux**\n\nLes tours à signaux reposent sur un principe simple : transmettre l'information à distance grâce à des signaux de feu ou de fumée, relayés de tour en tour.\n\nCe système existe dès l'Antiquité et se développe notamment dans l'empire romain pour surveiller les frontières et les zones sensibles.\n\nAu Moyen-Âge, seigneurs et rois reprennent ce principe pour défendre leurs territoires en installant des tours sur les points hauts afin de relayer rapidement les alertes.\n\nCes communications restent limitées à des messages simples, définis à l'avance, et seront utilisées jusqu'au XVIIIᵉ siècle."
+            }
+          },
+          {
+            "id": "b2",
+            "colonnes": 4,
+            "valeur": {
+              "type": "image",
+              "mediaId": "media-tours-signaux-chaine",
+              "legende": "Une chaîne de tours à signaux"
+            }
+          },
+          {
+            "id": "b3",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Les messagers à pied**\n\nUn des moyens de communication antiques les plus connus est le messager à pied, et plus particulièrement celui de Marathon.\n\nLa légende raconte que la cité d'Athènes, après avoir remporté à Marathon une victoire contre l'armée perse, envoie un messager pour annoncer la nouvelle. Après avoir parcouru une quarantaine de kilomètres et accompli sa mission, Philippidès meurt d'épuisement à son arrivée — mais l'information est passée.\n\nSur de « petites » distances comme celles des cités grecques, le messager à pied peut être efficace. Sur des itinéraires bien plus longs, il faut réfléchir à d'autres systèmes."
+            }
+          },
+          {
+            "id": "b4",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Les relais de poste**\n\nDès l'Antiquité, les grandes civilisations mettent en place des réseaux de communication pour transmettre l'information. Au VIᵉ siècle avant notre ère, l'empire perse organise les premiers relais de poste, bientôt suivi par la Chine et l'empire romain.\n\nEn France, Louis XI crée en 1464 un réseau de relais réservé, dans un premier temps, au roi et à l'armée.\n\nLe fonctionnement est simple : un messager parcourt à grand galop le chemin jusqu'au relais suivant, d'où il repart avec un cheval frais pour couvrir la distance totale le plus rapidement possible."
+            }
+          },
+          {
+            "id": "b5",
+            "valeur": {
+              "type": "galerie",
+              "elements": [
+                {
+                  "mediaId": "media-postillon",
+                  "legende": "Un postillon"
+                },
+                {
+                  "mediaId": "media-cursus-publicus",
+                  "legende": "Le réseau du cursus publicus romain"
+                },
+                {
+                  "mediaId": "media-relais-poste-conde",
+                  "legende": "Le relais de poste de Condé-sur-l'Escaut"
+                }
+              ]
+            }
+          },
+          {
+            "id": "b6",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**La carte des postes du royaume de France en 1691**\n\nSur cette carte, on observe le quadrillage du territoire par les relais postaux, espacés de 7 lieues — environ 34 kilomètres, distance idéale pour les chevaux au vu des routes de l'époque — plus de deux siècles après la mise en place du réseau par Louis XI.\n\nBien que certaines zones soient moins bien desservies, la très grande majorité du territoire est couverte.\n\nSon efficacité est proche de celle que nous connaissons aujourd'hui : il faut en moyenne deux jours à la malle-poste pour aller de Bordeaux à Paris, ou de Paris à Lyon."
+            }
+          },
+          {
+            "id": "b7",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le déclin**\n\nAvec le développement des chemins de fer, les relais de poste sont de moins en moins utilisés et disparaissent officiellement en 1873."
+            }
+          }
+        ],
+        "ordre": [
+          "video",
+          "titre",
+          "texte",
+          "encartTitre",
+          "encartTexte",
+          "suite:b1",
+          "suite:b2",
+          "suite:b3",
+          "suite:b4",
+          "suite:b5",
+          "suite:b6",
+          "suite:b7"
+        ],
+        "styles": {
+          "suite:b7": {
+            "fond": "#17334d"
+          }
+        }
+      }
+    },
+    {
+      "id": "page-3e-03",
+      "titre": "Le télégraphe optique de Chappe",
+      "modele": "t2",
+      "ordre": 3,
+      "vignette": "media-chappe-telegraphe",
+      "contenu": {
+        "modele": "t2",
+        "largeurs": {
+          "image": 6,
+          "texte": 6
+        },
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "Le télégraphe optique de Chappe"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-chappe-telegraphe",
+            "legende": "Le télégraphe de Claude Chappe"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "1791 – milieu du XIXᵉ siècle\n\n\n\n\n\nLa première grande révolution des communications à longue distance apparaît pendant la Révolution française avec le télégraphe optique de Claude Chappe. Son réseau repose sur une succession de tours équipées de bras articulés visibles de loin. Les opérateurs, appelés « stationnaires », observent le signal reçu à l'aide d'une longue-vue puis le reproduisent pour la tour suivante, permettant au message de parcourir rapidement de grandes distances.",
+            "lignes": [
+              {
+                "morceaux": [
+                  {
+                    "gras": true,
+                    "texte": "1791 – milieu du XIXᵉ siècle"
+                  }
+                ]
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": []
+              },
+              {
+                "morceaux": [
+                  {
+                    "texte": "La première grande révolution des communications à longue distance apparaît pendant la Révolution française avec le télégraphe optique de Claude Chappe. Son réseau repose sur une succession de tours équipées de bras articulés visibles de loin. Les opérateurs, appelés « stationnaires », observent le signal reçu à l'aide d'une longue-vue puis le reproduisent pour la tour suivante, permettant au message de parcourir rapidement de grandes distances."
+                  }
+                ]
+              }
+            ]
+          },
+          "galerie": {
+            "type": "galerie",
+            "elements": [
+              {
+                "mediaId": "media-chappe-vocabulaire",
+                "legende": "Le vocabulaire des positions de bras"
+              },
+              {
+                "mediaId": "media-chappe-tour",
+                "legende": "Une tour du réseau"
+              },
+              {
+                "mediaId": "media-chappe-rennes",
+                "legende": "La cathédrale de Rennes"
+              },
+              {
+                "mediaId": "media-chappe-mont-saint-michel",
+                "legende": "Le Mont-Saint-Michel"
+              },
+              {
+                "mediaId": "media-chappe-signes-service",
+                "legende": "Les signes de service"
+              }
+            ]
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "colonnes": 7,
+            "valeur": {
+              "type": "texte",
+              "valeur": "\nUn message en deux nombres\n\nPour transmettre un message, Chappe utilise un livre de codes où sont répertoriés des lettres, des mots et des expressions. Chaque élément est associé à deux nombres : le premier indique une page du livre, le second une ligne. Ces deux nombres sont ensuite convertis en positions des bras du télégraphe et transmis de tour en tour.\n\n\n\nSeuls les directeurs de ligne, situés au départ et à l'arrivée, possèdent le livre de codes. Eux seuls peuvent transformer un message en signaux, puis traduire les signaux reçus en texte. Des contrôleurs, longeant les lignes à cheval, vérifient aléatoirement à la longue-vue si les signaux sont corrects.",
+              "lignes": [
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Un message en deux nombres",
+                      "gras": true
+                    }
+                  ]
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Pour transmettre un message, Chappe utilise un livre de codes où sont répertoriés des lettres, des mots et des expressions. Chaque élément est associé à deux nombres : le premier indique une page du livre, le second une ligne. Ces deux nombres sont ensuite convertis en positions des bras du télégraphe et transmis de tour en tour."
+                    }
+                  ]
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Seuls les directeurs de ligne, situés au départ et à l'arrivée, possèdent le livre de codes. Eux seuls peuvent transformer un message en signaux, puis traduire les signaux reçus en texte. Des contrôleurs, longeant les lignes à cheval, vérifient aléatoirement à la longue-vue si les signaux sont corrects."
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "b2",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Les limites du télégraphe**\n\nLa première ligne reliant Paris à Lille est inaugurée en 1794. Un message peut alors être transmis en moins de dix minutes, contre environ deux jours à cheval. Face à son succès, le réseau est développé dans toute la France, notamment sous Napoléon.\n\nToutefois, son fonctionnement dépend entièrement de la visibilité : la nuit, le brouillard ou les intempéries interrompent les communications. Ces limites poussent les ingénieurs à rechercher un système plus fiable, ouvrant la voie au télégraphe électrique au milieu du XIXᵉ siècle."
+            }
+          },
+          {
+            "id": "010081e5-54e2-4d8a-a644-78535ecc6728",
+            "apres": "galerie",
+            "colonnes": 5,
+            "hauteur": 1160,
+            "valeur": {
+              "type": "image",
+              "mediaId": "media-morse-controleur-aerien",
+              "legende": "Le Morse encore employé par les contrôleurs aériens"
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "image",
+          "texte",
+          "suite:b1",
+          "suite:010081e5-54e2-4d8a-a644-78535ecc6728",
+          "galerie",
+          "suite:b2"
+        ],
+        "styles": {
+          "suite:b2": {
+            "fond": "#17334d"
+          }
+        }
+      }
+    },
+    {
+      "id": "page-3e-04",
+      "titre": "L'électricité et le télégraphe Morse",
+      "modele": "t2",
+      "ordre": 4,
+      "vignette": "media-morse-manipulateur",
+      "contenu": {
+        "modele": "t2",
+        "largeurs": {
+          "image": 5
+        },
+        "hauteurs": {
+          "galerie": 160,
+          "image": 380
+        },
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "L'électricité et le télégraphe Morse"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-morse-manipulateur",
+            "legende": "Un manipulateur Morse"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "**Les débuts de l'électricité**\n\nDe nombreuses découvertes sur l'électricité ont lieu au cours du XIXᵉ siècle, et elles vont considérablement faire évoluer les systèmes de communication.\n\nEn 1800, Volta met au point la première pile électrique, composée :\n- d'une couche de cuivre\n- d'une couche de tissu imbibé d'eau salée\n- d'une couche de zinc\n\nEn 1820, Ørsted découvre, en approchant une boussole d'un fil électrique, que l'électricité provoque un champ électromagnétique. Trois ans plus tard, Ampère invente le solénoïde, un fil métallique enroulé en hélice qui amplifie et stabilise le champ magnétique en son centre."
+          },
+          "galerie": {
+            "type": "galerie",
+            "elements": [
+              {
+                "mediaId": "media-morse-controleur-aerien",
+                "legende": "Le Morse encore employé par les contrôleurs aériens"
+              },
+              {
+                "mediaId": "media-morse-drapeau",
+                "legende": "Le Morse transmis au drapeau"
+              },
+              {
+                "mediaId": "media-morse-secours",
+                "legende": "Un émetteur-récepteur de secours"
+              }
+            ]
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "colonnes": 12,
+            "valeur": {
+              "type": "texte",
+              "valeur": "**L'électro-aimant, et tout change**\n\nLe principe de l'électro-aimant, inventé par Arago en 1824, permet aux communications de vivre la révolution électrique. Le principe est simple : si l'on fait passer un courant électrique dans un solénoïde, le champ électromagnétique attire un aimant à son extrémité.\n\nCes découvertes amènent le développement d'un télégraphe électrique qui n'est plus soumis aux aléas climatiques et nocturnes : tant que le fil n'est pas coupé, le message passe."
+            }
+          },
+          {
+            "id": "b2",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le télégraphe Morse**\n\nDans la première moitié du XIXᵉ siècle, le télégraphe électrique marque une véritable révolution. Les premiers modèles sont développés en 1837 par Cooke et Wheatstone, rapidement suivis par Samuel Morse, dont le système s'impose durablement.\n\nLe principe repose sur l'envoi d'impulsions électriques dans un circuit. À l'aide d'un manipulateur, l'opérateur ouvre et ferme le circuit pour produire des signaux courts et longs correspondant au code Morse, traduisant lettres et chiffres par des points et des traits. Ces signaux circulent le long des lignes électriques jusqu'au récepteur.\n\nÀ l'arrivée, un électro-aimant actionne une aiguille qui marque une bande de papier selon la durée des impulsions — ou bien le signal est écouté par un télégraphiste. Le message doit ensuite être déchiffré.\n\nCe système permet des communications rapides sur de longues distances. Il est largement utilisé, notamment pendant la guerre de Crimée sous Napoléon III, pour coordonner les opérations et informer l'opinion publique."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "image",
+          "texte",
+          "galerie",
+          "suite:b1",
+          "suite:b2"
+        ],
+        "styles": {
+          "image": {
+            "recadre": true
+          }
+        }
+      }
+    },
+    {
+      "id": "page-3e-05",
+      "titre": "Le téléphone",
+      "modele": "t2",
+      "ordre": 5,
+      "vignette": "media-telephone-fonctionnement",
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "Le téléphone"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-telephone-fonctionnement",
+            "legende": "Le principe du téléphone"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "**Les débuts du téléphone**\n\nLa fin du XIXᵉ siècle voit l'apparition du téléphone. Le principe est d'utiliser l'électricité pour envoyer des sons. Selon les sources, l'invention peut être attribuée à Meucci vers 1870 ou à Gray, mais l'histoire retiendra Graham Bell, car c'est lui qui dépose le brevet le premier, en 1876.\n\nLe téléphone fonctionne grâce à la transformation de la voix en signaux électriques :\n- côté émetteur, la voix fait vibrer une membrane reliée à un dispositif électrique ;\n- ces variations sont transformées en courant électrique et circulent le long d'un fil ;\n- à l'arrivée, le phénomène inverse se produit : une membrane se met à vibrer et reproduit la voix."
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "colonnes": 6,
+            "hauteur": 780,
+            "valeur": {
+              "type": "image",
+              "mediaId": "media-telephone-demoiselle",
+              "legende": "Une demoiselle du téléphone à son standard"
+            }
+          },
+          {
+            "id": "b2",
+            "colonnes": 6,
+            "hauteur": 740,
+            "valeur": {
+              "type": "image",
+              "mediaId": "media-telephone-demoiselles-1892",
+              "legende": "Un standard téléphonique en 1892"
+            }
+          },
+          {
+            "id": "b3",
+            "colonnes": 12,
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Les demoiselles du téléphone**\n\nDans la vitrine des téléphones, vous pouvez découvrir le téléphone Marty 1910, l'un des modèles emblématiques du début du XXᵉ siècle. À cette époque, les téléphones ne possèdent ni clavier ni cadran permettant de composer directement un numéro. Pour établir une communication, l'utilisateur actionne une manivelle qui génère un courant électrique et signale son appel au standard téléphonique.\n\nLorsqu'il décroche son combiné, il est mis en relation avec une opératrice, surnommée « demoiselle du téléphone ». Après avoir indiqué le nom ou le numéro du correspondant souhaité, celle-ci réalise manuellement le raccordement en reliant les deux lignes sur le standard. Chaque appel nécessite ainsi l'intervention humaine d'une opératrice avant que la conversation puisse commencer.\n\nCe métier exige une grande concentration et une excellente mémoire."
+            }
+          },
+          {
+            "id": "b4",
+            "colonnes": 12,
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Vers l'automatique**\n\nTant que le réseau ne compte qu'un nombre limité d'abonnés, les connexions peuvent être établies rapidement. Mais le réseau s'étoffe et les liaisons deviennent très nombreuses : en 1889, l'ingénieur Strowger invente les premiers centraux téléphoniques automatiques.\n\nVous pouvez également découvrir le téléphone U43, l'un des premiers téléphones produits à grande échelle, à cadran, permettant à chaque abonné d'avoir son numéro."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "image",
+          "texte",
+          "suite:b3",
+          "suite:b1",
+          "suite:b2",
+          "suite:b4"
+        ],
+        "styles": {
+          "suite:b4": {
+            "fond": "#17334d"
+          },
+          "suite:b1": {
+            "recadre": true
+          }
+        }
+      }
+    },
+    {
+      "id": "page-3e-06",
+      "titre": "La télégraphie sans fil (TSF)",
+      "modele": "t2",
+      "ordre": 6,
+      "vignette": "media-tour-eiffel-1914",
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "La télégraphie sans fil (TSF)"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-tour-eiffel-1914",
+            "legende": "La tour Eiffel en 1914, mât d'antenne militaire"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "Contrairement aux communications filaires, la télégraphie sans fil repose sur la transmission d'ondes. Elle naît à la fin du XIXᵉ siècle grâce aux travaux de Maxwell, qui théorise les ondes électromagnétiques, puis de Hertz, qui prouve leur existence par une expérience utilisant des étincelles électriques. En 1890, Branly invente le cohéreur, un dispositif capable de détecter ces ondes.\n\nEn Russie, Alexandre Popov met au point un récepteur radio performant, d'abord utilisé comme détecteur d'orages. De son côté, Guglielmo Marconi développe un système complet qu'il exploite à grande échelle : en 1899, il réalise la première liaison radio à travers la Manche, sur environ 46 kilomètres."
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**La TSF au sein de l'armée**\n\nEn France, le contexte militaire joue un rôle déterminant. Après la défaite de 1870 face à la Prusse, l'armée française prend conscience de l'importance stratégique des communications : transmettre rapidement et efficacement l'information est indispensable pour coordonner les opérations et commander les troupes. Cette maîtrise constitue alors l'un des atouts majeurs de l'armée prussienne.\n\nC'est dans ce climat qu'est créée une nouvelle spécialité au sein du génie militaire : les « sapeurs-télégraphistes ». D'abord 24ᵉ bataillon, il devient le 8ᵉ régiment du génie au Mont-Valérien. Leur mission consiste à mettre en place, entretenir et exploiter les réseaux de communication, permettant aux états-majors et aux unités de rester en liaison, même au cœur des opérations."
+            }
+          },
+          {
+            "id": "b2",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le général Gustave Ferrié**\n\nAu début du XXᵉ siècle, ces sapeurs-télégraphistes développent rapidement la TSF. Le général Gustave Ferrié (1868-1932) y joue un rôle central. Il utilise la tour Eiffel comme support d'antenne, permettant dès 1907 des communications à très longue distance, et améliore l'ampoule triode inventée par Lee de Forest, ce qui augmente la réception et la stabilité des signaux.\n\nDiplômé de l'École polytechnique tout comme Gustave Eiffel, il demande à ce dernier l'usage de la tour comme mât d'antenne — ce qui la sauve de son démontage, elle qui n'avait été construite que temporairement pour l'exposition universelle de 1889.\n\nIl joue aussi un rôle important dans l'harmonisation du temps à l'échelle internationale : ses travaux contribuent à la diffusion d'une heure précise par signaux radio, et donc à la coordination des fuseaux horaires. Cette harmonisation est essentielle pour la navigation, les communications et les échanges internationaux.\n\nComme vous pouvez le voir sur son uniforme, il reçoit de nombreuses décorations françaises et étrangères."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "image",
+          "texte",
+          "suite:b1",
+          "suite:b2"
+        ]
+      }
+    },
+    {
+      "id": "page-3e-07",
+      "titre": "La Première Guerre mondiale",
+      "modele": "t2",
+      "ordre": 7,
+      "vignette": "media-radio-lampe-tm",
+      "couleurTexte": "#f8faf5",
+      "contenu": {
+        "modele": "t2",
+        "largeurs": {
+          "image": 12,
+          "texte": 6
+        },
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "La Première Guerre mondiale"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-radio-lampe-tm",
+            "legende": "Un poste radio à ampoule TM"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "**Le 8ᵉ régiment du génie**\n\nEn 1914, la guerre éclate et le 8ᵉ régiment du génie est transformé en dépôt de guerre : les grandes unités de l'armée française — armées, corps d'armée, divisions — font appel à lui pour disposer de spécialistes et de matériels de transmission.\n\nLes effectifs formés avant la guerre sont ainsi répartis sur tous les fronts, des Dardanelles jusqu'aux tranchées de Verdun. Il faut rapidement former de nouveaux sapeurs-télégraphistes : le 8ᵉ régiment passe de 7 000 hommes au moment de la mobilisation générale à 55 000 hommes au début de l'année 1918."
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "colonnes": 6,
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le matériel militaire**\n\nPendant la Première Guerre mondiale, la TSF connaît ses premiers usages à grande échelle. Sous l'impulsion du général Ferrié, l'ampoule triode — ou ampoule de télégraphie militaire — est améliorée, ce qui perfectionne les communications radio.\n\nCependant, le matériel reste encombrant et peu pratique. D'autres moyens sont donc utilisés : le morse, la télégraphie optique avec l'héliographe, le téléphone de campagne et les pigeons voyageurs.\n\nLa guerre permet aussi à de nombreux soldats de se familiariser avec ces technologies. Le téléphone se développe : des postes centraux mobiles sont déployés, notamment avec le modèle « Marty 1910 »."
+            }
+          },
+          {
+            "id": "b2",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le radiogramme de la victoire**\n\nEn juin 1918, alors que l'état-major allemand prépare une grande offensive, le lieutenant Georges Painvin parvient à décrypter un message ennemi : « Hâtez l'approvisionnement en munitions. Le faire même de jour tant qu'on n'est pas vu. »\n\nCe message permet au général Ferdinand Foch d'identifier la zone de l'attaque, près de Compiègne. L'offensive est stoppée, contribuant à la victoire finale. Cette réussite restera secrète jusqu'en 1973."
+            }
+          },
+          {
+            "id": "b3",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Ce qu'il faut retenir**\n\nLa Première Guerre mondiale révèle toute l'importance de la cryptologie. Les moyens de communication se multiplient, mais les risques d'interception aussi. Dès lors, chiffrer les messages devient essentiel : si vous pouvez écouter votre adversaire, il peut lui aussi vous écouter."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "image",
+          "suite:b1",
+          "texte",
+          "suite:b2",
+          "suite:b3"
+        ],
+        "styles": {
+          "suite:b3": {
+            "fond": "#17334d"
+          },
+          "suite:b1": {
+            "fond": "#ecfffc",
+            "opacite": 10
+          }
+        }
+      }
+    },
+    {
+      "id": "page-3e-08",
+      "titre": "Les pigeons voyageurs",
+      "modele": "t2",
+      "ordre": 8,
+      "vignette": "media-pigeon-1914",
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "La colombophilie militaire"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-pigeon-1914",
+            "legende": "Un pigeon voyageur pendant la Première Guerre mondiale"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "Le moyen de communication le plus fiable depuis l'Antiquité et jusqu'au XXᵉ siècle, principalement par temps de guerre, reste l'usage des pigeons voyageurs.\n\nLe principe est simple : le pigeon retourne toujours à l'endroit où il naît, où on le nourrit, et où se trouve sa compagne.\n\nLes pigeons sont utilisés sur le terrain jusqu'à la guerre d'Algérie. Des pigeons largués par parachute sont même expérimentés pendant la Seconde Guerre mondiale."
+          },
+          "galerie": {
+            "type": "galerie",
+            "elements": [
+              {
+                "mediaId": "media-pigeon-vitrine-1",
+                "legende": "Matériel de colombophilie militaire"
+              },
+              {
+                "mediaId": "media-pigeon-vitrine-2",
+                "legende": "Tubes porte-messages et paniers"
+              },
+              {
+                "mediaId": "media-sergeant-stubby",
+                "legende": "Sergeant Stubby, chien de guerre décoré"
+              },
+              {
+                "mediaId": "media-dickin-medal",
+                "legende": "La médaille Dickin, décernée aux animaux"
+              }
+            ]
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Vaillant, le pigeon du fort de Vaux**\n\nQuand le commandant Reynal part occuper le fort de Vaux à Verdun, il embarque dans un panier quatre pigeons voyageurs. En 1916, le fort est encerclé et les liaisons téléphoniques ne fonctionnent plus.\n\nAu moment où le fort est sur le point de tomber, il prend l'un de ses derniers pigeons, Vaillant, glisse son message dans le tube accroché à sa patte et l'envoie. Le pigeon parvient à transmettre l'information — mais trop tard : le fort est tombé.\n\nVaillant est cité à l'ordre de la Nation pour son acte de bravoure."
+            }
+          },
+          {
+            "id": "b2",
+            "valeur": {
+              "type": "image",
+              "mediaId": "media-pigeon-camera",
+              "legende": "Un pigeon équipé d'un appareil photo automatique"
+            }
+          },
+          {
+            "id": "b3",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le saviez-vous ? L'ancêtre du drone**\n\nPendant la Première Guerre mondiale, les armées cherchent tous les moyens possibles d'observer l'ennemi… même les plus inattendus.\n\nOn équipe alors des pigeons voyageurs de minuscules appareils photo automatiques, fixés sur leur poitrine. Ces appareils, inventés notamment par l'Allemand Julius Neubronner avant la guerre, prennent des clichés à intervalles réguliers pendant le vol.\n\nLâché derrière les lignes ennemies, le pigeon survole discrètement les positions. À son retour, les militaires récupèrent les images : plans de tranchées, mouvements de troupes, positions d'artillerie.\n\nC'est l'origine du drone."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "image",
+          "texte",
+          "galerie",
+          "suite:b1",
+          "suite:b2",
+          "suite:b3"
+        ],
+        "styles": {
+          "suite:b3": {
+            "fond": "#17334d"
+          }
+        }
+      }
+    },
+    {
+      "id": "page-3e-09",
+      "titre": "L'entre-deux-guerres",
+      "modele": "t2",
+      "ordre": 9,
+      "vignette": "media-radio-philips",
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "L'entre-deux-guerres"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-radio-philips",
+            "legende": "La radio Philips, dite « boîte à jambon »"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "**La « Der des Ders »**\n\nAprès la Première Guerre mondiale, la paix est signée à Versailles en 1919 entre la France, ses alliés et l'Allemagne.\n\nDans les années qui suivent, malgré des tensions liées notamment aux remboursements que l'Allemagne doit payer, des efforts de paix et de réconciliation sont entrepris. Aristide Briand et Gustav Stresemann, ministres des Affaires étrangères, signent en 1925 avec la Belgique, la Grande-Bretagne, la Tchécoslovaquie et la Pologne une série d'accords à Locarno, en Suisse. L'objectif est de maintenir la paix et la collaboration en Europe.\n\nLa paix semblait s'enraciner, et la Première Guerre mondiale devait rester à tout jamais la « Der des Ders »."
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le plan Ferrié**\n\nEn parallèle, une volonté de connecter les Français se traduit par un développement des systèmes de communication. Le ministère des Postes et Télégraphes devient le ministère des Postes, Télégraphes et Téléphones.\n\nDès 1921, le général Ferrié développe la radiodiffusion depuis les installations de la tour Eiffel et dessine un plan pour assurer la diffusion radio à l'échelle nationale. Les premiers programmes sont essentiellement des bulletins météo, très utiles pour les agriculteurs français, et le cours de la Bourse.\n\nPuis les programmes se diversifient et les postes radio s'implantent progressivement dans les foyers. Le long du mur, vous pouvez voir une des premières radios Philips, surnommée la « radio boîte à jambon » du fait de sa forme.\n\nC'est aussi l'époque où se développent les liaisons de radioamateurs, ainsi que les premières expérimentations de la télévision."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "image",
+          "texte",
+          "suite:b1"
+        ]
+      }
+    },
+    {
+      "id": "page-3e-10",
+      "titre": "La Seconde Guerre mondiale et les Merlinettes",
+      "modele": "t2",
+      "ordre": 10,
+      "vignette": "media-radiogoniometre",
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "La Seconde Guerre mondiale"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-radiogoniometre",
+            "legende": "Un radiogoniomètre, pour repérer l'origine d'une émission"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "La Seconde Guerre mondiale commence très mal pour la France : en juin 1940, elle est contrainte de signer l'armistice face à l'avancée très rapide des forces allemandes.\n\nDepuis Londres, les forces françaises libres se réorganisent pour poursuivre le combat aux côtés des Alliés. Progressivement, elles rejoignent l'Afrique du Nord, d'où se prépare la reconquête du territoire national."
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Les Merlinettes**\n\nDans ce contexte, un problème majeur apparaît : le manque de personnel dans les unités de transmissions.\n\nLe général Merlin, alors à la tête des transmissions de l'armée française libre, décide de répondre à cette pénurie en ouvrant le recrutement aux femmes. Elles reçoivent une formation militaire complète et un véritable statut au sein de l'armée. On les appellera bientôt les « Merlinettes ».\n\nCes femmes sont formées à la fois aux techniques de transmission et aux exigences militaires. Leur instruction se déroule notamment à Hydra, en Algérie. Une fois leur formation terminée, elles sont intégrées aux 807ᵉ et 808ᵉ compagnies de transmissions.\n\nElles seront environ 2 000 à rejoindre ainsi les rangs de l'armée française libre."
+            }
+          },
+          {
+            "id": "b2",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le saviez-vous ?**\n\nCertaines d'entre elles sont ensuite formées par le BCRA, ancêtre de la DGSE, pour être parachutées en territoire ennemi et y espionner. Au total, cinq d'entre elles seront exécutées pour ces actions."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "image",
+          "texte",
+          "suite:b1",
+          "suite:b2"
+        ],
+        "styles": {
+          "suite:b2": {
+            "fond": "#17334d"
+          }
+        }
+      }
+    },
+    {
+      "id": "page-3e-11",
+      "titre": "La guerre secrète : Enigma et la Résistance",
+      "modele": "t2",
+      "ordre": 11,
+      "vignette": "media-chiffrement",
+      "contenu": {
+        "modele": "t2",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "La guerre secrète"
+          },
+          "image": {
+            "type": "image",
+            "mediaId": "media-chiffrement",
+            "legende": "Machines de chiffrement du musée"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "**Enigma**\n\nL'invasion allemande se fait de manière sécurisée, car les ordres sont transmis par le chiffrement de la machine Enigma. Avancez vers ces deux machines : ce sont les mêmes, l'une est dans sa boîte en bois, ouverte.\n\nSon utilisation est simple : elle repose sur un système de rotors qui modifie le chiffrement à chaque frappe, rendant les messages extrêmement difficiles à décrypter. L'opérateur la règle tous les jours en la paramétrant précisément. Ensuite, il tape le message sur le clavier de machine à écrire et le chiffrement apparaît en illuminant les lettres du clavier supérieur. Un opérateur radio envoie alors le message chiffré."
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Une machine née dans les banques**\n\nAu départ, ces machines Enigma sont inventées durant l'entre-deux-guerres pour des banquiers allemands, afin de chiffrer les données bancaires de leurs clients.\n\nLeur chiffrement est percé par une équipe de mathématiciens polonais et français durant l'entre-deux-guerres, qui gardent leurs connaissances secrètes. Les Allemands n'ont pas d'autres machines aussi avancées, mais ils se rendent compte, à la veille de la Seconde Guerre mondiale, des découvertes franco-polonaises. Ils complexifient alors la machine en ajoutant réflecteurs, rotors et tableau de fiches."
+            }
+          },
+          {
+            "id": "b2",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Ultra – Bletchley Park**\n\nEn 1940, les Britanniques lancent l'opération « Ultra » à Bletchley Park, où des milliers de scientifiques travaillent en secret pour décrypter les communications allemandes.\n\nParmi eux, Alan Turing met au point des machines électromécaniques, premiers calculateurs appelés « bombes logiques », capables de tester rapidement de nombreuses combinaisons de chiffrement. Pour réussir, elles s'appuient sur des mots probables présents dans les messages, comme ceux des bulletins météo. Ses travaux permettent, dès 1940, de redécrypter la machine.\n\nLe secret étant de rigueur jusqu'en 1975, ce premier calculateur électronique est longtemps resté inconnu : il fut détruit après-guerre. Alan Turing est aujourd'hui considéré comme le père de l'informatique."
+            }
+          },
+          {
+            "id": "b3",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Et les Alliés…**\n\nDu côté français, le chiffrement repose notamment sur la machine Hagelin B21, qui se trouve derrière vous, sur l'îlot central. Développée au début des années 1930 et adaptée aux besoins de l'armée, elle est rendue transportable et capable d'imprimer les messages. Environ 500 exemplaires sont produits avant la Seconde Guerre mondiale.\n\nAprès l'armistice, certaines machines sont récupérées par l'Allemagne, qui parvient à en décrypter le fonctionnement. Une version améliorée est alors mise au point en 1942, équipée d'un surchiffreur, offrant une sécurité supérieure à celle d'Enigma.\n\nContrairement à Enigma, elle utilise des demi-rotors au mouvement irrégulier et un système de codage en grille, rendant le déchiffrement extrêmement difficile."
+            }
+          },
+          {
+            "id": "b4",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**La Résistance**\n\nAprès l'armistice, l'armée française est maintenue à 100 000 hommes. Face à l'importance croissante des communications sur les champs de bataille, les transmissions sont érigées en arme autonome le 1ᵉʳ juin 1942, sous le régime de Vichy, se détachant définitivement du génie dont elles étaient une spécialité.\n\nParmi eux, le commandant Leschi, qui finira sa carrière comme général, commande la ferme de la Rapine, centre de transmissions de l'armée de Vichy. En parallèle, il agit pour la Résistance : il lui communique les ordres de Vichy et lui fournit du matériel de transmission. Dénoncé, il est envoyé dans les camps de la mort, auxquels il échappe avec la Libération.\n\nRobert Keller, ingénieur des PTT et lieutenant de réserve, participe à la réparation d'une ligne téléphonique stratégique reliant Paris à Metz, utilisée par les autorités allemandes pour leurs communications avec Berlin. Profitant de cette intervention, son équipe et lui mettent discrètement la ligne sur écoute. Pendant plusieurs mois, ils recueillent de précieuses informations : cette source, connue sous le nom de « source K », fournit aux Alliés des renseignements d'une grande valeur. Dénoncé lui aussi, il est déporté et meurt en camp."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "image",
+          "texte",
+          "suite:b1",
+          "suite:b2",
+          "suite:b3",
+          "suite:b4"
+        ]
+      }
+    },
+    {
+      "id": "page-3e-12",
+      "titre": "La télévision",
+      "modele": "t1",
+      "ordre": 12,
+      "vignette": null,
+      "contenu": {
+        "modele": "t1",
+        "emplacements": {
+          "titre": {
+            "type": "titre",
+            "valeur": "La télévision"
+          },
+          "texte": {
+            "type": "texte",
+            "valeur": "**L'invention de la télévision**\n\nLe principe de la télévision existe depuis les années 1870. Cette invention vient d'un Français, Constantin Senlecq, qui invente en 1879 le télectroscope. Cinquante ans plus tard, la première télévision est inventée par l'Écossais John Baird, aidé par son équipe : en 1926, pour la première fois, on émet l'image télévisée d'un objet en mouvement."
+          }
+        },
+        "suite": [
+          {
+            "id": "b1",
+            "valeur": {
+              "type": "texte",
+              "valeur": "Fondée sur des moyens électromécaniques, les perspectives offertes par cette solution sont cependant limitées. L'invention est par la suite améliorée par Zworykin, qui présente son iconoscope, une machine permettant une analyse extrêmement fine de l'image, restituée ensuite sur un écran cathodique.\n\nCependant, l'arrivée de la Seconde Guerre mondiale stoppe la progression scientifique dans le secteur télévisuel. Réservée à une certaine élite, il faut attendre les années 1950 pour que la télévision se diffuse dans les foyers français."
+            }
+          },
+          {
+            "id": "b2",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Les années 1950 et le boom de la télévision**\n\nEn France, on note un retard dans la diffusion de la télévision, au contraire de nos voisins européens. En 1939, l'Allemagne et le Royaume-Uni comptent environ 20 000 postes de télévision, tandis que la France n'atteindra ce nombre que dans les années 1950.\n\nEn 1950, on ne dénombre que 3 794 postes en France, mais leur accroissement est spectaculaire durant la décennie. Les émissions ne peuvent alors être diffusées qu'à Paris, à cause de la faible portée de l'émetteur de la tour Eiffel. Le premier relais se fait à Lille en 1950, ce qui permet aux Parisiens et aux Lillois de voir la rediffusion du couronnement de la reine Elizabeth II, le 2 juin 1953.\n\nMalgré des efforts importants, il faut attendre les années 1960 pour l'achèvement de la couverture du territoire en relais émetteurs. Le million de postes dans les foyers français ne sera atteint qu'en 1958."
+            }
+          },
+          {
+            "id": "b3",
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le saviez-vous ? Le studio d'enregistrement de Charles de Gaulle**\n\nLe studio que vous pouvez observer au musée est celui de la base aérienne de Taverny.\n\nChaque génération de président cherche le média qui touche le plus de Français en cas d'urgence. En 1914, la nouvelle de la mobilisation générale est relayée par les journaux, auxquels la grande majorité des Français avaient accès. Le 18 juin 1940, le général de Gaulle s'adresse aux Français par la radio, depuis Londres. Mais lorsqu'il est rappelé en 1958, il sait que la télévision est le nouveau média. Il installe donc un poste de commandement à la base aérienne de Taverny, en Île-de-France. En ce contexte de guerre froide, et en cas d'alerte — nucléaire par exemple — il peut communiquer avec tous les Français pour les avertir de la situation.\n\nCe studio a été actif entre 1958 et 2004, avant d'être cédé au musée."
+            }
+          }
+        ],
+        "ordre": [
+          "titre",
+          "texte",
+          "suite:b1",
+          "suite:b2",
+          "suite:b3"
+        ],
+        "styles": {
+          "suite:b3": {
+            "fond": "#17334d"
+          }
+        }
+      }
+    }
+  ],
+  "medias": [
+    {
+      "id": "media-lotr-feux-alarme",
+      "empreinte": "30c59b433f48",
+      "type": "video",
+      "legende": "Les feux d'alarme, relayés de sommet en sommet",
+      "largeur": null,
+      "hauteur": null,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "lotr-feux-alarme.mp4",
+          "octets": 46801417
+        }
+      ]
+    },
+    {
+      "id": "media-tours-signaux-chaine",
+      "empreinte": "90cd6fc681b2",
+      "type": "image",
+      "legende": "Une chaîne de tours à signaux",
+      "largeur": 1080,
+      "hauteur": 1080,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "tours-signaux-chaine.png",
+          "octets": 1880397
+        }
+      ]
+    },
+    {
+      "id": "media-postillon",
+      "empreinte": "68239a31eedf",
+      "type": "image",
+      "legende": "Un postillon",
+      "largeur": 700,
+      "hauteur": 541,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "postillon.png",
+          "octets": 534677
+        }
+      ]
+    },
+    {
+      "id": "media-cursus-publicus",
+      "empreinte": "98dbc95ab542",
+      "type": "image",
+      "legende": "Le réseau du cursus publicus romain",
+      "largeur": 1920,
+      "hauteur": 1596,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "cursus-publicus.png",
+          "octets": 4192493
+        }
+      ]
+    },
+    {
+      "id": "media-relais-poste-conde",
+      "empreinte": "666422e494ec",
+      "type": "image",
+      "legende": "Le relais de poste de Condé-sur-l'Escaut",
+      "largeur": 1920,
+      "hauteur": 1440,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "relais-poste-conde.jpg",
+          "octets": 587768
+        }
+      ]
+    },
+    {
+      "id": "media-chappe-telegraphe",
+      "empreinte": "981f0d8be336",
+      "type": "image",
+      "legende": "Le télégraphe optique de Claude Chappe",
+      "largeur": 1920,
+      "hauteur": 1330,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "chappe-telegraphe.jpg",
+          "octets": 388600
+        }
+      ]
+    },
+    {
+      "id": "media-chappe-vocabulaire",
+      "empreinte": "0602ad25e132",
+      "type": "image",
+      "legende": "Le vocabulaire des positions de bras",
+      "largeur": 1920,
+      "hauteur": 1216,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "chappe-vocabulaire.jpg",
+          "octets": 370847
+        }
+      ]
+    },
+    {
+      "id": "media-chappe-tour",
+      "empreinte": "b24ed28a3513",
+      "type": "image",
+      "legende": "Une tour du réseau Chappe",
+      "largeur": 1920,
+      "hauteur": 1527,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "chappe-tour.jpg",
+          "octets": 264891
+        }
+      ]
+    },
+    {
+      "id": "media-chappe-rennes",
+      "empreinte": "7747023f0783",
+      "type": "image",
+      "legende": "La cathédrale de Rennes, support d'une station",
+      "largeur": 919,
+      "hauteur": 1206,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "chappe-rennes.jpg",
+          "octets": 309661
+        }
+      ]
+    },
+    {
+      "id": "media-chappe-mont-saint-michel",
+      "empreinte": "2eda9d11915b",
+      "type": "image",
+      "legende": "Le Mont-Saint-Michel, station du réseau",
+      "largeur": 800,
+      "hauteur": 517,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "chappe-mont-saint-michel.jpg",
+          "octets": 162310
+        }
+      ]
+    },
+    {
+      "id": "media-chappe-signes-service",
+      "empreinte": "92f843fe503a",
+      "type": "image",
+      "legende": "Les signes de service du télégraphe Chappe",
+      "largeur": 1025,
+      "hauteur": 677,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "chappe-signes-service.png",
+          "octets": 93184
+        }
+      ]
+    },
+    {
+      "id": "media-morse-manipulateur",
+      "empreinte": "94abd4161e06",
+      "type": "image",
+      "legende": "Un manipulateur Morse",
+      "largeur": 1354,
+      "hauteur": 762,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "morse-manipulateur.jpg",
+          "octets": 66589
+        }
+      ]
+    },
+    {
+      "id": "media-morse-controleur-aerien",
+      "empreinte": "ef1a3fdcac65",
+      "type": "image",
+      "legende": "Le Morse encore employé par les contrôleurs aériens",
+      "largeur": 448,
+      "hauteur": 336,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "morse-controleur-aerien.jpg",
+          "octets": 23117
+        }
+      ]
+    },
+    {
+      "id": "media-morse-drapeau",
+      "empreinte": "e2a9bb9d2d71",
+      "type": "image",
+      "legende": "Le Morse transmis au drapeau",
+      "largeur": 962,
+      "hauteur": 215,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "morse-drapeau.png",
+          "octets": 20745
+        }
+      ]
+    },
+    {
+      "id": "media-morse-secours",
+      "empreinte": "55621f6fd143",
+      "type": "image",
+      "legende": "Un émetteur-récepteur Morse de secours",
+      "largeur": 1920,
+      "hauteur": 928,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "morse-secours.jpg",
+          "octets": 255054
+        }
+      ]
+    },
+    {
+      "id": "media-telephone-fonctionnement",
+      "empreinte": "55f2747b3f2d",
+      "type": "image",
+      "legende": "Le principe du téléphone",
+      "largeur": 1536,
+      "hauteur": 1024,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "telephone-fonctionnement.png",
+          "octets": 1912338
+        }
+      ]
+    },
+    {
+      "id": "media-telephone-demoiselle",
+      "empreinte": "99dd01a3aac9",
+      "type": "image",
+      "legende": "Une demoiselle du téléphone à son standard",
+      "largeur": 1500,
+      "hauteur": 1000,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "telephone-demoiselle.jpg",
+          "octets": 183346
+        }
+      ]
+    },
+    {
+      "id": "media-telephone-demoiselles-1892",
+      "empreinte": "c41d12d0c336",
+      "type": "image",
+      "legende": "Un standard téléphonique en 1892",
+      "largeur": 640,
+      "hauteur": 581,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "telephone-demoiselles-1892.jpg",
+          "octets": 179674
+        }
+      ]
+    },
+    {
+      "id": "media-tour-eiffel-1914",
+      "empreinte": "7494265310bd",
+      "type": "image",
+      "legende": "La tour Eiffel en 1914, mât d'antenne militaire",
+      "largeur": 960,
+      "hauteur": 976,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "tour-eiffel-1914.jpg",
+          "octets": 378275
+        }
+      ]
+    },
+    {
+      "id": "media-radio-lampe-tm",
+      "empreinte": "efccd19fa8f5",
+      "type": "image",
+      "legende": "Un poste radio à ampoule TM (télégraphie militaire)",
+      "largeur": 1920,
+      "hauteur": 1440,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "radio-lampe-tm.jpg",
+          "octets": 350900
+        }
+      ]
+    },
+    {
+      "id": "media-pigeon-1914",
+      "empreinte": "627b13a02b67",
+      "type": "image",
+      "legende": "Un pigeon voyageur pendant la Première Guerre mondiale",
+      "largeur": 1024,
+      "hauteur": 733,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "pigeon-1914.jpg",
+          "octets": 136795
+        }
+      ]
+    },
+    {
+      "id": "media-pigeon-vitrine-1",
+      "empreinte": "6c95a5687d6a",
+      "type": "image",
+      "legende": "Matériel de colombophilie militaire",
+      "largeur": 1920,
+      "hauteur": 938,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "pigeon-vitrine-1.jpg",
+          "octets": 271653
+        }
+      ]
+    },
+    {
+      "id": "media-pigeon-vitrine-2",
+      "empreinte": "a240c9b2ee15",
+      "type": "image",
+      "legende": "Tubes porte-messages et paniers",
+      "largeur": 1920,
+      "hauteur": 941,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "pigeon-vitrine-2.jpg",
+          "octets": 288584
+        }
+      ]
+    },
+    {
+      "id": "media-pigeon-camera",
+      "empreinte": "c93aa8d7771a",
+      "type": "image",
+      "legende": "Un pigeon équipé d'un appareil photo automatique",
+      "largeur": 600,
+      "hauteur": 387,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "pigeon-camera.jpg",
+          "octets": 45587
+        }
+      ]
+    },
+    {
+      "id": "media-sergeant-stubby",
+      "empreinte": "cbad7c9aa17d",
+      "type": "image",
+      "legende": "Sergeant Stubby, chien de guerre décoré",
+      "largeur": 574,
+      "hauteur": 480,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "sergeant-stubby.jpg",
+          "octets": 50068
+        }
+      ]
+    },
+    {
+      "id": "media-dickin-medal",
+      "empreinte": "7b5f075f3a49",
+      "type": "image",
+      "legende": "La médaille Dickin, décernée aux animaux",
+      "largeur": 250,
+      "hauteur": 334,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "dickin-medal.jpg",
+          "octets": 15242
+        }
+      ]
+    },
+    {
+      "id": "media-radio-philips",
+      "empreinte": "5429b3ad159e",
+      "type": "image",
+      "legende": "La radio Philips, dite « boîte à jambon »",
+      "largeur": 1920,
+      "hauteur": 1358,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "radio-philips.png",
+          "octets": 107661
+        }
+      ]
+    },
+    {
+      "id": "media-radiogoniometre",
+      "empreinte": "40319a06ef87",
+      "type": "image",
+      "legende": "Un radiogoniomètre, pour repérer l'origine d'une émission",
+      "largeur": 315,
+      "hauteur": 640,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "radiogoniometre.jpg",
+          "octets": 32714
+        }
+      ]
+    },
+    {
+      "id": "media-chiffrement",
+      "empreinte": "d6ee79f3a0ba",
+      "type": "image",
+      "legende": "Machines de chiffrement du musée",
+      "largeur": 1920,
+      "hauteur": 1111,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "chiffrement.jpg",
+          "octets": 158416
+        }
+      ]
+    }
+  ]
+}

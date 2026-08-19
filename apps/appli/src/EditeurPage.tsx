@@ -9,10 +9,16 @@ import {
 import {
   COLONNES_GRILLE,
   COLONNES_MIN,
+  DECALAGE_MAX,
   HAUTEUR_MAX,
   HAUTEUR_MIN,
   colonnesDe,
   colonnesEmplacement,
+  colonnesPourPhoto,
+  decalageDe,
+  decalageEmplacement,
+  estRecadre,
+  LARGEUR_TOILE,
   ordreCellules,
   controlerContenu,
   DEFS_BLOCS_LIBRES,
@@ -23,12 +29,18 @@ import {
   modelePar,
   sansMiseEnForme,
   texteBrut,
+  HAUTEUR_BANDEAU_DEFAUT,
+  HAUTEUR_BANDEAU_MAX,
+  HAUTEUR_BANDEAU_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
   FRISE_DETAIL_MAX_SIGNES,
   FRISE_LIBELLE_MAX_SIGNES,
   QUIZ_EXPLICATION_MAX_SIGNES,
   QUIZ_QUESTION_MAX_SIGNES,
   QUIZ_REPONSE_MAX_SIGNES,
+  PAS_TAILLE_TEXTE,
+  TAILLE_TEXTE_MAX,
+  TAILLE_TEXTE_MIN,
   type BlocLibre,
   type ContenuPage,
   type DefEmplacement,
@@ -54,7 +66,13 @@ import {
 } from '@borne/contenu/rendu'
 import { ChampTexteRiche, type CommandesTexteRiche } from './ChampTexteRiche.jsx'
 import { importerMedias, resolveurMedias } from './contenu.js'
-import { couleursEffectives, stylesCouleurs, type Couleurs } from './couleurs.js'
+import {
+  BANDEAU_DEFAUT,
+  couleursEffectives,
+  stylesCouleurs,
+  surFondLisible,
+  type Couleurs,
+} from './couleurs.js'
 import { RoueCouleur } from './RoueCouleur.jsx'
 
 /**
@@ -100,10 +118,9 @@ export function EditeurPage({
   const [couleursOuvertes, setCouleursOuvertes] = useState(false)
   // Glisser-déposer sur l'aperçu : bloc en cours de déplacement, et endroit visé.
   const [glisseId, setGlisseId] = useState<string | null>(null)
-  const [depot, setDepot] = useState<{
-    cle: string
-    ou: 'avant' | 'apres' | 'gauche' | 'droite'
-  } | null>(null)
+  // Une seule déclaration de la forme d'un dépôt, plus bas (« type Depot ») :
+  // en la répétant ici, les deux finissaient par ne plus dire la même chose.
+  const [depot, setDepot] = useState<Depot | null>(null)
 
   // Le manifeste est validé au chargement : le contenu a la forme attendue.
   const contenu = page.contenu as ContenuPage
@@ -200,8 +217,25 @@ export function EditeurPage({
 
   // ── Couleurs propres à la page ─────────────────────────────────────────────
 
-  const changerCouleurPage = (champ: 'couleurFond' | 'couleurTexte', hex: string) =>
-    surModification((p) => ({ ...p, [champ]: hex }))
+  const changerCouleurPage = (
+    champ: 'couleurFond' | 'couleurTexte' | 'couleurBandeau' | 'couleurBandeauTexte',
+    hex: string,
+  ) => surModification((p) => ({ ...p, [champ]: hex }))
+
+  // Hauteur du bandeau. Une saisie vide ou illisible ne change rien : on ne
+  // remplace pas un réglage par « 0 » pendant que l'utilisateur efface le champ.
+  const changerHauteurBandeau = (saisie: string) =>
+    surModification((p) => {
+      const pixels = Number.parseInt(saisie, 10)
+      if (!Number.isFinite(pixels)) return p
+      return {
+        ...p,
+        hauteurBandeau: Math.min(HAUTEUR_BANDEAU_MAX, Math.max(HAUTEUR_BANDEAU_MIN, pixels)),
+      }
+    })
+
+  const masquerBandeau = (actif: boolean) =>
+    surModification((p) => ({ ...p, bandeauMasque: actif || undefined }))
 
   // Revenir au thème global : on retire les couleurs propres à la page.
   const suivreThemeGlobal = () =>
@@ -209,45 +243,72 @@ export function EditeurPage({
       const copie = { ...p }
       delete copie.couleurFond
       delete copie.couleurTexte
+      delete copie.couleurBandeau
+      delete copie.couleurBandeauTexte
+      delete copie.hauteurBandeau
+      delete copie.bandeauMasque
       return copie
     })
 
   const couleursPage = couleursEffectives(manifeste.reglages, page)
-  const pagePersonnalisee = page.couleurFond !== undefined || page.couleurTexte !== undefined
+
+  // Couleur du texte du bandeau telle que la borne l'affichera : celle qu'on a
+  // choisie, ou celle qu'elle calcule d'après le fond.
+  const texteBandeau =
+    page.couleurBandeauTexte ?? surFondLisible(page.couleurBandeau ?? BANDEAU_DEFAUT)
+  const pagePersonnalisee =
+    page.couleurFond !== undefined ||
+    page.couleurTexte !== undefined ||
+    page.couleurBandeau !== undefined ||
+    page.couleurBandeauTexte !== undefined ||
+    page.hauteurBandeau !== undefined ||
+    page.bandeauMasque !== undefined
 
   // Règle la largeur d'un bloc, en colonnes sur la grille de 12. Appelé par la
   // poignée de l'aperçu (glissement) comme par le bouton du panneau (clavier).
   const redimensionnerBloc = (cle: string, colonnes: number) => {
-    const borne = Math.min(COLONNES_GRILLE, Math.max(COLONNES_MIN, Math.round(colonnes)))
     surModification((precedente) => {
       const contenuPage = precedente.contenu as ContenuPage
-
-      // Un bloc ajouté porte sa largeur ; un emplacement du modèle la range
-      // dans « largeurs », parce qu'on ne réécrit pas la déclaration du modèle.
-      if (cle.startsWith('suite:')) {
-        const id = cle.slice('suite:'.length)
-        return {
-          ...precedente,
-          contenu: {
-            ...contenuPage,
-            suite: lireSuite(contenuPage).map((bloc) =>
-              // « largeur » est laissé de côté : « colonnes » l'emporte à la
-              // lecture, et garder l'ancien champ permet d'ouvrir le contenu
-              // avec une version précédente de l'application sans tout perdre.
-              bloc.id === id ? { ...bloc, colonnes: borne } : bloc,
-            ),
-          },
-        }
-      }
-
-      return {
-        ...precedente,
-        contenu: {
-          ...contenuPage,
-          largeurs: { ...(contenuPage.largeurs ?? {}), [cle]: borne },
-        },
-      }
+      // Un bloc ajouté porte sa largeur ; un emplacement du modèle la range dans
+      // « largeurs », parce qu'on ne réécrit pas la déclaration du modèle.
+      // « avecLargeur » connaît cette différence, et laisse l'ancien champ
+      // « largeur » en place — un contenu ouvert avec une version précédente de
+      // l'application ne perd pas tout.
+      //
+      // Le décalage du bloc mange sa largeur possible : les deux tiennent
+      // toujours sur les 12 colonnes.
+      const plafond = COLONNES_GRILLE - decalageDeCle(contenuPage, cle)
+      const largeur = Math.min(plafond, Math.max(COLONNES_MIN, Math.round(colonnes)))
+      return { ...precedente, contenu: avecLargeur(contenuPage, cle, largeur) }
     })
+  }
+
+  /**
+   * Coche / décoche « Recadrer la photo ».
+   *
+   * En cochant, on donne au cadre **la hauteur qu'occupe déjà la photo** : rien
+   * ne bouge à l'écran, la photo n'est pas coupée, et les poignées de hauteur
+   * apparaissent pour la réduire. C'est ce qui rend le réglage sans danger — un
+   * réglage qui recadre au moment où on le coche serait une mauvaise surprise.
+   * En décochant, la photo redevient entière (la hauteur est simplement ignorée).
+   */
+  const basculerRecadrage = (nom: string, actif: boolean) => {
+    // Mesuré avant toute modification, sur la photo elle-même : l'aperçu est
+    // réduit, on repasse donc en pixels de toile.
+    const zone = document
+      .querySelector(`.edit__apercu .emp[data-nom="${nom}"] .b-image__zone`)
+      ?.getBoundingClientRect()
+    const page = document.querySelector('.edit__apercu .mdl')?.getBoundingClientRect()
+    const echelle = page && page.width > 0 ? page.width / LARGEUR_TOILE : 0
+
+    modifierStyle(nom, (style) => {
+      if (actif) return { ...style, recadre: true }
+      const copie = { ...style }
+      delete copie.recadre
+      return copie
+    })
+
+    if (actif && zone && echelle > 0) redimensionnerHauteur(nom, zone.height / echelle)
   }
 
   /** Hauteur d'une image ou d'une galerie, en pixels de toile. */
@@ -323,6 +384,19 @@ export function EditeurPage({
       }
       return valeur
     })
+
+    // Le bloc s'adapte à la photo qu'on vient de lui donner : sa largeur est
+    // réduite juste assez pour que la photo ne fasse pas deux écrans de haut.
+    // On ne touche pas à la photo, qui reste entière — c'est le bloc qui cède.
+    // Une photo recadrée est déjà tenue par la hauteur de son cadre : rien à
+    // faire pour elle.
+    const photo = medias[0]
+    if (photo && defPour(nom)?.type === 'image' && !estRecadre(contenu, nom)) {
+      const actuelles = colonnesDeCle(contenu, nom)
+      const voulues = colonnesPourPhoto(photo.largeur, photo.hauteur, actuelles)
+      if (voulues !== actuelles) redimensionnerBloc(nom, voulues)
+    }
+
     setSelecteur(null)
   }
 
@@ -363,10 +437,110 @@ export function EditeurPage({
   // Événements pointeur, jamais l'API « drag and drop » HTML5 : celle-ci ne
   // fonctionne pas au doigt, et la borne est un écran tactile.
 
-  /** Où le bloc va tomber, tel que le pointeur le désigne. */
-  type Depot = { cle: string; ou: 'avant' | 'apres' | 'gauche' | 'droite' }
+  /**
+   * Où le bloc va tomber, tel que le pointeur le désigne.
+   *
+   * « decalage » et « largeur » ne sont renseignés que pour un dépôt dans le
+   * vide d'une rangée : la place visée y est mesurée sur la grille au moment du
+   * geste, donc le bloc atterrit exactement là où on l'a lâché.
+   */
+  type Depot = {
+    cle: string
+    ou: 'avant' | 'apres' | 'gauche' | 'droite'
+    decalage?: number
+    largeur?: number
+    /**
+     * Emplacement exact où le bloc va se poser, en pixels d'écran — dessiné en
+     * cadre pointillé pendant le geste. Renseigné pour les dépôts dans le vide,
+     * où éclairer un bloc voisin serait trompeur : ce n'est pas contre lui que
+     * le bloc vient se coller, il y a un espace entre les deux.
+     */
+    fantome?: { gauche: number; haut: number; largeur: number; hauteur: number }
+  }
 
-  const depart = useRef<{ x: number; y: number; id: string; actif: boolean } | null>(null)
+  /** Un cadre de l'aperçu de dépôt, en pixels d'écran. */
+  type CadreApercu = {
+    cle: string
+    gauche: number
+    haut: number
+    largeur: number
+    hauteur: number
+  }
+
+  const depart = useRef<{
+    x: number
+    y: number
+    id: string
+    actif: boolean
+    /** Le bloc de l'aperçu qu'on tient, s'il y en a un : il suit le doigt. */
+    element: HTMLElement | null
+    /** Mise à l'échelle de la toile, pour traduire les pixels d'écran. */
+    echelle: number
+    /**
+     * Hauteur du bloc au repos, en pixels d'écran, relevée **avant** qu'il ne
+     * soit réduit pour être porté : une fois la transformation posée, sa boîte
+     * mesurée ne vaut plus que 45 % et les cadres seraient tout plats.
+     */
+    hauteur: number
+  } | null>(null)
+
+  /**
+   * Facteur de « zoom » subi par un élément de la toile. Un déplacement de 10
+   * pixels d'écran vaut 10 / echelle pixels **dans** la toile : sans cette
+   * division, le bloc traînerait derrière le doigt.
+   *
+   * Chromium le donne directement (« currentCSSZoom ») depuis la version 128 ;
+   * avant, on le mesure — la boîte englobante est zoomée, « offsetWidth » ne
+   * l'est pas.
+   */
+  const echelleDe = (element: HTMLElement): number => {
+    const donne = (element as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom
+    if (donne && donne > 0) return donne
+    const mesure = element.getBoundingClientRect().width / (element.offsetWidth || 1)
+    return mesure > 0 ? mesure : 1
+  }
+
+  /**
+   * Taille du bloc pendant qu'on le porte. À l'échelle 1, un bloc pleine largeur
+   * recouvrait la moitié de la page : on ne voyait plus ni les blocs voisins ni
+   * les cadres qui annoncent le résultat — c'est le reproche qui a été fait au
+   * geste. Réduit, il se lit comme ce qu'il est : l'objet qu'on tient en main,
+   * pas la page. La place réelle, elle, est donnée par les cadres.
+   */
+  const ECHELLE_PORTE = 0.45
+
+  /** Rend au bloc suivi sa place : fin du geste, ou abandon. */
+  const relacherBlocSuivi = () => {
+    const element = depart.current?.element
+    if (!element) return
+    element.style.transform = ''
+    element.style.transformOrigin = ''
+    element.style.willChange = ''
+  }
+
+  /**
+   * Deux dépôts qui désignent la même place. Sans cette comparaison, chaque
+   * mouvement du pointeur remplacerait l'état par un objet **équivalent** et
+   * redessinerait tout l'éditeur — cinquante fois par seconde pour rien.
+   */
+  const memeDepot = (a: Depot | null, b: Depot | null): boolean => {
+    if (a === b) return true
+    if (!a || !b) return false
+    return (
+      a.cle === b.cle &&
+      a.ou === b.ou &&
+      a.decalage === b.decalage &&
+      a.largeur === b.largeur &&
+      a.fantome?.gauche === b.fantome?.gauche &&
+      a.fantome?.haut === b.fantome?.haut &&
+      a.fantome?.largeur === b.fantome?.largeur &&
+      a.fantome?.hauteur === b.fantome?.hauteur
+    )
+  }
+
+  /** Change la place visée, mais **seulement** si elle a vraiment changé. */
+  const viser = (nouveau: Depot | null) =>
+    setDepot((precedent) => (memeDepot(precedent, nouveau) ? precedent : nouveau))
   const vientDeGlisser = useRef(false)
   /** Dernière position connue du pointeur, relue par le défilement automatique. */
   const dernierPoint = useRef<{ x: number; y: number } | null>(null)
@@ -407,7 +581,7 @@ export function EditeurPage({
       const avant = toile.scrollTop
       toile.scrollTop += pas
       // La page a bougé sous le pointeur : la cible visée n'est plus la même.
-      if (toile.scrollTop !== avant) setDepot(depotDepuisPoint(point.x, point.y, glisse.id))
+      if (toile.scrollTop !== avant) viser(depotDepuisPoint(point.x, point.y, glisse.id))
     }, 16)
   }
 
@@ -420,10 +594,24 @@ export function EditeurPage({
    * que « clientX / clientY ». (Ce ne serait pas vrai avec « transform ».)
    */
   const depotDepuisPoint = (x: number, y: number, cleGlisse: string): Depot | null => {
-    const dessous = document.elementFromPoint(x, y) as HTMLElement | null
-    const emplacement = dessous?.closest('.emp[data-nom]') as HTMLElement | null
+    // « elementsFromPoint » au pluriel : le bloc qu'on tient suit le doigt, il
+    // est donc en permanence sous le pointeur. On regarde **à travers** lui,
+    // sinon plus aucune cible ne serait jamais atteinte.
+    const dessous = document.elementsFromPoint(x, y) as HTMLElement[]
+    const emplacement = dessous
+      .map((element) => element.closest('.emp[data-nom]') as HTMLElement | null)
+      .find(
+        (candidat): candidat is HTMLElement =>
+          candidat !== null && candidat.dataset['nom'] !== cleGlisse,
+      )
     const cle = emplacement?.dataset['nom']
-    if (!emplacement || !cle || cle === cleGlisse) return null
+    // Le pointeur ne vise aucun bloc : peut-être le vide laissé à droite d'une
+    // rangée. On s'y pose plutôt que de ne rien faire.
+    if (!emplacement || !cle) {
+      return dessous.some((element) => element.closest('.mdl'))
+        ? depotDansLeVide(x, y, cleGlisse)
+        : null
+    }
 
     const cadre = emplacement.getBoundingClientRect()
     const fractionX = (x - cadre.left) / cadre.width
@@ -441,6 +629,51 @@ export function EditeurPage({
       return bloc ? colonnesDe(bloc) : COLONNES_GRILLE
     }
     return colonnesEmplacement(contenuPage, cle, modele.emplacements[cle]?.colonnes)
+  }
+
+  /** Décalage actuel d'une cellule : les colonnes vides à sa gauche. */
+  const decalageDeCle = (contenuPage: ContenuPage, cle: string): number => {
+    if (cle.startsWith('suite:')) {
+      const bloc = lireSuite(contenuPage).find((candidat) => `suite:${candidat.id}` === cle)
+      return bloc ? decalageDe(bloc) : 0
+    }
+    return decalageEmplacement(contenuPage, cle, colonnesDeCle(contenuPage, cle))
+  }
+
+  /**
+   * Place qu'une cellule prend sur sa rangée : son décalage **et** sa largeur.
+   * C'est cette mesure qui dit qui tient sur la même rangée que qui.
+   */
+  const occupeDeCle = (contenuPage: ContenuPage, cle: string): number =>
+    decalageDeCle(contenuPage, cle) + colonnesDeCle(contenuPage, cle)
+
+  /** Fixe le décalage d'une cellule. Zéro efface le réglage plutôt que l'écrire. */
+  const avecDecalage = (contenuPage: ContenuPage, cle: string, decalage: number): ContenuPage => {
+    const borne = Math.max(0, Math.min(DECALAGE_MAX, Math.round(decalage)))
+    if (cle.startsWith('suite:')) {
+      const id = cle.slice('suite:'.length)
+      return {
+        ...contenuPage,
+        suite: lireSuite(contenuPage).map((bloc) => {
+          if (bloc.id !== id) return bloc
+          if (borne === 0) {
+            const { decalage: _retire, ...sansDecalage } = bloc
+            return sansDecalage
+          }
+          return { ...bloc, decalage: borne }
+        }),
+      }
+    }
+    if (borne === 0) {
+      // Le rangement disparaît quand il devient vide : une page dont plus aucun
+      // bloc n'est décalé retrouve exactement le fichier qu'elle avait avant.
+      const restant = sansEntree(contenuPage.decalages, cle)
+      return {
+        ...contenuPage,
+        decalages: Object.keys(restant).length > 0 ? restant : undefined,
+      }
+    }
+    return { ...contenuPage, decalages: { ...(contenuPage.decalages ?? {}), [cle]: borne } }
   }
 
   /** Fixe la largeur d'une cellule, au bon endroit selon sa nature. */
@@ -466,21 +699,117 @@ export function EditeurPage({
    * à la ligne dès qu'il n'y a plus la place — la règle même de la grille de
    * l'aperçu, refaite ici pour savoir qui partage sa rangée avec qui.
    */
-  const rangeesDe = (contenuPage: ContenuPage): string[][] => {
+  const rangeesDeCles = (contenuPage: ContenuPage, cles: string[]): string[][] => {
     const rangees: string[][] = []
     let reste = 0
-    for (const cle of ordreCellules(contenuPage, modele)) {
-      const colonnes = colonnesDeCle(contenuPage, cle)
+    for (const cle of cles) {
+      const occupe = occupeDeCle(contenuPage, cle)
       const derniere = rangees[rangees.length - 1]
-      if (derniere && colonnes <= reste) {
+      if (derniere && occupe <= reste) {
         derniere.push(cle)
-        reste -= colonnes
+        reste -= occupe
       } else {
         rangees.push([cle])
-        reste = COLONNES_GRILLE - colonnes
+        reste = COLONNES_GRILLE - occupe
       }
     }
     return rangees
+  }
+
+  const rangeesDe = (contenuPage: ContenuPage): string[][] =>
+    rangeesDeCles(contenuPage, ordreCellules(contenuPage, modele))
+
+  /** Colonnes restées libres à droite d'une rangée, sur les 12 de la grille. */
+  const libreDeRangee = (contenuPage: ContenuPage, rangee: string[]): number =>
+    COLONNES_GRILLE - rangee.reduce((total, cle) => total + occupeDeCle(contenuPage, cle), 0)
+
+  /**
+   * Dépôt dans l'espace resté libre à droite d'une rangée.
+   *
+   * Le pointeur ne vise alors aucun bloc : on cherche la rangée qui se trouve à
+   * cette hauteur, et le bloc s'y pose **à la colonne visée**, à la suite des
+   * blocs déjà là et sans toucher à leurs largeurs. Les colonnes sautées
+   * deviennent un vide — c'est tout l'intérêt : on pousse un bloc vers la
+   * droite au lieu de tout redistribuer.
+   *
+   * La rangée où se trouve déjà le bloc glissé compte comme les autres : c'est
+   * ainsi qu'on écarte deux photos côte à côte sans les déplacer ailleurs.
+   *
+   * Rien n'est proposé si la rangée n'a plus la place minimale d'un bloc : il
+   * passerait à la ligne, ce que le geste n'annonce pas.
+   */
+  const depotDansLeVide = (x: number, y: number, cleGlisse: string): Depot | null => {
+    const grille = document.querySelector('.edit__apercu .mdl__grille')
+    if (!grille) return null
+    const cadreGrille = grille.getBoundingClientRect()
+    const echelleGrille = echelleDe(grille as HTMLElement)
+    const pas = cadreGrille.width / COLONNES_GRILLE
+    if (pas <= 0) return null
+
+    for (const rangee of rangeesDe(contenu)) {
+      const cadres = rangee
+        .map((cle) =>
+          document.querySelector(`.edit__apercu .emp[data-nom="${cle}"]`)?.getBoundingClientRect(),
+        )
+        .filter((cadre): cadre is DOMRect => cadre !== undefined)
+      if (cadres.length === 0) continue
+      const haut = Math.min(...cadres.map((cadre) => cadre.top))
+      const bas = Math.max(...cadres.map((cadre) => cadre.bottom))
+      if (y < haut || y > bas) continue
+
+      // Les blocs de la rangée, le glissé mis à part : c'est après eux qu'on se
+      // pose, et c'est leur total qui dit où commence le vide.
+      const restants = rangee.filter((cle) => cle !== cleGlisse)
+      // Rangée où le bloc glissé est seul : il se pousse **lui-même**, l'ordre
+      // de la page ne change pas. Sans ce cas, viser le vide à droite d'un bloc
+      // isolé ne ferait rien du tout.
+      const dernier = restants[restants.length - 1] ?? cleGlisse
+      const occupe = restants.reduce((total, cle) => total + occupeDeCle(contenu, cle), 0)
+      if (COLONNES_GRILLE - occupe < COLONNES_MIN) return null
+      // Le pointeur doit être dans le vide, pas sur les blocs.
+      if (x <= cadreGrille.left + occupe * pas) continue
+
+      // Colonne visée, aimantée sur la grille, puis bornée : jamais avant le
+      // vide, et toujours assez de place pour afficher le bloc.
+      const debut = Math.min(
+        COLONNES_GRILLE - COLONNES_MIN,
+        Math.max(occupe, Math.floor((x - cadreGrille.left) / pas)),
+      )
+      const largeur = Math.min(
+        colonnesDeCle(contenu, cleGlisse),
+        COLONNES_GRILLE - debut,
+      )
+
+      // Le cadre pointillé, aux vraies dimensions de la place visée. La
+      // gouttière est relue sur la grille plutôt que réécrite ici : les deux ne
+      // peuvent donc pas se contredire. « pas » ne suffirait pas — il vaut une
+      // colonne **plus sa part de gouttière**, ce qui décalerait le cadre.
+      // « columnGap » est lu en pixels **de toile**, la boîte englobante est en
+      // pixels **d'écran** : sans la remise à l'échelle, les deux mesures ne
+      // parlent pas de la même chose et le cadre tombe une dizaine de pixels
+      // trop à gauche, trop étroit.
+      const gouttiere = (parseFloat(getComputedStyle(grille).columnGap) || 0) * echelleGrille
+      const colonne = Math.max(
+        0,
+        (cadreGrille.width - (COLONNES_GRILLE - 1) * gouttiere) / COLONNES_GRILLE,
+      )
+
+      return {
+        cle: dernier,
+        ou: 'droite',
+        decalage: debut - occupe,
+        largeur,
+        fantome: {
+          gauche: cadreGrille.left + debut * (colonne + gouttiere),
+          haut,
+          largeur: largeur * colonne + (largeur - 1) * gouttiere,
+          // La hauteur du bloc qu'on tient, relevée à la saisie — pas celle de
+          // la rangée : le cadre doit avoir la taille du bloc annoncé.
+          hauteur: depart.current?.hauteur || bas - haut,
+        },
+      }
+    }
+    return null
   }
 
   /**
@@ -500,8 +829,11 @@ export function EditeurPage({
     for (const rangee of rangeesDe(apres)) {
       const [cle] = rangee
       if (rangee.length !== 1 || !cle || !accompagnes.has(cle)) continue
-      if (colonnesDeCle(resultat, cle) < COLONNES_GRILLE) {
-        resultat = avecLargeur(resultat, cle, COLONNES_GRILLE)
+      // Toute la largeur **restante** : un bloc poussé vers la droite garde son
+      // espace, il s'élargit seulement jusqu'au bord de la page.
+      const pleine = COLONNES_GRILLE - decalageDeCle(resultat, cle)
+      if (colonnesDeCle(resultat, cle) < pleine) {
+        resultat = avecLargeur(resultat, cle, pleine)
       }
     }
     return resultat
@@ -523,6 +855,24 @@ export function EditeurPage({
   ): ContenuPage | null => {
     const reste = ordreCellules(contenuPage, modele).filter((cle) => cle !== cleGlisse)
 
+    // Le bloc se pousse lui-même dans le vide de sa propre rangée : rien ne
+    // change dans l'ordre de la page, seule sa place sur la rangée bouge.
+    if (depot.cle === cleGlisse) {
+      if (depot.decalage === undefined || depot.largeur === undefined) return null
+      return avecLargeur(
+        avecDecalage(contenuPage, cleGlisse, depot.decalage),
+        cleGlisse,
+        depot.largeur,
+      )
+    }
+
+    // Place libre sur la rangée du voisin, mesurée **avant** l'insertion — et
+    // sur cette liste-ci, d'où le bloc glissé est absent.
+    const rangeeVoisine = rangeesDeCles(contenuPage, reste).find((rangee) =>
+      rangee.includes(depot.cle),
+    )
+    const libre = rangeeVoisine ? libreDeRangee(contenuPage, rangeeVoisine) : 0
+
     let vers = reste.indexOf(depot.cle)
     if (vers < 0) return null
     if (depot.ou === 'apres' || depot.ou === 'droite') vers += 1
@@ -530,32 +880,129 @@ export function EditeurPage({
 
     let resultat: ContenuPage = { ...contenuPage, ordre: reste }
 
-    if (depot.ou === 'gauche' || depot.ou === 'droite') {
-      // Côte à côte : les deux cellules doivent tenir sur les mêmes 12
-      // colonnes. Si le voisin est trop large pour laisser la place minimale,
-      // on partage en deux moitiés ; sinon il garde sa largeur et l'autre
-      // prend le reste.
-      const largeurVoisin = colonnesDeCle(resultat, depot.cle)
-      const partage = largeurVoisin > COLONNES_GRILLE - COLONNES_MIN
-      const colonnesVoisin = partage ? COLONNES_GRILLE / 2 : largeurVoisin
-      resultat = avecLargeur(resultat, depot.cle, colonnesVoisin)
-      resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE - colonnesVoisin)
-    } else {
-      // Déposé au-dessus ou en dessous : le bloc prend **toute la largeur**,
-      // il occupe donc une rangée à lui seul. C'est ce que le geste annonce —
-      // un trait horizontal pleine largeur — et cela évite qu'un bloc resté
-      // en demi-largeur se glisse à côté du voisin sans qu'on l'ait demandé.
-      resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE)
+    // Dépôt dans le vide d'une rangée : la place a été mesurée sur la grille au
+    // moment du geste (voir `depotDansLeVide`), on l'applique telle quelle.
+    if (depot.decalage !== undefined && depot.largeur !== undefined) {
+      resultat = avecDecalage(resultat, cleGlisse, depot.decalage)
+      return avecLargeur(resultat, cleGlisse, depot.largeur)
     }
 
+    // Tout autre dépôt remet le bloc au contact de son voisin : c'est ainsi
+    // qu'on **supprime** un espace qu'on ne veut plus.
+    resultat = avecDecalage(resultat, cleGlisse, 0)
+
+    if (depot.ou === 'gauche' || depot.ou === 'droite') {
+      if (libre >= COLONNES_MIN) {
+        // Il reste de la place sur la rangée : le bloc s'y glisse **tel quel**
+        // (au plus la place disponible) et personne d'autre ne bouge. C'est ce
+        // qui permet de remplir un espace libre, quitte à en laisser un peu.
+        resultat = avecLargeur(
+          resultat,
+          cleGlisse,
+          Math.min(colonnesDeCle(contenuPage, cleGlisse), libre),
+        )
+      } else {
+        // Rangée pleine : les deux cellules doivent tenir sur les mêmes 12
+        // colonnes. Si le voisin est trop large pour laisser la place minimale,
+        // on partage en deux moitiés ; sinon il garde sa largeur et l'autre
+        // prend le reste.
+        const largeurVoisin = colonnesDeCle(resultat, depot.cle)
+        const partage = largeurVoisin > COLONNES_GRILLE - COLONNES_MIN
+        const colonnesVoisin = partage ? COLONNES_GRILLE / 2 : largeurVoisin
+        resultat = avecLargeur(resultat, depot.cle, colonnesVoisin)
+        resultat = avecLargeur(resultat, cleGlisse, COLONNES_GRILLE - colonnesVoisin)
+      }
+    }
+    // Déposé au-dessus ou en dessous : le bloc **garde sa taille**. Il la
+    // prenait auparavant sur toute la largeur, pour être sûr d'occuper une
+    // rangée à lui seul ; mais déplacer un bloc n'est pas demander à le
+    // redimensionner, et se retrouver avec une photo élargie parce qu'on l'a
+    // bougée est la pire des surprises. Le seul cas où sa largeur change
+    // encore est celui où elle ne rentre pas : voir juste au-dessus.
+
     return resultat
+  }
+
+  /**
+   * Aperçu du dépôt : la rangée visée telle qu'elle sera **après**, un cadre
+   * par bloc, aux largeurs d'après.
+   *
+   * Sans lui, poser un bloc sur une rangée déjà pleine rétrécit le voisin sans
+   * l'avoir annoncé : on ne l'apprend qu'une fois le doigt levé.
+   *
+   * Les largeurs ne sont **pas** recalculées ici : on demande à
+   * « placerCellule » le contenu tel qu'il serait (elle est pure, rien n'est
+   * enregistré) et on dessine ce qu'elle répond. C'est la seule façon que
+   * l'aperçu ne puisse pas annoncer autre chose que ce qui se produira.
+   *
+   * La bande verticale (haut et hauteur) est celle qu'occupe la rangée
+   * aujourd'hui, relevée dans l'aperçu — comme le fait déjà le cadre fantôme.
+   */
+  const apercuDepot = (cleGlisse: string, vise: Depot): CadreApercu[] => {
+    const grille = document.querySelector('.edit__apercu .mdl__grille')
+    if (!grille) return []
+    const apres = placerCellule(contenu, cleGlisse, vise)
+    if (!apres) return []
+    const rangee = rangeesDe(apres).find((cles) => cles.includes(cleGlisse))
+    if (!rangee) return []
+
+    // Le bloc glissé est mis à part : il est encore à son ancienne place dans
+    // l'aperçu, sa position actuelle fausserait le haut de la rangée.
+    const boites = new Map<string, DOMRect>()
+    for (const cle of rangee) {
+      if (cle === cleGlisse) continue
+      const boite = document
+        .querySelector(`.edit__apercu .emp[data-nom="${cle}"]`)
+        ?.getBoundingClientRect()
+      if (boite) boites.set(cle, boite)
+    }
+    // Le bloc atterrit seul sur sa rangée : il n'y a rien à annoncer d'autre
+    // que sa propre place, dont le cadre fantôme se charge déjà.
+    if (boites.size === 0) return []
+    const haut = Math.min(...[...boites.values()].map((boite) => boite.top))
+    // Hauteur du bloc qu'on tient, relevée à la saisie : pendant le geste il est
+    // réduit, le mesurer maintenant donnerait 45 % de sa taille.
+    const hauteurTenue =
+      depart.current?.hauteur || Math.max(...[...boites.values()].map((boite) => boite.height))
+
+    // Même mesure que dans « depotDansLeVide » : la gouttière est relue sur la
+    // grille, jamais réécrite ici — les deux ne peuvent donc pas se contredire.
+    // Elle est en pixels de toile, les rectangles en pixels d'écran : d'où la
+    // remise à l'échelle.
+    const cadreGrille = grille.getBoundingClientRect()
+    const gouttiere =
+      (parseFloat(getComputedStyle(grille).columnGap) || 0) * echelleDe(grille as HTMLElement)
+    const colonne = Math.max(
+      0,
+      (cadreGrille.width - (COLONNES_GRILLE - 1) * gouttiere) / COLONNES_GRILLE,
+    )
+
+    let curseur = 0
+    return rangee.map((cle) => {
+      const debut = curseur + decalageDeCle(apres, cle)
+      const largeur = colonnesDeCle(apres, cle)
+      curseur = debut + largeur
+      return {
+        cle,
+        gauche: cadreGrille.left + debut * (colonne + gouttiere),
+        haut,
+        largeur: largeur * colonne + (largeur - 1) * gouttiere,
+        // **Chaque cadre a la taille de son bloc**, pas celle de la rangée :
+        // celui du bloc porté fait exactement sa hauteur, celui d'un voisin la
+        // sienne. Une bande commune donnait des cadres qui ne ressemblaient à
+        // aucun des blocs qu'ils annonçaient.
+        hauteur: cle === cleGlisse ? hauteurTenue : (boites.get(cle)?.height ?? hauteurTenue),
+      }
+    })
   }
 
   /** Déplace une cellule existante à l'endroit désigné par le dépôt. */
   const deposerCellule = (cleGlisse: string, depot: Depot) => {
     surModification((precedente) => {
       const avant = precedente.contenu as ContenuPage
-      if (cleGlisse === depot.cle) return precedente
+      // Se déposer sur soi-même ne veut rien dire… sauf pour se pousser dans le
+      // vide de sa propre rangée, où c'est justement le geste attendu.
+      if (cleGlisse === depot.cle && depot.decalage === undefined) return precedente
       if (!ordreCellules(avant, modele).includes(cleGlisse)) return precedente
 
       const apres = placerCellule(avant, cleGlisse, depot)
@@ -697,7 +1144,31 @@ export function EditeurPage({
   const auPointeurDescendu = (evenement: React.PointerEvent<HTMLElement>, nom: string) => {
     // La poignée de largeur a son propre glissement : ne pas le lui voler.
     if ((evenement.target as HTMLElement).closest('.mdl__poignee')) return
-    depart.current = { x: evenement.clientX, y: evenement.clientY, id: nom, actif: false }
+    // Le glissement part parfois du panneau de droite (poignée « ⠿ ») : là, rien
+    // ne suit le doigt, la ligne du panneau resterait coupée par son cadre.
+    const surApercu = evenement.currentTarget.closest('.edit__apercu')
+      ? evenement.currentTarget
+      : null
+    const echelle = surApercu ? echelleDe(surApercu) : 1
+    depart.current = {
+      x: evenement.clientX,
+      y: evenement.clientY,
+      id: nom,
+      actif: false,
+      element: surApercu,
+      echelle,
+      hauteur: surApercu ? surApercu.getBoundingClientRect().height : 0,
+    }
+
+    // Le bloc rétrécit **autour du point saisi** : c'est ce qui fait que
+    // l'endroit qu'on a touché reste sous le doigt au lieu de filer vers un
+    // coin. Posé dès la saisie, avant toute transformation.
+    if (surApercu) {
+      const cadre = surApercu.getBoundingClientRect()
+      surApercu.style.transformOrigin = `${(evenement.clientX - cadre.left) / echelle}px ${
+        (evenement.clientY - cadre.top) / echelle
+      }px`
+    }
   }
 
   const auPointeurDeplace = (evenement: React.PointerEvent<HTMLElement>) => {
@@ -718,11 +1189,22 @@ export function EditeurPage({
     }
 
     dernierPoint.current = { x: evenement.clientX, y: evenement.clientY }
-    setDepot(depotDepuisPoint(evenement.clientX, evenement.clientY, debut.id))
+
+    // Le bloc suit le doigt **tout de suite**, écrit directement dans le style :
+    // aucun rendu React ne s'interpose, le geste ne peut donc pas traîner.
+    if (debut.element) {
+      const dx = (evenement.clientX - debut.x) / debut.echelle
+      const dy = (evenement.clientY - debut.y) / debut.echelle
+      debut.element.style.willChange = 'transform'
+      debut.element.style.transform = `translate(${dx}px, ${dy}px) scale(${ECHELLE_PORTE})`
+    }
+
+    viser(depotDepuisPoint(evenement.clientX, evenement.clientY, debut.id))
   }
 
   const auPointeurRelache = () => {
     const debut = depart.current
+    relacherBlocSuivi()
     depart.current = null
     arreterDefilement()
     dernierPoint.current = null
@@ -761,7 +1243,9 @@ export function EditeurPage({
     )
 
     const enGlissement = glisseId === info.nom
-    const vise = depot?.cle === info.nom ? ` emp--depot-${depot.ou}` : ''
+    // Un dépôt qui montre son cadre fantôme n'éclaire aucun bloc : le bloc ne
+    // vient pas se coller contre celui-ci, il se pose plus loin.
+    const vise = depot?.cle === info.nom && !depot.fantome ? ` emp--depot-${depot.ou}` : ''
 
     return (
       <div
@@ -834,11 +1318,17 @@ export function EditeurPage({
         resoudre={resoudre}
         surContenu={(transformation) => modifierEmplacement(nom, transformation)}
         surStyle={(transformation) => modifierStyle(nom, transformation)}
+        surRecadrer={(actif) => basculerRecadrage(nom, actif)}
         surChoisirMedia={(type) => setSelecteur({ nom, type })}
         surFermeture={() => setSelection(null)}
       />
     )
   }
+
+  // Mesuré à chaque rendu, donc à chaque mouvement du pointeur : les rectangles
+  // relevés sont ceux de l'aperçu tel qu'il est en ce moment. Un aperçu gardé
+  // en mémoire vieillirait dès le premier défilement.
+  const apercuRangee = glisseId && depot ? apercuDepot(glisseId, depot) : []
 
   return (
     <div className="edit">
@@ -858,6 +1348,44 @@ export function EditeurPage({
         </ToileBorne>
       </div>
 
+      {/* Place visée pendant un dépôt : la rangée entière telle qu'elle sera,
+          ou à défaut le seul bloc déposé. Posé hors de l'aperçu et en
+          « fixed » : les coordonnées relevées par « getBoundingClientRect » sont
+          celles de l'écran, il n'y a donc aucune conversion à faire — et rien à
+          craindre du « zoom » de la toile, qui ne s'applique pas ici. */}
+      {apercuRangee.length > 0
+        ? apercuRangee.map((cadre) => (
+            <div
+              key={cadre.cle}
+              className={
+                cadre.cle === glisseId
+                  ? 'edit__fantome'
+                  : 'edit__fantome edit__fantome--voisin'
+              }
+              aria-hidden="true"
+              style={{
+                left: cadre.gauche,
+                top: cadre.haut,
+                width: cadre.largeur,
+                height: cadre.hauteur,
+              }}
+            />
+          ))
+        : depot?.fantome
+          ? (
+              <div
+                className="edit__fantome"
+                aria-hidden="true"
+                style={{
+                  left: depot.fantome.gauche,
+                  top: depot.fantome.haut,
+                  width: depot.fantome.largeur,
+                  height: depot.fantome.hauteur,
+                }}
+              />
+            )
+          : null}
+
       <aside className="pan">
         <div className="pan__couleurs">
           <button
@@ -866,7 +1394,7 @@ export function EditeurPage({
             aria-expanded={couleursOuvertes}
             onClick={() => setCouleursOuvertes((v) => !v)}
           >
-            <span>Couleurs de la page</span>
+            <span>Apparence de la page</span>
             <span aria-hidden="true">{couleursOuvertes ? '▲' : '▼'}</span>
           </button>
 
@@ -894,9 +1422,67 @@ export function EditeurPage({
                 />
               </div>
 
+              {/* ── Le bandeau du haut ────────────────────────────────────
+                  La barre « ← Accueil » du mode visiteur. Elle est **hors de la
+                  toile** : l'aperçu de gauche ne la montre pas, ces réglages ne
+                  se voient qu'en mode visiteur. */}
+              <h3 className="pan__sous-titre">Bandeau du haut</h3>
+
+              <label className="perso__bascule">
+                <input
+                  type="checkbox"
+                  checked={page.bandeauMasque === true}
+                  onChange={(evenement) => masquerBandeau(evenement.target.checked)}
+                />
+                <span>
+                  <strong>Masquer le bandeau</strong>
+                  <span className="pan__aide">
+                    {page.bandeauMasque === true
+                      ? 'La page prend toute la hauteur de l’écran. Le bouton « ← Accueil » reste, posé dans le coin : le visiteur garde toujours une sortie.'
+                      : 'La barre du haut affiche le retour à l’accueil et le titre de la page.'}
+                  </span>
+                </span>
+              </label>
+
+              {page.bandeauMasque === true ? null : (
+                <>
+                  <div className="apparence__couleur">
+                    <span className="champ__libelle">Fond du bandeau</span>
+                    <RoueCouleur
+                      valeur={couleursPage.couleurBandeau ?? BANDEAU_DEFAUT}
+                      surChangement={(hex) => changerCouleurPage('couleurBandeau', hex)}
+                    />
+                  </div>
+
+                  {/* Tant qu'aucune couleur n'est choisie ici, le disque montre
+                      celle que la borne calcule d'elle-même d'après le fond :
+                      ce qu'on voit est bien ce qui s'affiche. */}
+                  <div className="apparence__couleur">
+                    <span className="champ__libelle">Texte du bandeau</span>
+                    <RoueCouleur
+                      valeur={texteBandeau}
+                      surChangement={(hex) => changerCouleurPage('couleurBandeauTexte', hex)}
+                    />
+                  </div>
+
+                  <div className="apparence__veille">
+                    <span className="champ__libelle">Hauteur du bandeau</span>
+                    <input
+                      type="number"
+                      min={HAUTEUR_BANDEAU_MIN}
+                      max={HAUTEUR_BANDEAU_MAX}
+                      step={4}
+                      value={page.hauteurBandeau ?? HAUTEUR_BANDEAU_DEFAUT}
+                      onChange={(evenement) => changerHauteurBandeau(evenement.target.value)}
+                    />
+                    <span>pixels</span>
+                  </div>
+                </>
+              )}
+
               {pagePersonnalisee ? (
                 <button type="button" className="abtn abtn--discret" onClick={suivreThemeGlobal}>
-                  Suivre le thème général
+                  Revenir à l’apparence par défaut
                 </button>
               ) : null}
             </div>
@@ -1222,12 +1808,9 @@ function IconeFond() {
   )
 }
 
-/** Retire une entrée du rangement des habillages, sans toucher à l'original. */
-function sansEntree(
-  styles: Record<string, StyleBloc> | undefined,
-  nom: string,
-): Record<string, StyleBloc> {
-  const copie = { ...(styles ?? {}) }
+/** Retire une entrée d'un rangement par nom de bloc, sans toucher à l'original. */
+function sansEntree<T>(table: Record<string, T> | undefined, nom: string): Record<string, T> {
+  const copie = { ...(table ?? {}) }
   delete copie[nom]
   return copie
 }
@@ -1345,6 +1928,7 @@ function PanneauBloc({
   resoudre,
   surContenu,
   surStyle,
+  surRecadrer,
   surChoisirMedia,
   surFermeture,
 }: {
@@ -1356,6 +1940,8 @@ function PanneauBloc({
   resoudre: ResoudreMedia
   surContenu: (transformation: (valeur: ValeurEmplacement) => ValeurEmplacement) => void
   surStyle: (transformation: (style: StyleBloc) => StyleBloc) => void
+  /** Coche « Recadrer la photo » : passe par l'éditeur, qui mesure la hauteur. */
+  surRecadrer: (actif: boolean) => void
   surChoisirMedia: (type: 'image' | 'video') => void
   surFermeture: () => void
 }) {
@@ -1401,9 +1987,11 @@ function PanneauBloc({
       <FormulaireBloc
         def={def}
         valeur={valeur}
+        style={style}
         resoudre={resoudre}
         commandesTexte={commandesTexte}
         surChangement={surContenu}
+        surRecadrer={surRecadrer}
         surChoisirMedia={surChoisirMedia}
       />
     </div>
@@ -1440,6 +2028,12 @@ function BarreMiseEnForme({
   surStyle: (transformation: (style: StyleBloc) => StyleBloc) => void
 }) {
   const [roue, setRoue] = useState<'fond' | 'couleur' | null>(null)
+  /**
+   * Ce qu'on est en train de taper dans la case de la taille, tant qu'on n'a pas
+   * validé. Sans cet état, « 1 » (le début de « 150 ») serait aussitôt ramené
+   * dans les bornes et l'on ne pourrait plus rien écrire.
+   */
+  const [tailleSaisie, setTailleSaisie] = useState<string | null>(null)
 
   const basculer = (champ: 'gras' | 'italique' | 'souligne') => {
     if (texteRiche) commandesTexte.current?.basculer(champ)
@@ -1466,9 +2060,55 @@ function BarreMiseEnForme({
     surStyle((precedent) => {
       const copie = { ...precedent }
       if (valeur <= 0) delete copie.opacite
-      else copie.opacite = 100 - valeur
+      else {
+        // Rendre translucide suppose un fond. Tant qu'aucun n'a été choisi, on
+        // pose **celui que le disque affiche** — la couleur de la page. Sans
+        // cela, le curseur ne pouvait rien faire tant qu'on n'avait pas touché
+        // au disque, ce qui le faisait passer pour cassé.
+        if (copie.fond === undefined) copie.fond = couleursPage.couleurFond
+        copie.opacite = 100 - valeur
+      }
       return copie
     })
+
+  // Taille du texte du bloc, en pourcentage. Ramenée à 100, elle sort du
+  // fichier : un bloc qu'on remet à sa taille normale ne laisse pas de trace.
+  const taille = style.taille ?? 100
+  // Le pas est compté sur la valeur **rangée dans le contenu**, pas sur celle
+  // qu'affiche la barre : deux appuis rapprochés partiraient sinon tous les deux
+  // du même point de départ, et l'un des deux serait perdu (constaté).
+  const poserTaille = (valeur: number) =>
+    surStyle((precedent) => {
+      const borne = Math.min(TAILLE_TEXTE_MAX, Math.max(TAILLE_TEXTE_MIN, Math.round(valeur)))
+      const copie = { ...precedent }
+      if (borne === 100) delete copie.taille
+      else copie.taille = borne
+      return copie
+    })
+
+  const changerTaille = (sens: -1 | 1) => {
+    setTailleSaisie(null)
+    surStyle((precedent) => {
+      const vise = (precedent.taille ?? 100) + sens * PAS_TAILLE_TEXTE
+      const borne = Math.min(TAILLE_TEXTE_MAX, Math.max(TAILLE_TEXTE_MIN, vise))
+      const copie = { ...precedent }
+      if (borne === 100) delete copie.taille
+      else copie.taille = borne
+      return copie
+    })
+  }
+
+  // Ce qui a été tapé est appliqué en quittant la case (ou par « Entrée »).
+  // Une case vide ou un texte qui n'est pas un nombre ne change rien : on
+  // retrouve la valeur d'avant plutôt qu'une taille inventée.
+  const validerTaille = () => {
+    const tape = tailleSaisie
+    setTailleSaisie(null)
+    if (tape === null) return
+    const nombre = Number(tape.replace(',', '.'))
+    if (tape.trim() === '' || !Number.isFinite(nombre)) return
+    poserTaille(nombre)
+  }
 
   const alignement = style.alignement ?? 'gauche'
   const alignements: [AlignementBloc, string][] = [
@@ -1537,6 +2177,59 @@ function BarreMiseEnForme({
 
         <span className="ruban__separateur" aria-hidden="true" />
 
+        {/* Taille du texte du bloc. Deux boutons plutôt qu'une liste déroulante :
+            on lit la valeur en même temps qu'on la change, et il n'y a rien à
+            viser au pixel. Le réglage vaut pour tout le bloc — comme
+            l'alignement, et non comme G / I / S sur un texte. */}
+        <div className="ruban__groupe" role="group" aria-label="Taille du texte">
+          <button
+            type="button"
+            className="ruban__bouton"
+            aria-label="Réduire le texte"
+            title="Réduire le texte"
+            disabled={taille <= TAILLE_TEXTE_MIN}
+            onClick={() => changerTaille(-1)}
+          >
+            <span className="ruban__lettre ruban__lettre--petite">A</span>
+          </button>
+          {/* La valeur s'écrit aussi à la main : les deux boutons vont par pas
+              de dix, taper « 145 » est plus court que quatre appuis — et permet
+              une taille qui ne tombe pas sur un pas. */}
+          <span className="ruban__taille">
+            <input
+              type="number"
+              className="ruban__valeur"
+              aria-label="Taille du texte, en pourcentage"
+              title="Taille du texte, en pourcentage"
+              min={TAILLE_TEXTE_MIN}
+              max={TAILLE_TEXTE_MAX}
+              step={PAS_TAILLE_TEXTE}
+              value={tailleSaisie ?? taille}
+              onChange={(evenement) => setTailleSaisie(evenement.target.value)}
+              onBlur={validerTaille}
+              onKeyDown={(evenement) => {
+                if (evenement.key === 'Enter') evenement.currentTarget.blur()
+                if (evenement.key === 'Escape') setTailleSaisie(null)
+              }}
+            />
+            <span className="ruban__unite" aria-hidden="true">
+              %
+            </span>
+          </span>
+          <button
+            type="button"
+            className="ruban__bouton"
+            aria-label="Agrandir le texte"
+            title="Agrandir le texte"
+            disabled={taille >= TAILLE_TEXTE_MAX}
+            onClick={() => changerTaille(1)}
+          >
+            <span className="ruban__lettre ruban__lettre--grande">A</span>
+          </button>
+        </div>
+
+        <span className="ruban__separateur" aria-hidden="true" />
+
         <div className="ruban__groupe" role="group" aria-label="Couleurs du bloc">
           <button
             type="button"
@@ -1585,11 +2278,13 @@ function BarreMiseEnForme({
           <RoueCouleur valeur={couleurRoue} surChangement={(hex) => changerCouleur(roue, hex)} />
 
           {/* La transparence est rangée avec le fond, et non ailleurs dans la
-              barre : elle ne rend translucide que lui, et n'a donc aucun sens
-              tant qu'aucun fond n'est posé. Le curseur porte son propre
-              libellé, avec le nombre — sinon on ne saurait pas où on en est une
-              fois le doigt levé. */}
-          {roue === 'fond' && style.fond !== undefined ? (
+              barre : elle ne rend translucide que lui. Elle est montrée dès que
+              le disque du fond est ouvert, avant même qu'une couleur ait été
+              choisie — la cacher jusque-là la rendait introuvable, surtout sur
+              une galerie, dont les cases ont déjà un fond visible. Le curseur
+              porte son propre libellé, avec le nombre — sinon on ne saurait pas
+              où on en est une fois le doigt levé. */}
+          {roue === 'fond' ? (
             <label className="perso__glissiere">
               <span>Transparence du fond : {transparence} %</span>
               <input
@@ -1667,17 +2362,22 @@ const LEGENDE_MAX = 200
 function FormulaireBloc({
   def,
   valeur,
+  style,
   resoudre,
   commandesTexte,
   surChangement,
+  surRecadrer,
   surChoisirMedia,
 }: {
   def: DefEmplacement
   valeur: ValeurEmplacement
+  /** Sert au seul réglage de photo : « recadrer ». */
+  style: StyleBloc
   resoudre: ResoudreMedia
   /** Boîte par laquelle les boutons G I S atteignent le texte sélectionné. */
   commandesTexte: RefObject<CommandesTexteRiche | null>
   surChangement: (transformation: (valeur: ValeurEmplacement) => ValeurEmplacement) => void
+  surRecadrer?: (actif: boolean) => void
   surChoisirMedia: (type: 'image' | 'video') => void
 }) {
   // Un texte se saisit mis en forme, directement dans le champ.
@@ -1801,6 +2501,27 @@ function FormulaireBloc({
               }
             />
           </ChampMisEnForme>
+        ) : null}
+
+        {/* Le seul endroit d'où une photo peut être coupée : une case à cocher,
+            décochée par défaut. Tant qu'elle l'est, la photo est montrée entière
+            et son bloc suit ses proportions. */}
+        {resolu && def.type === 'image' && surRecadrer ? (
+          <label className="perso__bascule">
+            <input
+              type="checkbox"
+              checked={style.recadre === true}
+              onChange={(evenement) => surRecadrer(evenement.target.checked)}
+            />
+            <span>
+              <strong>Recadrer la photo</strong>
+              <span className="pan__aide">
+                {style.recadre === true
+                  ? 'La photo remplit un cadre dont vous réglez la hauteur (poignées en haut et en bas du bloc). Ce qui dépasse est coupé.'
+                  : 'La photo est montrée entière. Cochez pour choisir vous-même la hauteur du bloc : la photo remplira le cadre et ce qui dépasse sera coupé.'}
+              </span>
+            </span>
+          </label>
         ) : null}
       </div>
     )

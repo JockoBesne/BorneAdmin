@@ -496,6 +496,72 @@ button {
   padding: 18px;
 }
 
+/* Réglage à cocher dans le panneau d'un bloc (aujourd'hui : recadrer une photo).
+   Toute la ligne est la cible — libellé et explication comprises : sur un écran
+   tactile, viser la case seule demanderait de la précision au pixel. */
+.perso__bascule {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--b-trait);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+/* « [type='checkbox'] » n'est pas décoratif : « .pan input » (plus bas dans ce
+   fichier, même spécificité) imposerait sinon « width: 100 % » à la case, qui
+   prendrait toute la ligne et écraserait le texte sur le côté. L'attribut fait
+   pencher la balance. Même piège que « .roue__hex ». */
+.perso__bascule input[type='checkbox'] {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 2px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  accent-color: var(--b-accent);
+  cursor: pointer;
+}
+
+.perso__bascule > span {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.perso__bascule strong {
+  font-size: 15px;
+  color: var(--b-texte);
+}
+
+/* Place visée quand on glisse un bloc dans le vide d'une rangée : un cadre
+   pointillé, aux dimensions exactes de l'endroit où il va se poser. Il remplace
+   le liseré sur le bloc voisin, qui laissait croire que les deux allaient se
+   toucher alors qu'un espace les sépare.
+
+   Ne prend jamais le pointeur (« pointer-events »), sinon il se placerait entre
+   le doigt et la page et le dépôt viserait le cadre lui-même. */
+/* Place visée pendant un glissement. Le bloc qu'on tient : cadre plein.
+   Les blocs déjà là, qui vont changer de largeur pour lui faire place :
+   pointillé discret — ils annoncent, ils ne réclament pas l'attention. */
+.edit__fantome {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  border: 3px solid var(--b-accent);
+  border-radius: 18px;
+  background: rgba(233, 180, 76, 0.14);
+}
+
+.edit__fantome--voisin {
+  border: 2px dashed rgba(233, 180, 76, 0.55);
+  background: none;
+}
+
 /* Panneau des blocs. */
 
 .pan {
@@ -523,7 +589,18 @@ button {
   color: var(--b-texte);
 }
 
-/* Section repliable « Couleurs de la page ». */
+/* Séparation à l'intérieur du panneau d'apparence : « Bandeau du haut » ouvre
+   une deuxième famille de réglages, qui ne touche pas la page elle-même. */
+.pan__sous-titre {
+  margin: 6px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--b-trait);
+  font-family: var(--b-titre-police);
+  font-size: 15px;
+  color: var(--b-texte);
+}
+
+/* Section repliable « Apparence de la page ». */
 .pan__couleurs {
   border: 1px solid var(--b-trait);
   border-radius: 12px;
@@ -751,6 +828,54 @@ button {
 
 .ruban__lettre {
   font-weight: 700;
+}
+
+/* Les deux « A » de la taille du texte : leur différence de corps dit à elle
+   seule lequel réduit et lequel agrandit, sans un mot à lire. */
+.ruban__lettre--petite {
+  font-size: 11px;
+}
+
+.ruban__lettre--grande {
+  font-size: 17px;
+}
+
+/* La valeur est **affichée**, pas devinée : sur un réglage à deux boutons, on
+   ne saurait sinon jamais où l'on en est — et elle s'écrit directement.
+   « .ruban input.ruban__valeur » nomme la case deux fois, exprès : « .pan input »
+   lui donnerait sinon toute la largeur du panneau (même piège que « .roue__hex »
+   et que la case « Recadrer »). */
+.ruban__taille {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 2px;
+}
+
+.ruban input.ruban__valeur {
+  width: 44px;
+  padding: 2px 4px;
+  border: 1px solid var(--b-trait);
+  border-radius: 6px;
+  background: rgba(245, 247, 250, 0.06);
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--b-texte);
+}
+
+/* Les flèches natives du champ « number » sont minuscules et se doublent des
+   deux « A » : on les retire plutôt que d'offrir deux commandes pour un même
+   réglage, dont une trop petite pour être visée. */
+.ruban input.ruban__valeur::-webkit-inner-spin-button,
+.ruban input.ruban__valeur::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.ruban__unite {
+  font-size: 12px;
+  color: var(--b-texte-doux);
 }
 
 /* Bandeau de couleur sous l'icône, comme dans un traitement de texte : on voit
@@ -1123,9 +1248,17 @@ button {
 }
 
 /* Le bloc en cours de déplacement s'efface : on suit la cible, pas l'origine. */
+/* Le bloc qu'on tient suit le doigt, réduit (transformation écrite par
+   l'éditeur). Il passe au-dessus des autres sans les cacher : à sa taille
+   réelle, il recouvrait la page entière et l'on ne voyait plus où il allait
+   tomber. L'ombre le décolle, comme une feuille qu'on soulève ; le liseré dit
+   que c'est bien lui qu'on tient. */
 .emp--glisse {
-  opacity: 0.35;
+  z-index: 30;
+  opacity: 0.9;
   cursor: grabbing;
+  outline-color: var(--b-accent);
+  box-shadow: 0 18px 40px rgba(4, 11, 19, 0.55);
 }
 
 /* Repère de dépôt : un trait épais sur le bord visé. Sans lui, on ne sait pas
@@ -1410,9 +1543,15 @@ button {
   width: min(1000px, 94vw);
 }
 
+/* Réglages à gauche, aperçu à droite.
+ *
+ * L'aperçu a une largeur **garantie** : sans elle, une colonne « auto » prend
+ * la largeur de son contenu le plus large — une phrase un peu longue dans les
+ * réglages suffit alors à réduire l'aperçu à zéro pixel, et il disparaît de
+ * l'écran sans que rien ne signale l'erreur. Constaté, corrigé le 2026-08-18. */
 .apparence {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(0, auto) minmax(360px, 1fr);
   gap: 28px;
   align-items: start;
 }
@@ -1436,6 +1575,35 @@ button {
   font-size: 13px;
   line-height: 18px;
   color: var(--b-texte-doux);
+}
+
+/* Délai avant le retour automatique à l'accueil : un nombre, puis sa phrase.
+   Le champ est habillé ici, car « .pan input » ne vaut que dans le panneau
+   d'un bloc — hors de lui, il resterait blanc sur fond sombre. */
+.apparence__veille {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--b-texte-doux);
+}
+
+.apparence__veille input {
+  width: 88px;
+  padding: 10px 12px;
+  border: 1px solid rgba(245, 247, 250, 0.2);
+  border-radius: 10px;
+  background: #0e2237;
+  color: var(--b-texte);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.apparence__veille input:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 1px;
 }
 
 /* Une ligne « miniature + nom + boutons ». */
@@ -1884,6 +2052,7 @@ button {
      trois. */
   flex: 1;
   min-height: 0;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1891,10 +2060,38 @@ button {
   overflow: hidden;
 }
 
-.hub__vignette {
+/* La même image, floutée et assombrie, remplit le fond de la carte.
+ *
+ * Sans elle, une pièce montrée entière (« contain ») flotte au milieu d'une
+ * grande plage vide : la carte paraît inachevée. Avec elle, la carte est
+ * pleine, la pièce reste entière et lisible au centre, et le flou empêche de
+ * confondre le fond avec le document. */
+.hub__fond {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: blur(34px) saturate(0.55) brightness(0.3);
+  /* L'agrandissement mange les bords délavés que le flou fait apparaître. */
+  transform: scale(1.2);
+}
+
+/* « contain », et non « cover ».
+ *
+ * Le fonds d'un musée n'est pas fait que de photographies : ce sont des cartes,
+ * des gravures, des planches de signaux. Rognées dans une carte verticale,
+ * elles deviennent illisibles — d'une carte de France il ne restait qu'une
+ * bande où on lisait « appe » et « rdeaux ». Montrée entière, la pièce est
+ * reconnaissable ; la bande de fond qui reste autour d'elle est le prix, et il
+ * est bien moindre. Même règle que pour les photos d'une page : on ne coupe pas
+ * un document sans l'avoir demandé. */
+.hub__vignette {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 18px;
+  object-fit: contain;
 }
 
 .hub__image--absente {
@@ -1920,6 +2117,9 @@ button {
   height: 100%;
   display: flex;
   flex-direction: column;
+  /* Repère du bouton de retour quand le bandeau est masqué : il se pose alors
+     par-dessus la page, sans quoi il chercherait la fenêtre entière. */
+  position: relative;
   background: var(--b-fond);
   /* On entre dans la page : elle se rapproche légèrement en apparaissant. */
   animation: monde-entre 300ms cubic-bezier(0.2, 0, 0.2, 1);
@@ -1944,10 +2144,36 @@ button {
   display: flex;
   align-items: center;
   gap: 24px;
-  height: 96px;
+  height: var(--b-bandeau-hauteur, 96px);
   padding: 0 3vw;
-  background: #081726;
+  /* Réglable par page (« Couleurs de la page »). Sans réglage, le bleu sombre
+     d'origine — c'est la valeur de repli du « var() ». */
+  background: var(--b-bandeau, #081726);
   border-bottom: 1px solid rgba(245, 247, 250, 0.08);
+}
+
+/* Bandeau masqué : la page prend toute la hauteur, et il ne reste que le bouton
+   de retour, posé par-dessus. On ne le supprime jamais — sans lui, un visiteur
+   entré sur cette page n'aurait plus de sortie avant le retour automatique. */
+.monde__barre--masque {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  height: auto;
+  padding: 18px 3vw;
+  background: transparent;
+  border-bottom: none;
+}
+
+.monde__barre--masque .monde__titre {
+  display: none;
+}
+
+/* Le bouton n'a plus le bandeau derrière lui : il porte son propre fond, sinon
+   il se perdrait sur une photo pleine largeur. */
+.monde__barre--masque .monde__retour {
+  background: rgba(8, 23, 38, 0.72);
 }
 
 .monde__retour {
@@ -1955,10 +2181,10 @@ button {
   min-height: 56px;
   min-width: 180px;
   padding: 0 26px;
-  border: 2px solid rgba(233, 180, 76, 0.5);
+  border: 2px solid var(--b-bandeau-texte, rgba(233, 180, 76, 0.5));
   border-radius: 999px;
   background: transparent;
-  color: var(--b-accent);
+  color: var(--b-bandeau-texte, var(--b-accent));
   font-family: inherit;
   font-size: clamp(15px, 1.15vw, 22px);
   font-weight: 600;
@@ -1975,10 +2201,101 @@ button {
   flex: 1;
   font-size: clamp(15px, 1.2vw, 24px);
   font-weight: 600;
+  color: var(--b-bandeau-texte, var(--b-texte));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Fin de page : les deux pages voisines ────────────────────────────────
+   Ces boutons sont **dans** la toile, à la suite de la page : on les atteint
+   en descendant, ils ne mangent aucune hauteur d'écran le reste du temps.
+   Toutes les tailles sont donc en pixels de toile (référence 1920 × 1080),
+   comme la page elle-même — pas en « vw », qui vaudrait pour la fenêtre.
+   Les marges de côté sont celles de la page (96 px), pour que les boutons
+   tombent sur les mêmes bords que les blocs. */
+.voisines {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  gap: 40px;
+  padding: 0 96px 72px;
+  background: var(--b-fond);
+}
+
+.voisine {
+  flex: 1;
+  min-width: 0;
+  /* Deux doigts de haut : la cible reste facile à viser sans regarder. */
+  min-height: 132px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 20px 44px;
+  border: 3px solid rgba(233, 180, 76, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--b-accent);
+  font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+/* La page suivante se lit et se pointe à droite, comme elle se trouve. */
+.voisine--suivante {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.voisine:hover:not(:disabled),
+.voisine:focus-visible:not(:disabled) {
+  background: rgba(233, 180, 76, 0.16);
+}
+
+.voisine:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+/* Aux deux bouts du parcours : le bouton reste, il ne disparaît pas. */
+.voisine:disabled {
+  border-color: rgba(245, 247, 250, 0.12);
+  color: rgba(245, 247, 250, 0.3);
+  cursor: default;
+}
+
+.voisine__fleche {
+  flex: none;
+  font-size: 56px;
+  line-height: 1;
+}
+
+.voisine__textes {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.voisine__sens {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.voisine__nom {
+  font-size: 30px;
+  font-weight: 600;
   color: var(--b-texte);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.voisine:disabled .voisine__nom {
+  color: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2100,4 +2417,58 @@ button {
 .clavier__fermer:active {
   background: var(--b-accent);
   color: #0b1a2b;
+}
+
+/* ── Visionneuse : une photo en grand par-dessus la page ─────────────────── */
+
+.visionneuse {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 4vh 4vw;
+  background: rgba(4, 11, 19, 0.96);
+}
+
+/* Le fond entier referme. « z-index: -1 » le range derrière la photo : sans
+   cela il la recouvrirait, et la photo elle-même serait un bouton de fermeture. */
+.visionneuse__zone {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 0;
+  background: transparent;
+}
+
+.visionneuse__image {
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.visionneuse__legende {
+  margin: 0;
+  max-width: 60ch;
+  text-align: center;
+  font-size: clamp(15px, 1.3vw, 24px);
+  color: var(--b-texte-doux);
+}
+
+.visionneuse__fermer {
+  position: absolute;
+  top: 3vh;
+  right: 3vw;
+  min-height: 56px;
+  padding: 0 26px;
+  border: 2px solid rgba(245, 247, 250, 0.3);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--b-texte);
+  font-size: 18px;
+  font-weight: 600;
 }

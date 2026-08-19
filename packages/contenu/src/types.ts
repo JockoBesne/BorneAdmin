@@ -200,14 +200,66 @@ export type TypeBlocLibre = 'texte' | 'image' | 'galerie' | 'video' | 'quiz' | '
 export const COLONNES_GRILLE = 12
 /** En dessous d'un quart de largeur, un bloc n'est plus lisible sur la borne. */
 export const COLONNES_MIN = 3
+/**
+ * Décalage maximal d'un bloc : ce qui reste des 12 colonnes une fois la largeur
+ * minimale réservée au bloc lui-même. Au-delà, il ne resterait pas de place pour
+ * l'afficher.
+ */
+export const DECALAGE_MAX = COLONNES_GRILLE - COLONNES_MIN
+
+/* Taille du texte d'un bloc, en pourcentage de sa taille normale : 100 = celle
+ * que le modèle a prévue. Les bornes empêchent l'illisible (trop petit sur un
+ * écran regardé à deux mètres) comme l'ingérable (un titre qui déborde de sa
+ * page). Le pas est franc : dix pour cent se voient, deux non. */
+export const TAILLE_TEXTE_MIN = 60
+export const TAILLE_TEXTE_MAX = 200
+export const PAS_TAILLE_TEXTE = 10
 
 /* Hauteur réglable, en pixels de toile (référence 1920 × 1080).
- * Ne concerne que les images et les galeries : la hauteur d'un texte découle
- * de son contenu, celle d'une vidéo de ses proportions. */
+ * Ne concerne que les galeries et les photos **recadrées** : la hauteur d'un
+ * texte découle de son contenu, celle d'une photo de ses proportions, celle
+ * d'une vidéo de son cadre. */
 export const HAUTEUR_MIN = 160
 export const HAUTEUR_MAX = 1400
 /** Pas d'aimantation : assez fin pour ajuster, assez gros pour ne pas trembler. */
 export const HAUTEUR_PAS = 20
+
+/* Hauteur du bandeau du haut (la barre « ← Accueil » du mode visiteur), en
+ * pixels d'écran — le bandeau est hors de la toile. Le minimum laisse passer le
+ * bouton de retour, dont la cible fait 56 px : en dessous, on ne le viserait
+ * plus au doigt. Réglée par page ; absente, c'est la valeur d'origine. */
+export const HAUTEUR_BANDEAU_MIN = 72
+export const HAUTEUR_BANDEAU_MAX = 200
+export const HAUTEUR_BANDEAU_DEFAUT = 96
+
+/**
+ * Hauteur qu'on cherche à ne pas dépasser pour une photo, en pixels de toile.
+ *
+ * Ce n'est pas une limite imposée : c'est la hauteur visée quand on **choisit**
+ * une photo, en ajustant la largeur de son bloc (voir `colonnesPourPhoto`). Une
+ * photo en hauteur mise en pleine largeur ferait sinon 2 300 px de haut — plus
+ * de deux écrans — ce qui ne ressemble à rien sur une borne. 620 px est la valeur
+ * qui servait de plafond auparavant : la mise en page reste donc familière.
+ */
+export const HAUTEUR_PHOTO_VISEE = 620
+
+/* Géométrie de la page, en pixels de toile. Ces trois valeurs sont **aussi**
+ * écrites dans « rendu/modeles.css » (largeur de `.mdl`, sa marge intérieure, et
+ * `--gouttiere-grille`) : les changer d'un côté sans l'autre décalerait le calcul
+ * de la largeur d'un bloc. */
+export const LARGEUR_TOILE = 1920
+export const MARGE_PAGE = 96
+export const GOUTTIERE_GRILLE = 40
+
+/**
+ * Largeur d'une cellule de `colonnes` colonnes, en pixels de toile — gouttières
+ * comprises pour les colonnes qu'elle enjambe.
+ */
+export function largeurEnPixels(colonnes: number): number {
+  const utile = LARGEUR_TOILE - 2 * MARGE_PAGE
+  const colonne = (utile - (COLONNES_GRILLE - 1) * GOUTTIERE_GRILLE) / COLONNES_GRILLE
+  return colonnes * colonne + (colonnes - 1) * GOUTTIERE_GRILLE
+}
 
 export const BLOC_LIBRE_TEXTE_MAX_SIGNES = 2000
 export const BLOC_LIBRE_GALERIE_MAX = 12
@@ -249,12 +301,20 @@ export interface BlocLibre {
    * Largeur du bloc en colonnes, sur une grille de 12 (voir COLONNES_GRILLE).
    * C'est ce que règle la poignée de redimensionnement : on tire, la largeur
    * s'aimante sur une colonne. Les blocs s'enchaînent et passent à la ligne
-   * quand la rangée est pleine — une page ne peut donc ni se trouer ni voir
-   * deux blocs se chevaucher.
+   * quand la rangée est pleine — deux blocs ne peuvent donc jamais se
+   * chevaucher. Pour laisser un vide à gauche d'un bloc, voir « decalage ».
    *
    * Absent : déduit de « largeur » (moitie = 6, sinon 12).
    */
   colonnes?: number
+  /**
+   * Colonnes laissées **vides à gauche** du bloc, sur sa rangée : c'est ce qui
+   * permet de pousser un bloc vers la droite et de laisser un trou derrière lui.
+   *
+   * Absent ou 0 : le bloc suit son voisin sans espace — le comportement de
+   * toujours. La place occupée sur la rangée est donc « decalage + colonnes ».
+   */
+  decalage?: number
   /**
    * Hauteur imposée au bloc, en pixels de toile. Images et galeries seulement.
    *
@@ -303,6 +363,30 @@ export interface StyleBloc {
    * `fond`, elle n'a aucun effet.
    */
   opacite?: number
+  /**
+   * **Photos seulement** : recadrer la photo dans un cadre dont on choisit la
+   * hauteur, au lieu de la montrer entière.
+   *
+   * Absent (le cas normal) : la photo est **entière**, jamais coupée, et son bloc
+   * prend exactement ses proportions. C'est le seul comportement que rencontre
+   * quelqu'un qui n'a rien réglé.
+   *
+   * Présent : le bloc reçoit une hauteur (`hauteur` / `contenu.hauteurs[nom]`),
+   * réglable aux poignées haute et basse, et la photo la remplit en se recadrant
+   * autour de son point focal. Personne ne peut donc découvrir une photo coupée
+   * sans l'avoir demandé — c'était le défaut à corriger.
+   */
+  recadre?: boolean
+  /**
+   * Taille du texte du bloc, en pourcentage de sa taille normale (100 = celle
+   * du modèle). Absente = 100 : un bloc jamais réglé s'écrit comme avant.
+   *
+   * C'est un **facteur**, pas une taille en points : un titre et un paragraphe
+   * réglés à 120 % gardent leur écart, la page reste hiérarchisée. Les ateliers
+   * (quiz, frise) n'en tiennent pas compte — leurs commandes tactiles sont
+   * dimensionnées au doigt, les grossir les casserait.
+   */
+  taille?: number
 }
 
 /**
@@ -332,6 +416,14 @@ export interface ContenuPage {
    * jamais été retouchée garde exactement la mise en page de son modèle.
    */
   largeurs?: Record<string, number>
+  /**
+   * Décalages des emplacements du modèle, par nom : colonnes laissées vides à
+   * leur gauche. Même rôle que « decalage » sur un bloc ajouté, rangé ici pour
+   * la même raison que « largeurs » — on ne réécrit pas la déclaration du
+   * modèle. Facultatif : seuls les emplacements poussés vers la droite y
+   * figurent.
+   */
+  decalages?: Record<string, number>
   /**
    * Ordre libre des cellules de la page, du haut vers le bas.
    *

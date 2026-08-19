@@ -4,6 +4,9 @@ import {
   BLOC_LIBRE_TEXTE_MAX_SIGNES,
   COLONNES_GRILLE,
   COLONNES_MIN,
+  DECALAGE_MAX,
+  HAUTEUR_BANDEAU_MAX,
+  HAUTEUR_BANDEAU_MIN,
   HAUTEUR_MAX,
   HAUTEUR_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
@@ -14,6 +17,8 @@ import {
   QUIZ_QUESTION_MAX_SIGNES,
   QUIZ_REPONSE_MAX_SIGNES,
   QUIZ_REPONSES_MAX,
+  TAILLE_TEXTE_MAX,
+  TAILLE_TEXTE_MIN,
 } from './types.js'
 
 /**
@@ -78,6 +83,8 @@ export const schemaBlocLibre = z.object({
   // Largeur en colonnes réglée à la poignée. Bornée ici aussi : un contenu
   // modifié à la main ne doit pas pouvoir produire un bloc illisible.
   colonnes: z.number().int().min(COLONNES_MIN).max(COLONNES_GRILLE).optional(),
+  // Colonnes vides à gauche du bloc. 0 = collé à son voisin, comme avant.
+  decalage: z.number().int().min(0).max(DECALAGE_MAX).optional(),
   hauteur: z.number().int().min(HAUTEUR_MIN).max(HAUTEUR_MAX).optional(),
   valeur: z.discriminatedUnion('type', [
     z.object({
@@ -149,6 +156,11 @@ export const schemaStyleBloc = z.object({
   souligne: z.boolean().optional(),
   alignement: z.enum(['gauche', 'centre', 'droite']).optional(),
   opacite: z.number().int().min(0).max(100).optional(),
+  // Photos : recadrer dans un cadre de hauteur choisie plutôt que montrer la
+  // photo entière. Absent = entière, jamais coupée.
+  recadre: z.boolean().optional(),
+  // Taille du texte, en pourcentage de la taille normale. Absente = 100.
+  taille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
 })
 
 export const schemaPageManifeste = z.object({
@@ -161,6 +173,24 @@ export const schemaPageManifeste = z.object({
   // global (`reglages`). Présentes, elles l'emportent.
   couleurFond: z.string().regex(COULEUR).optional(),
   couleurTexte: z.string().regex(COULEUR).optional(),
+  /*
+   * Bandeau du haut : la barre « ← Accueil » du mode visiteur. Tout est
+   * facultatif, et tout absent = le bandeau d'origine — une page écrite avant
+   * ces réglages garde donc exactement son apparence.
+   */
+  couleurBandeau: z.string().regex(COULEUR).optional(),
+  // Absente, la couleur du texte est calculée d'après le fond (voir
+  // « surFondLisible » dans l'application) : claire sur sombre, sombre sur clair.
+  couleurBandeauTexte: z.string().regex(COULEUR).optional(),
+  hauteurBandeau: z
+    .number()
+    .int()
+    .min(HAUTEUR_BANDEAU_MIN)
+    .max(HAUTEUR_BANDEAU_MAX)
+    .optional(),
+  // Masqué, il ne reste que le bouton de retour, posé par-dessus la page : on ne
+  // laisse jamais un visiteur sans sortie.
+  bandeauMasque: z.boolean().optional(),
   contenu: z.object({
     modele: z.enum(['t0', 't1', 't2', 't3']),
     // Largeurs des emplacements réglées à la poignée. Déclaré ici sans quoi le
@@ -168,6 +198,8 @@ export const schemaPageManifeste = z.object({
     largeurs: z
       .record(z.string(), z.number().int().min(COLONNES_MIN).max(COLONNES_GRILLE))
       .optional(),
+    // Décalages des emplacements du modèle : colonnes vides à leur gauche.
+    decalages: z.record(z.string(), z.number().int().min(0).max(DECALAGE_MAX)).optional(),
     hauteurs: z
       .record(z.string(), z.number().int().min(HAUTEUR_MIN).max(HAUTEUR_MAX))
       .optional(),
