@@ -1,17 +1,17 @@
 {
   "version": 1,
-  "genereLe": "2026-08-19T14:11:01.937Z",
+  "genereLe": "2026-08-19T13:25:33.749Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Troisième étage — de l'Antiquité aux années 1970",
     "minutesAvantVeille": 3,
-    "couleurFond": "#0e2237",
+    "couleurFond": "#3c7ecc",
     "couleurTexte": "#f5f7fa",
-    "hubCouleurTexte": "#f5f7fa",
-    "hubTitreCouleur": "#f7f5ef",
-    "hubSousTitreCouleur": "#e9b44c",
-    "hubNomFond": "#081726",
-    "hubNomCouleur": "#f5f7fa",
+    "hubCouleurTexte": "#fafbff",
+    "hubTitreCouleur": "#fcfcff",
+    "hubSousTitreCouleur": "#3b311d",
+    "hubNomFond": "#3b311d",
+    "hubNomCouleur": "#f6f6ff",
     "hubNomTaille": 90,
     "pinAdmin": "1975"
   },
@@ -22,6 +22,7 @@
       "modele": "t1",
       "ordre": 1,
       "vignette": "media-tambours-garde",
+      "couleurBandeau": "#0d2035",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -30,7 +31,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "texte": 651
+          "image": 420,
+          "texte": 440
         },
         "emplacements": {
           "titre": {
@@ -65,8 +67,18 @@
             }
           },
           {
+            "id": "b3",
+            "colonnes": 6,
+            "hauteur": 380,
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Le saviez-vous ?**\n\n« Céleustique » vient du grec _keleustikós_, « relatif au commandement », lui-même tiré de _keleúein_ : ordonner, donner le signal.\n\nDans l'Antiquité, le _kéleustès_ donne la cadence aux rameurs, à la voix ou à l'instrument. C'est la première forme connue d'un son qui commande un geste collectif."
+            }
+          },
+          {
             "id": "b4",
             "colonnes": 12,
+            "hauteur": 160,
             "valeur": {
               "type": "texte",
               "valeur": "**3 000 ans**\n\nde l'Antiquité aux années 1970, en un seul étage"
@@ -74,16 +86,25 @@
           },
           {
             "id": "b5",
-            "colonnes": 12,
+            "colonnes": 6,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "**Un seul fil conducteur**\n\nDe la trompette au poste de télévision, la question ne change jamais : comment faire parvenir une information à quelqu'un qui n'est pas là ? Ce sont les réponses qui changent."
             }
           },
           {
+            "id": "b6",
+            "colonnes": 12,
+            "hauteur": 380,
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Comment lire cet étage**\n\nLes pages suivent l'ordre du temps. Les cartes dorées les plus vives portent un chiffre à retenir ; les encarts plus doux, une anecdote ou une parole d'époque."
+            }
+          },
+          {
             "id": "b7",
             "colonnes": 12,
-            "hauteur": 660,
             "valeur": {
               "type": "quiz",
               "question": "D'où vient le mot « céleustique » ?",
@@ -114,21 +135,32 @@
           "titre",
           "image",
           "texte",
-          "suite:b1",
           "suite:b2",
-          "suite:b4",
+          "suite:b1",
+          "suite:b3",
           "suite:b5",
-          "suite:b7"
+          "suite:b4",
+          "suite:b7",
+          "suite:b6"
         ],
         "styles": {
+          "image": {
+            "recadre": true
+          },
+          "suite:b3": {
+            "fond": "#f3dd7a",
+            "opacite": 13
+          },
           "suite:b4": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           },
-          "suite:b7": {
-            "ancre": "bas"
+          "suite:b6": {
+            "fond": "#f3dd7a",
+            "opacite": 13,
+            "remplir": true
           }
         }
       }
@@ -138,16 +170,21 @@
       "titre": "Avant l'électricité : porter, relayer, signaler",
       "modele": "t1",
       "ordre": 2,
-      "vignette": "media-marathon-merson",
+      "vignette": "media-tours-signaux-chaine",
+      "couleurBandeau": "#0a1a2b",
       "contenu": {
         "modele": "t1",
         "largeurs": {
           "titre": 12,
-          "image": 6,
-          "texte": 12
+          "image": 12,
+          "texte": 10
         },
         "decalages": {
           "texte": 1
+        },
+        "hauteurs": {
+          "image": 920,
+          "titre": 160
         },
         "emplacements": {
           "titre": {
@@ -156,8 +193,8 @@
           },
           "image": {
             "type": "image",
-            "mediaId": "media-marathon-merson",
-            "legende": "« Le soldat de Marathon », Luc-Olivier Merson"
+            "mediaId": "media-tours-signaux-chaine",
+            "legende": "Une chaîne de tours à signaux"
           },
           "texte": {
             "type": "texte",
@@ -185,7 +222,7 @@
           {
             "id": "b3",
             "colonnes": 6,
-            "hauteur": 320,
+            "hauteur": 280,
             "valeur": {
               "type": "texte",
               "valeur": "**XVIIIe siècle**\n\nla dernière époque où l'on transmet par le feu"
@@ -194,7 +231,7 @@
           {
             "id": "b4",
             "colonnes": 6,
-            "hauteur": 280,
+            "hauteur": 300,
             "valeur": {
               "type": "texte",
               "valeur": "**Sa limite**\n\nCes communications restent bornées à des messages simples, définis à l'avance. On peut dire « l'ennemi approche ». On ne peut dire ni combien ils sont, ni par où ils viennent."
@@ -209,9 +246,19 @@
             }
           },
           {
+            "id": "b7",
+            "colonnes": 6,
+            "hauteur": 420,
+            "valeur": {
+              "type": "image",
+              "mediaId": "media-marathon-merson",
+              "legende": "« Le soldat de Marathon », Luc-Olivier Merson"
+            }
+          },
+          {
             "id": "b8",
             "colonnes": 6,
-            "hauteur": 693,
+            "hauteur": 400,
             "valeur": {
               "type": "texte",
               "valeur": "**Il fallait autre chose**\n\nSur de courtes distances, comme entre cités grecques, le messager à pied suffit. Sur des routes bien plus longues, il faut inventer un système — et ce système sera le cheval, relayé.\n\nDès le VIe siècle avant notre ère, l'empire perse organise les premiers relais de poste, bientôt suivi par la Chine et Rome."
@@ -238,7 +285,7 @@
             "colonnes": 12,
             "valeur": {
               "type": "texte",
-              "valeur": "**34 km**\n\nentre deux relais : la distance qu'un cheval couvre à vive allure sans s'arrêter"
+              "valeur": "**Pourquoi sept lieues**\n\nLe relais n'est pas posé au hasard : c'est la distance qu'un cheval couvre à vive allure sans devoir s'arrêter. Au-delà, il faudrait le ménager, et tout le réseau ralentirait.\n\n**34 km**\n\nentre deux relais : la distance calculée pour un cheval"
             }
           },
           {
@@ -265,7 +312,7 @@
           {
             "id": "b13",
             "colonnes": 6,
-            "hauteur": 180,
+            "hauteur": 200,
             "valeur": {
               "type": "texte",
               "valeur": "Avec le développement des chemins de fer, les relais de poste s'effacent. Ils disparaissent officiellement en 1873."
@@ -282,13 +329,14 @@
         ],
         "ordre": [
           "titre",
+          "image",
           "texte",
           "suite:b1",
           "suite:b2",
           "suite:b3",
           "suite:b4",
           "suite:b6",
-          "image",
+          "suite:b7",
           "suite:b8",
           "suite:b9",
           "suite:b10",
@@ -299,31 +347,34 @@
         ],
         "styles": {
           "texte": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "taille": 105
           },
           "suite:b3": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           },
           "suite:b4": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
+          },
+          "suite:b7": {
+            "recadre": true
           },
           "suite:b13": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "taille": 105
           },
-          "suite:b11": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
-            "alignement": "centre",
-            "taille": 118
+          "image": {
+            "recadre": true
           }
         }
       }
@@ -335,6 +386,7 @@
       "ordre": 3,
       "vignette": "media-chappe-telegraphe",
       "couleurTexte": "#ffffff",
+      "couleurBandeau": "#123049",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -343,7 +395,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "texte": 627
+          "image": 420,
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -372,7 +425,7 @@
           {
             "id": "b2",
             "colonnes": 6,
-            "hauteur": 280,
+            "hauteur": 260,
             "valeur": {
               "type": "texte",
               "valeur": "Les stationnaires recopient des figures dont ils ignorent le sens. Seuls les directeurs de ligne, au départ et à l'arrivée, possèdent le livre de codes."
@@ -396,6 +449,14 @@
             }
           },
           {
+            "id": "b5",
+            "colonnes": 6,
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Un métier de patience**\n\nUn stationnaire passe ses journées la longue-vue à l'œil, à guetter la tour d'en face. Il ne sait rien de ce qu'il transmet — et c'est précisément ce qu'on lui demande."
+            }
+          },
+          {
             "id": "b6",
             "colonnes": 6,
             "valeur": {
@@ -411,11 +472,11 @@
               "elements": [
                 {
                   "mediaId": "media-chappe-vocabulaire",
-                  "legende": "Une page du livre de codes"
+                  "legende": "Le vocabulaire des positions de bras"
                 },
                 {
                   "mediaId": "media-chappe-tour",
-                  "legende": "Le réseau Chappe, de la Révolution aux dernières lignes"
+                  "legende": "Une tour du réseau"
                 },
                 {
                   "mediaId": "media-chappe-rennes",
@@ -435,10 +496,10 @@
           {
             "id": "b8",
             "colonnes": 6,
-            "hauteur": 296,
+            "hauteur": 300,
             "valeur": {
               "type": "texte",
-              "valeur": "**Le réseau s'étend**\n\nLa première ligne, Paris-Lille, est inaugurée en 1794. Le réseau gagne ensuite toute la France, notamment sous Napoléon : Strasbourg, Brest, Lyon, Toulon.\n\nÀ son apogée, dans les années 1840, il compte plus de cinq cents tours et près de cinq mille kilomètres de lignes."
+              "valeur": "**Dix minutes au lieu de deux jours**\n\nLa première ligne, Paris-Lille, est inaugurée en 1794. Un message y passe en moins de dix minutes, contre environ deux jours à cheval. Le réseau s'étend alors à toute la France, notamment sous Napoléon."
             }
           },
           {
@@ -492,6 +553,7 @@
           "suite:b2",
           "suite:b4",
           "suite:b3",
+          "suite:b5",
           "suite:b6",
           "suite:b7",
           "suite:b8",
@@ -499,20 +561,25 @@
           "suite:b10"
         ],
         "styles": {
+          "image": {
+            "recadre": true
+          },
           "suite:b2": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "taille": 105
           },
           "suite:b4": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           },
           "suite:b9": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
           }
         }
       }
@@ -523,6 +590,7 @@
       "modele": "t1",
       "ordre": 4,
       "vignette": "media-morse-manipulateur",
+      "couleurBandeau": "#0e2237",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -531,7 +599,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "texte": 517
+          "image": 420,
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -541,7 +610,7 @@
           "image": {
             "type": "image",
             "mediaId": "media-morse-manipulateur",
-            "legende": "L'alphabet Morse : un point, un trait, et rien d'autre"
+            "legende": "Un manipulateur Morse"
           },
           "texte": {
             "type": "texte",
@@ -552,7 +621,7 @@
           {
             "id": "b1",
             "colonnes": 6,
-            "hauteur": 462,
+            "hauteur": 480,
             "valeur": {
               "type": "texte",
               "valeur": "**Les débuts de l'électricité**\n\nEn 1800, Volta met au point la première pile électrique :\n- une couche de cuivre\n- une couche de tissu imbibé d'eau salée\n- une couche de zinc\n\nPour la première fois, on dispose d'un courant continu, stable, que l'on peut transporter."
@@ -579,7 +648,6 @@
           {
             "id": "b4",
             "colonnes": 6,
-            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "**Le télégraphe Morse**\n\nLes premiers modèles sont développés en 1837 par Cooke et Wheatstone, rapidement suivis par Samuel Morse, dont le système s'impose durablement.\n\nÀ l'aide d'un manipulateur, l'opérateur ouvre et ferme le circuit pour produire des signaux courts et longs — points et traits — qui filent le long des lignes jusqu'au récepteur."
@@ -613,7 +681,6 @@
           {
             "id": "b8",
             "colonnes": 6,
-            "hauteur": 240,
             "valeur": {
               "type": "texte",
               "valeur": "**1837**\n\nCooke et Wheatstone ouvrent l'ère du télégraphe électrique"
@@ -622,7 +689,7 @@
           {
             "id": "b9",
             "colonnes": 6,
-            "hauteur": 200,
+            "hauteur": 300,
             "valeur": {
               "type": "texte",
               "valeur": "**Lire à l'oreille**\n\nUn télégraphiste exercé n'a pas besoin de la bande de papier : il entend les points et les traits et les écrit directement, aussi vite qu'on lit un texte à voix haute."
@@ -633,7 +700,7 @@
             "colonnes": 6,
             "valeur": {
               "type": "texte",
-              "valeur": "**Un alphabet qu'on peut siffler**\n\nParce qu'il ne demande que deux durées, le Morse voyage par la lumière, par le son, au drapeau, ou par un simple coup frappé sur une cloison.\n\nLe code survit à ses machines."
+              "valeur": "**Un alphabet qu'on peut siffler**\n\nParce qu'il ne demande que deux durées, le Morse voyage par la lumière, par le son, au drapeau, ou par un simple coup frappé sur une cloison. Le code survit à ses machines.\n\n**2 signes**\n\nun point et un trait : tout l'alphabet tient là-dedans"
             }
           },
           {
@@ -668,7 +735,7 @@
           {
             "id": "b13",
             "colonnes": 6,
-            "hauteur": 336,
+            "hauteur": 340,
             "valeur": {
               "type": "texte",
               "valeur": "**Ce que le télégraphe change vraiment**\n\nPour la première fois, l'information va plus vite que celui qui la porte. Une nouvelle peut arriver à Paris avant le train qui l'apporte.\n\nCette séparation entre le message et le messager est peut-être la rupture la plus profonde de tout cet étage."
@@ -695,28 +762,33 @@
         ],
         "styles": {
           "texte": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "taille": 105
+          },
+          "image": {
+            "recadre": true
           },
           "suite:b2": {
             "recadre": true
           },
           "suite:b6": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           },
           "suite:b8": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           },
           "suite:b12": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
           }
         }
       }
@@ -727,6 +799,7 @@
       "modele": "t1",
       "ordre": 5,
       "vignette": "media-telephone-bell-1876",
+      "couleurBandeau": "#143b58",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -735,7 +808,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "texte": 605
+          "image": 540,
+          "texte": 580
         },
         "emplacements": {
           "titre": {
@@ -756,7 +830,7 @@
           {
             "id": "b1",
             "colonnes": 6,
-            "hauteur": 462,
+            "hauteur": 460,
             "valeur": {
               "type": "texte",
               "valeur": "**Comment la voix devient courant**\n\n- Côté émetteur, la voix fait vibrer une membrane reliée à un dispositif électrique.\n- Ces variations deviennent un courant qui parcourt le fil.\n- À l'arrivée, le phénomène inverse : une membrane vibre et reproduit la voix.\n\nCe n'est plus un code qui voyage. C'est la personne."
@@ -775,7 +849,7 @@
           {
             "id": "b3",
             "colonnes": 6,
-            "hauteur": 462,
+            "hauteur": 440,
             "valeur": {
               "type": "texte",
               "valeur": "**Les demoiselles du téléphone**\n\nDans la vitrine, le téléphone Marty 1910 n'a ni clavier ni cadran. Pour appeler, on actionne une manivelle qui produit un courant et signale l'appel au standard.\n\nEn décrochant, on tombe sur une opératrice — la « demoiselle du téléphone ». On lui donne un nom, un numéro ; elle relie les deux lignes à la main, sur son standard. Chaque conversation commence donc par une troisième personne."
@@ -794,7 +868,7 @@
           {
             "id": "b5",
             "colonnes": 6,
-            "hauteur": 442,
+            "hauteur": 660,
             "valeur": {
               "type": "texte",
               "valeur": "**1889**\n\nStrowger invente le central automatique : la fin des demoiselles"
@@ -803,7 +877,7 @@
           {
             "id": "b6",
             "colonnes": 6,
-            "hauteur": 400,
+            "hauteur": 620,
             "valeur": {
               "type": "image",
               "mediaId": "media-telephone-demoiselles-1892",
@@ -813,6 +887,7 @@
           {
             "id": "b7",
             "colonnes": 12,
+            "hauteur": 940,
             "valeur": {
               "type": "quiz",
               "question": "Vers 1900, que fallait-il faire pour téléphoner à quelqu'un ? (plusieurs réponses possibles)",
@@ -847,10 +922,9 @@
           {
             "id": "b8",
             "colonnes": 6,
-            "hauteur": 296,
             "valeur": {
               "type": "texte",
-              "valeur": "**Un métier exigeant**\n\nIl fallait une grande concentration et une excellente mémoire. Tant que les abonnés sont peu nombreux, les liaisons s'établissent vite.\n\nMais le réseau s'étoffe et les demandes se multiplient : la commutation à la main atteint sa limite."
+              "valeur": "**Un métier exigeant**\n\nIl fallait une grande concentration et une excellente mémoire. Tant que les abonnés sont peu nombreux, les liaisons s'établissent vite.\n\nMais le réseau s'étoffe, les demandes se multiplient : en 1889, l'ingénieur Strowger invente les premiers centraux automatiques."
             }
           },
           {
@@ -877,6 +951,9 @@
           "suite:b9"
         ],
         "styles": {
+          "image": {
+            "recadre": true
+          },
           "suite:b2": {
             "recadre": true
           },
@@ -884,13 +961,17 @@
             "recadre": true
           },
           "suite:b5": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           },
           "suite:b9": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
+          },
+          "suite:b7": {
+            "ancre": "bas"
           },
           "suite:b6": {
             "recadre": true
@@ -904,6 +985,7 @@
       "modele": "t1",
       "ordre": 6,
       "vignette": "media-tour-eiffel-1914",
+      "couleurBandeau": "#10283e",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -912,7 +994,8 @@
           "texte": 6
         },
         "hauteurs": {
-          "texte": 900
+          "image": 420,
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -933,7 +1016,7 @@
           {
             "id": "b1",
             "colonnes": 6,
-            "hauteur": 701,
+            "hauteur": 440,
             "valeur": {
               "type": "texte",
               "valeur": "**Popov et Marconi**\n\nEn Russie, Alexandre Popov met au point un récepteur radio performant, d'abord employé comme détecteur d'orages.\n\nDe son côté, Guglielmo Marconi développe un système complet qu'il exploite à grande échelle : en 1899, il réalise la première liaison radio à travers la Manche, sur environ 46 kilomètres."
@@ -942,6 +1025,7 @@
           {
             "id": "b2",
             "colonnes": 6,
+            "hauteur": 420,
             "valeur": {
               "type": "image",
               "mediaId": "media-branly-coherer",
@@ -961,7 +1045,7 @@
           {
             "id": "b4",
             "colonnes": 6,
-            "hauteur": 462,
+            "hauteur": 420,
             "valeur": {
               "type": "texte",
               "valeur": "**La TSF entre à l'armée**\n\nAprès la défaite de 1870 face à la Prusse, l'armée française prend conscience de l'importance stratégique des communications. Cette maîtrise était l'un des atouts majeurs des Prussiens.\n\nUne spécialité nouvelle naît au sein du génie : les « sapeurs-télégraphistes ». D'abord 24e bataillon, ils deviennent le 8e régiment du génie, au Mont-Valérien."
@@ -970,6 +1054,7 @@
           {
             "id": "b5",
             "colonnes": 6,
+            "hauteur": 300,
             "valeur": {
               "type": "texte",
               "valeur": "**Le général Gustave Ferrié**\n\nGustave Ferrié (1868-1932) joue un rôle central. Il fait de la tour Eiffel un support d'antenne, permettant dès 1907 des communications à très longue distance, et améliore l'ampoule triode de Lee de Forest — gagnant en réception et en stabilité.\n\nDiplômé de Polytechnique comme Gustave Eiffel, il demande à ce dernier l'usage de la tour. Elle ne devait durer que vingt ans : son utilité militaire la sauve du démontage."
@@ -978,7 +1063,7 @@
           {
             "id": "b6",
             "colonnes": 6,
-            "hauteur": 360,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "Ferrié a aussi mis les horloges du monde à l'heure : ses travaux diffusent l'heure exacte par signaux radio, et fondent la coordination des fuseaux horaires."
@@ -987,7 +1072,7 @@
           {
             "id": "b7",
             "colonnes": 6,
-            "hauteur": 296,
+            "hauteur": 280,
             "valeur": {
               "type": "texte",
               "valeur": "**46 km**\n\nla première liaison radio à travers la Manche, en 1899"
@@ -998,7 +1083,7 @@
             "colonnes": 6,
             "valeur": {
               "type": "texte",
-              "valeur": "**Un uniforme couvert de décorations**\n\nSon uniforme, présenté au musée, porte de nombreuses distinctions, françaises et étrangères.\n\nSes travaux sur la radio et sur les systèmes d'écoute ont directement pesé sur l'efficacité des opérations."
+              "valeur": "**Un uniforme couvert de décorations**\n\nComme vous pouvez le voir sur son uniforme, Ferrié reçoit de nombreuses distinctions, françaises et étrangères.\n\nSes travaux sur la radio et les systèmes d'écoute ont directement pesé sur l'efficacité des opérations militaires."
             }
           },
           {
@@ -1007,6 +1092,15 @@
             "valeur": {
               "type": "texte",
               "valeur": "**1907**\n\nla tour Eiffel devient une antenne, et échappe au démontage"
+            }
+          },
+          {
+            "id": "b10",
+            "colonnes": 6,
+            "hauteur": 200,
+            "valeur": {
+              "type": "texte",
+              "valeur": "**Une tour sauvée par la radio**\n\nSans Ferrié, la tour Eiffel aurait été démontée au terme de sa concession. C'est son antenne militaire qui l'a rendue indispensable — et l'a laissée debout."
             }
           },
           {
@@ -1062,39 +1156,49 @@
           "suite:b6",
           "suite:b7",
           "suite:b8",
+          "suite:b10",
           "suite:b9",
           "suite:b11"
         ],
         "styles": {
           "texte": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "remplir": true,
             "taille": 105
+          },
+          "image": {
+            "recadre": true
+          },
+          "suite:b2": {
+            "recadre": true
           },
           "suite:b3": {
             "recadre": true
           },
           "suite:b6": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "taille": 105
           },
           "suite:b7": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           },
           "suite:b8": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
           },
           "suite:b9": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           }
         }
@@ -1106,6 +1210,7 @@
       "modele": "t1",
       "ordre": 7,
       "vignette": "media-telegraphistes-croquis-1916",
+      "couleurBandeau": "#0a1826",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -1115,7 +1220,7 @@
         },
         "hauteurs": {
           "image": 420,
-          "texte": 462
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -1136,7 +1241,7 @@
           {
             "id": "b1",
             "colonnes": 6,
-            "hauteur": 809,
+            "hauteur": 460,
             "valeur": {
               "type": "texte",
               "valeur": "**De 7 000 à 55 000 hommes**\n\nIl faut former de nouveaux sapeurs-télégraphistes, et vite. Le régiment passe de 7 000 hommes à la mobilisation générale à 55 000 au début de l'année 1918.\n\nEn quatre ans, une armée entière apprend un métier qui n'existait presque pas."
@@ -1172,7 +1277,7 @@
           {
             "id": "b5",
             "colonnes": 6,
-            "hauteur": 462,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "**Tout ce qui fonctionne**\n\nAucun moyen ne suffit seul. On double, on triple, on garde le pigeon en réserve derrière le téléphone et la radio. La redondance devient une doctrine — elle l'est restée."
@@ -1181,6 +1286,7 @@
           {
             "id": "b6",
             "colonnes": 6,
+            "hauteur": 420,
             "valeur": {
               "type": "image",
               "mediaId": "media-telephone-campagne-1917",
@@ -1198,6 +1304,7 @@
           {
             "id": "b8",
             "colonnes": 6,
+            "hauteur": 160,
             "valeur": {
               "type": "texte",
               "valeur": "« Hâtez l'approvisionnement en munitions. Le faire même de jour tant qu'on n'est pas vu. »"
@@ -1244,14 +1351,14 @@
           "titre",
           "image",
           "texte",
-          "suite:b5",
+          "suite:b1",
           "suite:b2",
           "suite:b3",
           "suite:b4",
-          "suite:b1",
+          "suite:b5",
           "suite:b6",
-          "suite:b7",
           "suite:b8",
+          "suite:b7",
           "suite:b9",
           "suite:b10"
         ],
@@ -1260,15 +1367,20 @@
             "recadre": true
           },
           "suite:b1": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
           },
           "suite:b2": {
             "recadre": true
           },
+          "suite:b6": {
+            "recadre": true
+          },
           "suite:b8": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "ancre": "bas",
             "taille": 105
           }
@@ -1281,6 +1393,7 @@
       "modele": "t1",
       "ordre": 8,
       "vignette": "media-pigeon-1914",
+      "couleurBandeau": "#123049",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -1290,7 +1403,7 @@
         },
         "hauteurs": {
           "image": 420,
-          "texte": 462
+          "texte": 420
         },
         "emplacements": {
           "titre": {
@@ -1311,7 +1424,6 @@
           {
             "id": "b1",
             "colonnes": 6,
-            "hauteur": 462,
             "valeur": {
               "type": "texte",
               "valeur": "**Pourquoi il revient toujours**\n\nLe principe tient en une phrase : le pigeon retourne toujours à l'endroit où il naît, où on le nourrit, et où se trouve sa compagne.\n\nOn ne lui apprend rien. On l'emporte, et on le lâche."
@@ -1364,6 +1476,7 @@
           {
             "id": "b7",
             "colonnes": 6,
+            "hauteur": 160,
             "valeur": {
               "type": "texte",
               "valeur": "**4 pigeons**\n\nce que le commandant Reynal emporte au fort de Vaux"
@@ -1385,11 +1498,11 @@
               "elements": [
                 {
                   "mediaId": "media-pigeon-vitrine-1",
-                  "legende": "Julius Neubronner et l'appareil photo qu'il fixe au pigeon"
+                  "legende": "Matériel de colombophilie militaire"
                 },
                 {
                   "mediaId": "media-pigeon-vitrine-2",
-                  "legende": "Le pigeon photographe, et deux vues prises depuis les airs"
+                  "legende": "Tubes porte-messages et paniers"
                 },
                 {
                   "mediaId": "media-pigeon-camera",
@@ -1409,7 +1522,6 @@
           {
             "id": "b10",
             "colonnes": 6,
-            "hauteur": 522,
             "valeur": {
               "type": "texte",
               "valeur": "**Le saviez-vous ? L'ancêtre du drone**\n\nPendant la Première Guerre mondiale, on cherche tous les moyens d'observer l'ennemi — même les plus inattendus.\n\nOn équipe des pigeons de minuscules appareils photo automatiques, fixés sur la poitrine. Inventés par l'Allemand Julius Neubronner avant la guerre, ils déclenchent à intervalles réguliers pendant le vol.\n\nLâché derrière les lignes, l'oiseau survole les positions. À son retour, on récupère les images : tranchées, mouvements de troupes, artillerie."
@@ -1428,6 +1540,7 @@
           {
             "id": "b12",
             "colonnes": 12,
+            "hauteur": 500,
             "valeur": {
               "type": "image",
               "mediaId": "media-photo-prise-par-pigeon",
@@ -1481,17 +1594,18 @@
           "suite:b6",
           "suite:b7",
           "suite:b8",
+          "suite:b9",
           "suite:b10",
           "suite:b11",
           "suite:b12",
-          "suite:b9",
           "suite:b13"
         ],
         "styles": {
           "texte": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "taille": 105
           },
           "image": {
@@ -1501,22 +1615,27 @@
             "recadre": true
           },
           "suite:b4": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "taille": 105
           },
           "suite:b7": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "ancre": "bas",
             "taille": 118
           },
           "suite:b10": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
           },
           "suite:b11": {
+            "recadre": true
+          },
+          "suite:b12": {
             "recadre": true
           }
         }
@@ -1528,6 +1647,7 @@
       "modele": "t1",
       "ordre": 9,
       "vignette": "media-station-radio-1930",
+      "couleurBandeau": "#17415e",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -1536,8 +1656,7 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420,
-          "texte": 462
+          "image": 420
         },
         "emplacements": {
           "titre": {
@@ -1575,7 +1694,6 @@
           {
             "id": "b3",
             "colonnes": 6,
-            "hauteur": 336,
             "valeur": {
               "type": "texte",
               "valeur": "**La radio entre à la maison**\n\nLes premiers programmes sont des bulletins météo — précieux pour les agriculteurs — et le cours de la Bourse. Puis ils se diversifient, et les postes s'installent dans les foyers.\n\nLe long du mur, une des premières radios Philips, surnommée « radio boîte à jambon » à cause de sa forme."
@@ -1600,38 +1718,10 @@
           {
             "id": "b6",
             "colonnes": 6,
-            "hauteur": 240,
+            "hauteur": 320,
             "valeur": {
               "type": "texte",
               "valeur": "**1921**\n\nFerrié lance la radiodiffusion depuis la tour Eiffel"
-            }
-          },
-          {
-            "id": "b7",
-            "colonnes": 12,
-            "valeur": {
-              "type": "quiz",
-              "question": "En 1921, qu'entend-on d'abord sur les ondes de la tour Eiffel ?",
-              "reponses": [
-                {
-                  "id": "r1",
-                  "texte": "Le bulletin météo et le cours de la Bourse",
-                  "correcte": true,
-                  "explication": "Deux services avant d'être un divertissement : la météo pour les agriculteurs, la Bourse pour les négociants. Les programmes ne se diversifieront qu'ensuite."
-                },
-                {
-                  "id": "r2",
-                  "texte": "Le journal parlé du soir",
-                  "correcte": false,
-                  "explication": "L'information suivra, mais elle n'ouvre pas le bal : la radio commence par rendre des services."
-                },
-                {
-                  "id": "r3",
-                  "texte": "Les discours du président de la République",
-                  "correcte": false,
-                  "explication": "Il faudra attendre la radio de 1940, puis la télévision de 1958, pour qu'un chef d'État parle directement aux Français."
-                }
-              ]
             }
           }
         ],
@@ -1644,26 +1734,27 @@
           "suite:b3",
           "suite:b4",
           "suite:b5",
-          "suite:b6",
-          "suite:b7"
+          "suite:b6"
         ],
         "styles": {
           "image": {
             "recadre": true
           },
           "suite:b1": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "taille": 105
           },
           "suite:b4": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
           },
           "suite:b6": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           }
         }
@@ -1675,6 +1766,7 @@
       "modele": "t1",
       "ordre": 10,
       "vignette": "media-merlinette-violette-camps",
+      "couleurBandeau": "#0b1d2e",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -1683,8 +1775,7 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420,
-          "texte": 462
+          "image": 420
         },
         "emplacements": {
           "titre": {
@@ -1705,7 +1796,6 @@
           {
             "id": "b1",
             "colonnes": 6,
-            "hauteur": 462,
             "valeur": {
               "type": "texte",
               "valeur": "**Depuis Londres, puis Alger**\n\nLes Forces françaises libres se réorganisent pour poursuivre le combat aux côtés des Alliés, puis rejoignent l'Afrique du Nord, d'où se prépare la reconquête du territoire.\n\nUn problème majeur apparaît aussitôt : il manque du personnel dans les unités de transmissions."
@@ -1724,10 +1814,9 @@
           {
             "id": "b3",
             "colonnes": 6,
-            "hauteur": 256,
             "valeur": {
               "type": "texte",
-              "valeur": "**Les Merlinettes**\n\nLe général Merlin, à la tête des transmissions de l'armée française libre, décide d'ouvrir le recrutement aux femmes.\n\nOn les appellera bientôt les « Merlinettes ». Elles rejoignent les 807e et 808e compagnies de transmissions."
+              "valeur": "**Les Merlinettes**\n\nLe général Merlin, à la tête des transmissions de l'armée française libre, décide d'ouvrir le recrutement aux femmes. Elles reçoivent une formation militaire complète et un véritable statut dans l'armée.\n\nOn les appellera bientôt les « Merlinettes ». Formées aux techniques de transmission comme aux exigences militaires, instruites notamment à Hydra, en Algérie, elles rejoignent les 807e et 808e compagnies de transmissions.\n\nElles seront environ deux mille."
             }
           },
           {
@@ -1748,7 +1837,7 @@
           },
           {
             "id": "b6",
-            "colonnes": 12,
+            "colonnes": 6,
             "valeur": {
               "type": "quiz",
               "question": "Pourquoi l'armée française libre recrute-t-elle des femmes dans les transmissions à partir de 1942 ?",
@@ -1776,7 +1865,7 @@
           },
           {
             "id": "b7",
-            "colonnes": 12,
+            "colonnes": 6,
             "valeur": {
               "type": "texte",
               "valeur": "**2 000 femmes**\n\nles Merlinettes engagées dans l'armée française libre"
@@ -1800,15 +1889,16 @@
           "suite:b3",
           "suite:b4",
           "suite:b5",
-          "suite:b8",
+          "suite:b6",
           "suite:b7",
-          "suite:b6"
+          "suite:b8"
         ],
         "styles": {
           "texte": {
-            "couleur": "#e9b44c",
+            "fond": "#f3dd7a",
             "italique": true,
             "alignement": "centre",
+            "opacite": 9,
             "taille": 105
           },
           "image": {
@@ -1818,12 +1908,13 @@
             "recadre": true
           },
           "suite:b4": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
           },
           "suite:b7": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           }
         }
@@ -1835,6 +1926,7 @@
       "modele": "t1",
       "ordre": 11,
       "vignette": "media-enigma-m4",
+      "couleurBandeau": "#071320",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -1843,8 +1935,7 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420,
-          "texte": 462
+          "image": 420
         },
         "emplacements": {
           "titre": {
@@ -1853,8 +1944,8 @@
           },
           "image": {
             "type": "image",
-            "mediaId": "media-enigma-m4",
-            "legende": "Une machine Enigma à quatre rotors, ouverte"
+            "mediaId": "media-chiffrement",
+            "legende": "Les deux machines Enigma du musée"
           },
           "texte": {
             "type": "texte",
@@ -1865,7 +1956,6 @@
           {
             "id": "b1",
             "colonnes": 6,
-            "hauteur": 530,
             "valeur": {
               "type": "texte",
               "valeur": "**Comment elle fonctionne**\n\nUn système de rotors modifie le chiffrement à chaque frappe, ce qui rend les messages extrêmement difficiles à percer. L'opérateur règle la machine chaque jour, selon un réglage convenu.\n\nIl tape son message sur un clavier de machine à écrire ; le texte chiffré apparaît en illuminant les lettres du clavier supérieur. Un opérateur radio l'envoie alors en Morse."
@@ -1874,10 +1964,11 @@
           {
             "id": "b2",
             "colonnes": 6,
+            "hauteur": 420,
             "valeur": {
               "type": "image",
-              "mediaId": "media-chiffrement",
-              "legende": "Écritures secrètes : coder, chiffrer, brouiller"
+              "mediaId": "media-enigma-m4",
+              "legende": "Une machine Enigma à quatre rotors, ouverte"
             }
           },
           {
@@ -1885,16 +1976,15 @@
             "colonnes": 6,
             "valeur": {
               "type": "texte",
-              "valeur": "**Née dans une banque**\n\nEnigma est inventée durant l'entre-deux-guerres pour des banquiers allemands, afin de chiffrer les données de leurs clients.\n\nL'armée s'en empare ensuite et la complexifie à la veille de la guerre : réflecteurs, rotors supplémentaires, tableau de fiches."
+              "valeur": "**Née dans une banque**\n\nEnigma est inventée durant l'entre-deux-guerres pour des banquiers allemands, afin de chiffrer les données de leurs clients. L'armée s'en empare ensuite.\n\nSon chiffrement est percé dès l'entre-deux-guerres par une équipe de mathématiciens polonais et français, qui gardent le secret. Les Allemands s'en doutent à la veille de la guerre et complexifient la machine : réflecteurs, rotors supplémentaires, tableau de fiches."
             }
           },
           {
             "id": "b4",
             "colonnes": 6,
-            "hauteur": 240,
             "valeur": {
               "type": "texte",
-              "valeur": "**Un silence de vingt ans**\n\nDès l'entre-deux-guerres, une équipe de mathématiciens polonais et français perce le chiffrement d'Enigma. Ils n'en disent rien à personne.\n\nC'est ce silence qui rendra Bletchley Park possible."
+              "valeur": "**Un silence de vingt ans**\n\nLes mathématiciens polonais et français qui percent Enigma avant la guerre n'en disent rien à personne. C'est ce silence qui rendra Bletchley Park possible."
             }
           },
           {
@@ -1938,7 +2028,6 @@
           {
             "id": "b7",
             "colonnes": 6,
-            "hauteur": 462,
             "valeur": {
               "type": "texte",
               "valeur": "**Ultra – Bletchley Park**\n\nEn 1940, les Britanniques lancent l'opération « Ultra » à Bletchley Park, où des milliers de scientifiques travaillent en secret à décrypter les communications allemandes.\n\nParmi eux, Alan Turing met au point des machines électromécaniques — les « bombes logiques » —, premiers calculateurs capables de tester très vite d'innombrables combinaisons. Elles s'appuient sur des mots probables présents dans les messages, comme ceux des bulletins météo."
@@ -1947,7 +2036,6 @@
           {
             "id": "b8",
             "colonnes": 6,
-            "hauteur": 400,
             "valeur": {
               "type": "texte",
               "valeur": "**Un secret de trente-cinq ans**\n\nLe secret reste absolu jusqu'en 1975. Ce premier calculateur électronique est longtemps demeuré inconnu : il fut détruit après-guerre.\n\nAlan Turing est aujourd'hui considéré comme le père de l'informatique."
@@ -1972,7 +2060,6 @@
           {
             "id": "b11",
             "colonnes": 6,
-            "hauteur": 360,
             "valeur": {
               "type": "texte",
               "valeur": "**1975**\n\nl'année où le secret de Bletchley Park est enfin levé"
@@ -1991,15 +2078,7 @@
             "colonnes": 6,
             "valeur": {
               "type": "texte",
-              "valeur": "**Deux hommes, deux fins**\n\nLeschi échappe aux camps à la Libération. Keller y meurt.\n\nLes transmissions ont eu leurs morts, loin des champs de bataille et longtemps sans nom."
-            }
-          },
-          {
-            "id": "b14",
-            "colonnes": 12,
-            "valeur": {
-              "type": "texte",
-              "valeur": "**1er juin 1942**\n\nles Transmissions deviennent une arme autonome, détachée du génie"
+              "valeur": "**Deux hommes, deux fins**\n\nLeschi échappe aux camps à la Libération. Keller y meurt. Les transmissions ont eu leurs morts, loin des champs de bataille et longtemps sans nom.\n\n**1er juin 1942**\n\nles transmissions deviennent une arme autonome, détachée du génie"
             }
           }
         ],
@@ -2017,7 +2096,6 @@
           "suite:b8",
           "suite:b9",
           "suite:b10",
-          "suite:b14",
           "suite:b11",
           "suite:b12",
           "suite:b13"
@@ -2026,22 +2104,20 @@
           "image": {
             "recadre": true
           },
+          "suite:b2": {
+            "recadre": true
+          },
           "suite:b6": {
             "recadre": true
           },
           "suite:b8": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
           },
           "suite:b11": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
-            "taille": 118
-          },
-          "suite:b14": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
-            "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           }
         }
@@ -2053,6 +2129,7 @@
       "modele": "t1",
       "ordre": 12,
       "vignette": "media-baird-televisor",
+      "couleurBandeau": "#15496b",
       "contenu": {
         "modele": "t1",
         "largeurs": {
@@ -2061,8 +2138,7 @@
           "texte": 6
         },
         "hauteurs": {
-          "image": 420,
-          "texte": 462
+          "image": 420
         },
         "emplacements": {
           "titre": {
@@ -2091,7 +2167,6 @@
           {
             "id": "b2",
             "colonnes": 6,
-            "hauteur": 320,
             "valeur": {
               "type": "texte",
               "valeur": "**Un retard français**\n\nEn 1939, l'Allemagne et le Royaume-Uni comptent environ 20 000 postes ; la France n'atteindra ce nombre que dans les années 1950.\n\nEn 1950, on n'en dénombre que 3 794. Les émissions ne sont alors diffusées qu'à Paris, faute de portée de l'émetteur de la tour Eiffel."
@@ -2100,7 +2175,6 @@
           {
             "id": "b3",
             "colonnes": 6,
-            "hauteur": 462,
             "valeur": {
               "type": "texte",
               "valeur": "**Le premier relais**\n\nIl est installé à Lille en 1950. Parisiens et Lillois peuvent ainsi voir la rediffusion du couronnement d'Elizabeth II, le 2 juin 1953.\n\nIl faudra attendre les années 1960 pour couvrir tout le territoire, et 1958 pour que le million de postes soit atteint."
@@ -2121,13 +2195,12 @@
             "colonnes": 6,
             "valeur": {
               "type": "texte",
-              "valeur": "**Le saviez-vous ? Le studio de Charles de Gaulle**\n\nLe studio que vous voyez au musée est celui de la base aérienne de Taverny.\n\nRappelé au pouvoir en 1958, de Gaulle sait que la télévision est le nouveau média : il y fait installer un poste de commandement. En pleine guerre froide, en cas d'alerte — nucléaire par exemple —, il peut s'adresser à tous les Français."
+              "valeur": "**Le saviez-vous ? Le studio de Charles de Gaulle**\n\nLe studio que vous voyez au musée est celui de la base aérienne de Taverny.\n\nChaque président cherche le média qui touche le plus de Français en cas d'urgence. En 1914, la mobilisation générale passe par les journaux. Le 18 juin 1940, de Gaulle parle à la radio depuis Londres. Mais rappelé en 1958, il sait que la télévision est le nouveau média : il installe un poste de commandement à Taverny.\n\nEn pleine guerre froide, en cas d'alerte — nucléaire par exemple —, il peut ainsi s'adresser à tous les Français. Ce studio est resté actif de 1958 à 2004."
             }
           },
           {
             "id": "b6",
             "colonnes": 6,
-            "hauteur": 376,
             "valeur": {
               "type": "texte",
               "valeur": "**Taverny, 1958-2004**\n\nQuarante-six ans de service, sous cinq présidents, avant que le studio ne soit cédé au musée. Vous en avez la pièce sous les yeux."
@@ -2144,7 +2217,6 @@
           {
             "id": "b8",
             "colonnes": 6,
-            "hauteur": 218,
             "valeur": {
               "type": "texte",
               "valeur": "**Le média du président**\n\nEn 1914, la mobilisation passe par les journaux. En 1940, par la radio. En 1958, par la télévision. Chaque génération choisit le canal qui touche le plus de monde — c'est encore vrai aujourd'hui."
@@ -2219,12 +2291,13 @@
             "recadre": true
           },
           "suite:b5": {
-            "fond": "#16324c"
+            "fond": "#f3dd7a",
+            "opacite": 13
           },
           "suite:b7": {
-            "fond": "#e9b44c",
-            "couleur": "#0e2237",
+            "fond": "#f3dd7a",
             "alignement": "centre",
+            "opacite": 24,
             "taille": 118
           }
         }
@@ -2250,6 +2323,27 @@
           "profil": "origine",
           "chemin": "lotr-feux-alarme.mp4",
           "octets": 46801417
+        }
+      ]
+    },
+    {
+      "id": "media-tours-signaux-chaine",
+      "empreinte": "90cd6fc681b2",
+      "type": "image",
+      "legende": "Une chaîne de tours à signaux",
+      "largeur": 1080,
+      "hauteur": 1080,
+      "dureeSecondes": null,
+      "posterChemin": null,
+      "pointFocal": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "fichiers": [
+        {
+          "profil": "origine",
+          "chemin": "tours-signaux-chaine.png",
+          "octets": 1880397
         }
       ]
     },
@@ -2341,7 +2435,7 @@
       "id": "media-chappe-vocabulaire",
       "empreinte": "dcdab3f86634",
       "type": "image",
-      "legende": "Une page du livre de codes",
+      "legende": "Le vocabulaire des positions de bras",
       "largeur": 1920,
       "hauteur": 1216,
       "dureeSecondes": null,
@@ -2362,7 +2456,7 @@
       "id": "media-chappe-tour",
       "empreinte": "84b527df14b8",
       "type": "image",
-      "legende": "Le réseau Chappe, de la Révolution aux dernières lignes",
+      "legende": "Une tour du réseau Chappe",
       "largeur": 1920,
       "hauteur": 1527,
       "dureeSecondes": null,
@@ -2446,7 +2540,7 @@
       "id": "media-morse-manipulateur",
       "empreinte": "3acd8da0e0d8",
       "type": "image",
-      "legende": "L'alphabet Morse : un point, un trait, et rien d'autre",
+      "legende": "Un manipulateur Morse",
       "largeur": 1354,
       "hauteur": 762,
       "dureeSecondes": null,
@@ -2656,7 +2750,7 @@
       "id": "media-pigeon-vitrine-1",
       "empreinte": "8eda1294c639",
       "type": "image",
-      "legende": "Julius Neubronner et l'appareil photo qu'il fixe au pigeon",
+      "legende": "Matériel de colombophilie militaire",
       "largeur": 1920,
       "hauteur": 938,
       "dureeSecondes": null,
@@ -2677,7 +2771,7 @@
       "id": "media-pigeon-vitrine-2",
       "empreinte": "700d4cd57f96",
       "type": "image",
-      "legende": "Le pigeon photographe, et deux vues prises depuis les airs",
+      "legende": "Tubes porte-messages et paniers",
       "largeur": 1920,
       "hauteur": 941,
       "dureeSecondes": null,
@@ -2782,7 +2876,7 @@
       "id": "media-chiffrement",
       "empreinte": "69fae7e594b0",
       "type": "image",
-      "legende": "Écritures secrètes : coder, chiffrer, brouiller",
+      "legende": "Les machines de chiffrement du musée",
       "largeur": 1920,
       "hauteur": 1111,
       "dureeSecondes": null,

@@ -39,6 +39,10 @@ bureau. Le geste ne se désactive pas depuis le code — `principal.cjs` écoute
 donc `minimize` et remonte la fenêtre (`restore`, `focus`, et **le niveau
 « screen-saver » à reposer**, sinon elle revient derrière la barre des tâches).
 `minimize` ne se refuse pas, contrairement à `close` : la fenêtre clignote.
+**Exception voulue : Ctrl + M** replie vraiment l'application (drapeau
+`repliAutorise`, même mécanique que `sortieAutorisee`) — on revient par
+l'icône de la barre des tâches, et l'événement `restore` repose le niveau
+« screen-saver ».
 
 **Deux façons de fermer la borne**, arrivées par deux chemins et conservées
 toutes les deux : **Ctrl + Maj + A** depuis l'écran d'administration (elle
@@ -210,21 +214,48 @@ ordinateur**, voir ci-dessous.
 - **`contenu-exemple/`** — jeu de test lu/écrit par défaut (`BORNE_CONTENU` pour
   en pointer un autre). Depuis le 2026-08-18, c'est aussi la **démonstration de
   présentation** : les 12 pages du 3ᵉ étage, refaites pour montrer tous les
-  outils de mise en page (les quatre modèles, grille et décalages, hauteurs et
-  recadrage, habillages, textes enrichis, quiz et frises, couleurs par page).
-  L'état d'avant est gardé dans `contenu.json.avant-refonte-demo`.
+  outils de mise en page (grille et décalages, hauteurs et recadrage,
+  habillages, textes enrichis, quiz et frises). L'état d'avant est gardé dans
+  `contenu.json.avant-refonte-demo`, et celui d'avant la mise au propre du
+  2026-08-19 dans `contenu.json.avant-presentation`.
+  - **Trois registres, et trois seulement** (2026-08-19) : le **chiffre**, plaque
+    d'or pleine (`#e9b44c`) à texte bleu nuit ; la **citation**, texte d'or en
+    italique centré, sans fond ; l'**encart**, carte `#16324c` — la teinte des
+    cartes du thème. L'or posé en fond *translucide* est à proscrire : à 20 %
+    sur le bleu nuit il vire au gris-vert (mesuré `#3a3f3b`), et c'est ce qui
+    faisait passer les plaques pour des dalles sales. Fond général `#0e2237`,
+    celui pour lequel `--b-surface` a été dessiné ; bandeau identique sur les
+    douze pages (aucune couleur écrite, c'est le repli de la feuille de style).
   - **Piège, rencontré et payé cher : les légendes des médias ne décrivaient pas
     les fichiers.** « chappe-tour » est une *carte* du réseau, pas une tour ;
-    « morse-manipulateur » est l'*alphabet* Morse ; « radio-philips » était le
-    *logo* de la marque ; « pigeon-vitrine-1/2 » montrent l'appareil photo de
-    Neubronner. Une démonstration bâtie sur ces légendes présente chaque pièce
-    pour ce qu'elle n'est pas. **Regarder les fichiers avant de les placer** :
-    on ouvre les images (une planche-contact injectée dans la fenêtre suffit),
-    on relève ce qu'elles montrent, et seulement ensuite on écrit la page.
+    « morse-manipulateur » est l'*alphabet* Morse ; « chiffrement » est un
+    *schéma*, pas les machines du musée ; « radio-philips » était le *logo* de
+    la marque ; « pigeon-vitrine-1/2 » montrent l'appareil photo de Neubronner.
+    Une démonstration bâtie sur ces légendes présente chaque pièce pour ce
+    qu'elle n'est pas. Toutes corrigées le 2026-08-19. **Regarder les fichiers
+    avant de les placer** : on ouvre les images (une planche-contact injectée
+    dans la fenêtre suffit), on relève ce qu'elles montrent, et seulement
+    ensuite on écrit la page.
+  - **Une pièce qui n'est pas une photographie ne se recadre pas.** Affiches,
+    gravures, planches, schémas, dessins, objets détourés : coupés, il n'en
+    reste qu'une bande — l'alphabet Morse recadré à 420 px ne montrait plus une
+    seule lettre. Dix images sont passées en « entières » le 2026-08-19. Restent
+    recadrées les pièces **en hauteur** (pile de Volta, planche de croquis 1916,
+    Enigma) : montrées entières, elles feraient 1 200 px de haut.
+  - **Le vide se mesure, il ne s'estime pas.** Les hauteurs ont été reprises en
+    pilotant la borne par CDP : pour chaque rangée, hauteur réservée contre
+    hauteur réellement occupée par le contenu. Une hauteur n'est gardée que si
+    elle aligne un texte sur une image plus grande ; ailleurs elle est retirée.
+    Plus aucune rangée ne réserve plus de 40 px au-delà de son contenu.
   - L'illustration générée par IA (`tours-signaux-chaine.png`) et le logo
-    Philips ont été retirés de la bibliothèque ; les fichiers restent sur le
-    disque. Deux pages n'ont donc **aucune photo** (l'entre-deux-guerres, la
-    télévision) : il manque des clichés pris au musée.
+    Philips sont retirés de la bibliothèque ; les fichiers restent sur le
+    disque. « Avant l'électricité » ouvre désormais sur le tableau de Merson.
+    `radiogoniometre.jpg` ne fait que 315 × 640 : il est agrandi 2,7 fois et ça
+    se voit — à rephotographier au musée.
+  - **`lotr-feux-alarme.mp4` est un extrait de film de fiction.** Il illustre
+    bien les feux relayés de sommet en sommet, mais ce n'est pas une pièce du
+    musée et les droits n'ont pas été vérifiés : à remplacer avant toute
+    présentation publique.
 - **`packages/ui/`** — composants génériques, peu utilisés.
 - `apps/api`, `apps/admin`, `apps/borne` — **réservoir** de code de l'ancienne
   architecture. Ne tournent plus, ne sont plus installés, mais restent une

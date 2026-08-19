@@ -436,6 +436,10 @@ function importerMediasPage(dossier, fichiers) {
 // la fenêtre ne doivent pas rendre le bureau au visiteur.
 let sortieAutorisee = false
 
+// Même règle pour le repli : il n'est légitime que si on l'a demandé
+// (Ctrl + M). Le geste à quatre doigts de Windows, lui, reste refusé.
+let repliAutorise = false
+
 // Sortie de maintenance. Volontairement à quatre doigts : impossible à trouver
 // par hasard, impossible à faire sur un écran tactile sans clavier.
 // ponytail: une combinaison en dur suffit ; à passer derrière le code admin
@@ -483,6 +487,16 @@ function creerFenetre() {
       return
     }
 
+    // Repli volontaire : Ctrl + M plie l'application sans la fermer. On lève le
+    // drapeau juste avant, pour que la garde ci-dessous laisse passer ce
+    // repli-là et lui seul. On revient par l'icône de la barre des tâches.
+    if (entree.control && !entree.alt && !entree.shift && entree.key.toLowerCase() === 'm') {
+      repliAutorise = true
+      fenetre.minimize()
+      evenement.preventDefault()
+      return
+    }
+
     const touche = entree.key
     const interdite =
       touche === 'F11' ||
@@ -505,10 +519,21 @@ function creerFenetre() {
   // descend puis remonte, le clignotement est le prix à payer.
   fenetre.on('minimize', () => {
     if (sortieAutorisee) return
+    if (repliAutorise) {
+      repliAutorise = false
+      return
+    }
     fenetre.restore()
     fenetre.focus()
     // Le repli a fait perdre le niveau « écran de veille » : sans cela, la
     // fenêtre remonte **derrière** la barre des tâches.
+    fenetre.setAlwaysOnTop(true, 'screen-saver')
+  })
+
+  // Au retour d'un repli volontaire, la fenêtre a perdu son niveau « écran de
+  // veille » comme après n'importe quel repli : sans cela elle remonte derrière
+  // la barre des tâches.
+  fenetre.on('restore', () => {
     fenetre.setAlwaysOnTop(true, 'screen-saver')
   })
 
