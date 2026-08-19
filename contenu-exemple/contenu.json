@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-19T14:11:01.937Z",
+  "genereLe": "2026-08-19T14:40:46.025Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Troisième étage — de l'Antiquité aux années 1970",
@@ -51,6 +51,7 @@
           {
             "id": "b1",
             "colonnes": 6,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "**La céleustique**\n\nDès l'Antiquité, les armées utilisent des signaux sonores pour transmettre des ordres sur le champ de bataille. Cors, trompettes, fifres et tambours permettent de communiquer malgré la distance et le bruit des combats.\n\nAu fil des siècles, les signaux se codifient : chaque sonnerie, chaque rythme correspond à un ordre précis — la charge, l'avancée, la retraite."
@@ -59,6 +60,7 @@
           {
             "id": "b2",
             "colonnes": 6,
+            "hauteur": 380,
             "valeur": {
               "type": "texte",
               "valeur": "**Elle n'a jamais disparu**\n\nLa musique militaire a traversé les époques. Aujourd'hui encore, de nombreuses fanfares, comme celle des Transmissions, rythment les cérémonies et les commémorations.\n\nCe que vous entendez alors n'est pas un ornement : c'est le dernier état d'un langage vieux de trois mille ans."
@@ -66,7 +68,8 @@
           },
           {
             "id": "b4",
-            "colonnes": 12,
+            "colonnes": 6,
+            "decalage": 3,
             "valeur": {
               "type": "texte",
               "valeur": "**3 000 ans**\n\nde l'Antiquité aux années 1970, en un seul étage"
@@ -75,6 +78,7 @@
           {
             "id": "b5",
             "colonnes": 12,
+            "hauteur": 180,
             "valeur": {
               "type": "texte",
               "valeur": "**Un seul fil conducteur**\n\nDe la trompette au poste de télévision, la question ne change jamais : comment faire parvenir une information à quelqu'un qui n'est pas là ? Ce sont les réponses qui changent."

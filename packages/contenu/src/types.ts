@@ -280,6 +280,18 @@ export const FRISE_EVENEMENTS_MIN = 3
 export const FRISE_EVENEMENTS_MAX = 6
 
 /**
+ * Bornes de l'année d'un événement de frise.
+ *
+ * Déclarées ici, et pas seulement dans le schéma Zod : la case de saisie doit
+ * ramener dans ces bornes ce qu'on y tape. Une année écrite au-delà était
+ * **refusée à l'enregistrement**, et plus rien ne s'enregistrait ensuite — un
+ * chiffre de trop dans une année, et le travail de la journée ne partait plus
+ * sur le disque.
+ */
+export const FRISE_ANNEE_MIN = -3000
+export const FRISE_ANNEE_MAX = 3000
+
+/**
  * Bloc ajouté librement à une page.
  * L'identifiant est stable : c'est lui qui permet de déplacer ou retirer un
  * bloc sans ambiguïté, même si deux blocs ont le même contenu.

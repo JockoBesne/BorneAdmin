@@ -7,6 +7,7 @@ import {
   type RefObject,
 } from 'react'
 import {
+  BLOC_LIBRE_GALERIE_MAX,
   COLONNES_GRILLE,
   COLONNES_MIN,
   DECALAGE_MAX,
@@ -33,6 +34,9 @@ import {
   HAUTEUR_BANDEAU_DEFAUT,
   HAUTEUR_BANDEAU_MAX,
   HAUTEUR_BANDEAU_MIN,
+  anneeBornee,
+  FRISE_ANNEE_MAX,
+  FRISE_ANNEE_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
   FRISE_DETAIL_MAX_SIGNES,
   FRISE_LIBELLE_MAX_SIGNES,
@@ -300,8 +304,11 @@ export function EditeurPage({
     const zone = document
       .querySelector(`.edit__apercu .emp[data-nom="${nom}"] .b-image__zone`)
       ?.getBoundingClientRect()
-    const page = document.querySelector('.edit__apercu .mdl')?.getBoundingClientRect()
-    const echelle = page && page.width > 0 ? page.width / LARGEUR_TOILE : 0
+    // Nommée « toile » et non « page » : le composant a déjà une « page » — la
+    // page en cours de modification — et l'ombrer ici est un piège posé pour
+    // plus tard.
+    const toile = document.querySelector('.edit__apercu .mdl')?.getBoundingClientRect()
+    const echelle = toile && toile.width > 0 ? toile.width / LARGEUR_TOILE : 0
 
     modifierStyle(nom, (style) => {
       if (actif) return { ...style, recadre: true }
@@ -391,12 +398,19 @@ export function EditeurPage({
   const choisirMedias = (nom: string, medias: MediaManifeste[]) => {
     modifierEmplacement(nom, (valeur) => {
       if (valeur.type === 'galerie') {
+        // Le plafond de la galerie est **appliqué ici**, et pas seulement dans
+        // le bouton « + Ajouter une photo » : on choisit plusieurs fichiers
+        // d'un coup (c'est fait pour), et une galerie trop pleine était refusée
+        // par le schéma à l'enregistrement — plus rien ne s'enregistrait
+        // ensuite. Les photos en trop restent en bibliothèque.
+        const def = defPour(nom)
+        const plafond = def?.type === 'galerie' ? def.max : BLOC_LIBRE_GALERIE_MAX
         return {
           ...valeur,
           elements: [
             ...valeur.elements,
             ...medias.map((media) => ({ mediaId: media.id, legende: media.legende })),
-          ],
+          ].slice(0, plafond),
         }
       }
       const media = medias[0]
@@ -695,6 +709,26 @@ export function EditeurPage({
       }
     }
     return { ...contenuPage, decalages: { ...(contenuPage.decalages ?? {}), [cle]: borne } }
+  }
+
+  /**
+   * Centre un bloc sur sa rangée, ou le recolle à gauche.
+   *
+   * Rien de neuf dans le fichier : les colonnes qui manquent au bloc pour
+   * remplir la ligne sont partagées, moitié en décalage à sa gauche, moitié
+   * laissées derrière lui. C'est le décalage déjà en place, calculé au lieu
+   * d'être glissé à la main.
+   *
+   * Le calcul se refait à chaque appui : un bloc élargi ensuite se recentre
+   * d'un bouton, il ne se recentre pas tout seul.
+   */
+  const centrerBloc = (cle: string) => {
+    surModification((precedente) => {
+      const contenuPage = precedente.contenu as ContenuPage
+      const centre = Math.floor((COLONNES_GRILLE - colonnesDeCle(contenuPage, cle)) / 2)
+      const vise = decalageDeCle(contenuPage, cle) === centre ? 0 : centre
+      return { ...precedente, contenu: avecDecalage(contenuPage, cle, vise) }
+    })
   }
 
   /** Fixe la largeur d'une cellule, au bon endroit selon sa nature. */
@@ -1621,6 +1655,10 @@ export function EditeurPage({
             const blocAjoute = suite.find((candidat) => `suite:${candidat.id}` === cle)
             const valeur = blocAjoute ? blocAjoute.valeur : contenu.emplacements[cle]
             const colonnes = colonnesDeCle(contenu, cle)
+            // Décalage courant et décalage qui centrerait le bloc : le bouton
+            // « centrer » compare les deux pour savoir s'il centre ou recolle.
+            const decalage = decalageDeCle(contenu, cle)
+            const centre = Math.floor((COLONNES_GRILLE - colonnes) / 2)
 
             return (
               <li key={cle} className={blocAjoute ? 'pan__ligne--ajoutee' : undefined}>
@@ -1736,6 +1774,26 @@ export function EditeurPage({
                       }}
                     >
                       {colonnes === COLONNES_GRILLE ? '▭' : '◧'}
+                    </button>
+                    {/* Centrer sur la rangée : n'a de sens que si le bloc laisse de
+                        la place. Rappuyer le recolle à gauche. */}
+                    <button
+                      type="button"
+                      className={`abtn abtn--mini${decalage === centre && centre > 0 ? ' abtn--actif' : ''}`}
+                      disabled={centre === 0}
+                      aria-label={
+                        decalage === centre && centre > 0
+                          ? 'Bloc centré sur la ligne. Le recoller à gauche.'
+                          : 'Centrer ce bloc sur la ligne'
+                      }
+                      title={
+                        decalage === centre && centre > 0
+                          ? 'Centré sur la ligne'
+                          : 'Centrer sur la ligne'
+                      }
+                      onClick={() => centrerBloc(cle)}
+                    >
+                      ↔
                     </button>
                     <button
                       type="button"
@@ -2958,13 +3016,11 @@ function FormulaireFrise({
                 année
                 <input
                   type="number"
-                  min={-3000}
-                  max={3000}
+                  min={FRISE_ANNEE_MIN}
+                  max={FRISE_ANNEE_MAX}
                   value={evenement.annee}
                   onChange={(champ) =>
-                    changerEvenement(evenement.id, {
-                      annee: Number.parseInt(champ.target.value, 10) || 0,
-                    })
+                    changerEvenement(evenement.id, { annee: anneeBornee(champ.target.value) })
                   }
                 />
               </label>

@@ -468,14 +468,37 @@ export function Admin({
       if (champ !== 'couleurFond' && champ !== 'couleurTexte') {
         return { ...m, reglages }
       }
+      return sansCouleursPropres({ ...m, reglages }, [champ])
+    })
+
+  /**
+   * Efface la couleur que les pages et l'accueil s'étaient donnée, pour les
+   * champs indiqués : ils reprennent alors celle de la borne.
+   *
+   * Le même passage sert au disque de couleur **et** au bouton « Rétablir les
+   * couleurs d'origine ». Le bouton ne le faisait pas : sur un contenu dont les
+   * pages ont leurs propres couleurs — le cas même pour lequel cette règle
+   * existe — il remettait le réglage général et rien ne changeait à l'écran.
+   */
+  const sansCouleursPropres = (
+    m: Manifeste,
+    champs: ('couleurFond' | 'couleurTexte')[],
+  ): Manifeste => {
+    const reglages = { ...m.reglages }
+    for (const champ of champs) {
       if (champ === 'couleurFond') reglages.hubCouleurFond = undefined
       else reglages.hubCouleurTexte = undefined
-      return {
-        ...m,
-        reglages,
-        pages: m.pages.map((page) => ({ ...page, [champ]: undefined })),
-      }
-    })
+    }
+    return {
+      ...m,
+      reglages,
+      pages: m.pages.map((page) => {
+        const copie = { ...page }
+        for (const champ of champs) delete copie[champ]
+        return copie
+      }),
+    }
+  }
 
   /**
    * Code d'accès à l'administration : quatre chiffres, et rien d'autre.
@@ -556,15 +579,23 @@ export function Admin({
       },
     }))
 
+  // Retour aux couleurs d'origine de la borne. Comme les disques ci-dessus, il
+  // reprend les pages et l'accueil qui s'en étaient donné d'autres : sans cela,
+  // le bouton ne changeait rien sur un contenu personnalisé.
   const retablirCouleurs = () =>
-    modifier((m) => ({
-      ...m,
-      reglages: {
-        ...m.reglages,
-        couleurFond: REGLAGES_DEFAUT.couleurFond,
-        couleurTexte: REGLAGES_DEFAUT.couleurTexte,
-      },
-    }))
+    modifier((m) =>
+      sansCouleursPropres(
+        {
+          ...m,
+          reglages: {
+            ...m.reglages,
+            couleurFond: REGLAGES_DEFAUT.couleurFond,
+            couleurTexte: REGLAGES_DEFAUT.couleurTexte,
+          },
+        },
+        ['couleurFond', 'couleurTexte'],
+      ),
+    )
 
   // ── Images de l'accueil ────────────────────────────────────────────────────
   // Le fichier est copié dans la bibliothèque de médias, puis rangé : en fond

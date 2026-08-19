@@ -9,6 +9,8 @@ import {
   HAUTEUR_BANDEAU_MIN,
   HAUTEUR_MAX,
   HAUTEUR_MIN,
+  FRISE_ANNEE_MAX,
+  FRISE_ANNEE_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
   FRISE_DETAIL_MAX_SIGNES,
   FRISE_EVENEMENTS_MAX,
@@ -133,7 +135,7 @@ export const schemaBlocLibre = z.object({
             libelle: z.string().max(FRISE_LIBELLE_MAX_SIGNES),
             // Bornée : une année hors de cette plage est une faute de frappe,
             // et elle casserait l'échelle de la frise affichée au visiteur.
-            annee: z.number().int().min(-3000).max(3000),
+            annee: z.number().int().min(FRISE_ANNEE_MIN).max(FRISE_ANNEE_MAX),
             detail: z.string().max(FRISE_DETAIL_MAX_SIGNES),
           }),
         )

@@ -534,6 +534,11 @@ function creerFenetre() {
   // veille » comme après n'importe quel repli : sans cela elle remonte derrière
   // la barre des tâches.
   fenetre.on('restore', () => {
+    // Et le drapeau retombe ici, pas seulement dans « minimize » : appelé sur
+    // une fenêtre déjà repliée, « minimize() » n'émet aucun événement et le
+    // drapeau resterait levé — le prochain geste à quatre doigts découvrirait
+    // alors le bureau, une fois. Rien ne doit ramener au bureau.
+    repliAutorise = false
     fenetre.setAlwaysOnTop(true, 'screen-saver')
   })
 

@@ -328,7 +328,19 @@ function RenduGrille({
   surRedimensionner,
   surHauteur,
   lecteurVideo,
-}: PropsModele) {
+  seulementSuite = false,
+}: PropsModele & {
+  /**
+   * Modèle 3 : seuls les blocs **ajoutés** passent par la grille — ses
+   * emplacements à lui sont dessinés dans la composition vidéo, qui est
+   * indivisible. Tout le reste (l'ordre de la page, les largeurs, les hauteurs,
+   * les décalages, les poignées) est celui des autres modèles : il n'y a qu'un
+   * seul chemin, donc rien qui puisse diverger. Une grille séparée l'avait
+   * fait — elle affichait les blocs dans l'ordre où ils avaient été créés, et
+   * les flèches ▲▼ ne changeaient rien.
+   */
+  seulementSuite?: boolean
+}) {
   const edition = emp !== undefined
   const env = habiller(contenu, emp)
   const modele = modelePar(contenu.modele)
@@ -399,6 +411,7 @@ function RenduGrille({
   // librement. Sans « ordre », on retrouve l'ordre du modèle — voir
   // `ordreCellules`.
   for (const cle of ordreCellules(contenu, modele)) {
+    if (seulementSuite && !cle.startsWith('suite:')) continue
     if (cle.startsWith('suite:')) {
       const bloc = suite.find((candidat) => `suite:${candidat.id}` === cle)
       if (!bloc) continue
@@ -439,6 +452,10 @@ function RenduGrille({
     )
   }
 
+  // Modèle 3 sans bloc ajouté : pas de grille du tout sous la composition
+  // vidéo, sinon ses marges laisseraient une bande vide. Les autres modèles
+  // gardent leur grille même vide — leur mise en page d'avant, au nœud près.
+  if (seulementSuite && cellules.length === 0) return null
   return <div className="mdl__grille">{cellules}</div>
 }
 
@@ -606,79 +623,10 @@ export function Modele2(props: PropsModele) {
   )
 }
 
-/**
- * Blocs ajoutés seuls, sur la grille de 12 colonnes.
- *
- * Sert au modèle 3, dont la composition vidéo est indivisible (sa déclaration
- * le dit expressément) : ses emplacements ne passent donc pas par la grille,
- * mais les blocs ajoutés dessous, si.
- */
-function GrilleBlocsAjoutes({
-  contenu,
-  media,
-  emp,
-  surImage,
-  surRedimensionner,
-  lecteurVideo,
-}: PropsModele) {
-  const edition = emp !== undefined
-  const env = habiller(contenu, emp)
-  const sections = (modelePar(contenu.modele)?.sections ?? []).map((s) => s.nom)
-  const blocs = lireSuite(contenu).filter((bloc) => edition || !estBlocLibreVide(bloc))
-  if (blocs.length === 0) return null
-  void sections
-
-  return (
-    <div className="mdl__grille">
-      {blocs.map((bloc) => {
-        const colonnes = colonnesDe(bloc)
-        const decalage = decalageDe(bloc)
-        return (
-          <div
-            key={bloc.id}
-            className={`mdl__cellule${
-              bloc.valeur.type === 'galerie'
-                ? ' mdl__cellule--galerie'
-                : bloc.valeur.type === 'video'
-                  ? ' mdl__cellule--video'
-                  : ''
-            }`}
-            style={{
-              gridColumn: `span ${decalage + colonnes}`,
-              ...(decalage === 0
-                ? {}
-                : {
-                    ['--decalage' as string]: decalage,
-                    ['--travee' as string]: decalage + colonnes,
-                  }),
-            }}
-          >
-            {renduBlocLibre(bloc, { contenu, media, surImage, lecteurVideo }, env)}
-            {surRedimensionner ? (
-              <PoigneeLargeur
-                cle={`suite:${bloc.id}`}
-                colonnes={colonnes}
-                decalage={decalage}
-                surRedimensionner={surRedimensionner}
-              />
-            ) : null}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 // ── Modèle 3 — Vidéo en avant ────────────────────────────────────────────────
 
-export function Modele3({
-  contenu,
-  media,
-  emp,
-  surImage,
-  surRedimensionner,
-  lecteurVideo = false,
-}: PropsModele) {
+export function Modele3(props: PropsModele) {
+  const { contenu, media, emp, lecteurVideo = false } = props
   const env = habiller(contenu, emp)
   const encartTitre = lireTexte(contenu, 'encartTitre')
   const encartTexte = lireTexte(contenu, 'encartTexte')
@@ -750,14 +698,11 @@ export function Modele3({
         </div>
       </div>
 
-      <GrilleBlocsAjoutes
-        contenu={contenu}
-        media={media}
-        emp={emp}
-        surImage={surImage}
-        surRedimensionner={surRedimensionner}
-        lecteurVideo={lecteurVideo}
-      />
+      {/* Les blocs ajoutés passent par la **même** grille que les autres
+          modèles : l'ordre de la page, les hauteurs et les poignées y sont donc
+          les mêmes partout. Seuls les emplacements du modèle sont écartés — ils
+          sont dessinés ci-dessus, dans la composition vidéo. */}
+      <RenduGrille {...props} lecteurVideo={lecteurVideo} seulementSuite />
     </article>
   )
 }

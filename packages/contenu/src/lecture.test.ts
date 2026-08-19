@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { colonnesPourPhoto, hauteurCellule, hauteurReglable } from './lecture.js'
+import { anneeBornee, colonnesPourPhoto, hauteurCellule, hauteurReglable } from './lecture.js'
+import { DEFS_BLOCS_LIBRES } from './controles.js'
+import { schemaBlocLibre } from './manifeste.js'
 import {
+  BLOC_LIBRE_GALERIE_MAX,
   COLONNES_GRILLE,
   COLONNES_MIN,
+  FRISE_ANNEE_MAX,
+  FRISE_ANNEE_MIN,
   HAUTEUR_PHOTO_VISEE,
   largeurEnPixels,
   type ContenuPage,
@@ -84,4 +89,61 @@ test('tous les autres blocs ont une hauteur réglable', () => {
   assert.equal(hauteurCellule(contenu, 'texte', 'texte', 400), 400)
   // Rien de réglé : aucune hauteur imposée, la page est celle d'avant.
   assert.equal(hauteurCellule(contenu, 'texte', 'texte', undefined), undefined)
+})
+
+/*
+ * Les deux bornes que l'éditeur doit tenir lui-même.
+ *
+ * Elles ne protègent pas l'affichage : elles protègent l'**enregistrement**.
+ * Un bloc que le schéma refuse fait échouer toute écriture du contenu — pas
+ * seulement la sienne — et plus rien ne part sur le disque jusqu'à ce que
+ * quelqu'un remarque le « ⚠ Échec » de la barre. Les deux cas ci-dessous se
+ * sont produits : une année tapée avec un chiffre de trop, et une galerie
+ * remplie de treize photos choisies d'un coup.
+ */
+
+test("l'année d'une frise ne peut pas sortir des bornes du schéma", () => {
+  assert.equal(anneeBornee('1975'), 1975)
+  assert.equal(anneeBornee('-500'), -500)
+  // Le cas qui cassait l'enregistrement : un chiffre de trop.
+  assert.equal(anneeBornee('20261'), FRISE_ANNEE_MAX)
+  assert.equal(anneeBornee('-99999'), FRISE_ANNEE_MIN)
+  // Case vidée pendant la saisie : une année, pas « NaN ».
+  assert.equal(anneeBornee(''), 0)
+
+  const frise = (annee: number) =>
+    schemaBlocLibre.safeParse({
+      id: 'b',
+      valeur: {
+        type: 'frise',
+        consigne: '',
+        evenements: [{ id: 'e', libelle: 'Un événement', annee, detail: '' }],
+      },
+    }).success
+
+  for (const saisie of ['20261', '-99999', '1975', '']) {
+    assert.ok(frise(anneeBornee(saisie)), `année refusée pour la saisie « ${saisie} »`)
+  }
+})
+
+test('une galerie pleine reste acceptée par le schéma, une de plus non', () => {
+  // Le plafond de l'éditeur et celui du schéma sont le même nombre : c'est ce
+  // qui fait que remplir une galerie jusqu'au bout ne casse pas l'écriture.
+  const def = DEFS_BLOCS_LIBRES.galerie
+  assert.equal(def.type === 'galerie' ? def.max : -1, BLOC_LIBRE_GALERIE_MAX)
+
+  const galerie = (nombre: number) =>
+    schemaBlocLibre.safeParse({
+      id: 'b',
+      valeur: {
+        type: 'galerie',
+        elements: Array.from({ length: nombre }, (_, i) => ({
+          mediaId: `media-${i}`,
+          legende: '',
+        })),
+      },
+    }).success
+
+  assert.ok(galerie(BLOC_LIBRE_GALERIE_MAX))
+  assert.ok(!galerie(BLOC_LIBRE_GALERIE_MAX + 1))
 })

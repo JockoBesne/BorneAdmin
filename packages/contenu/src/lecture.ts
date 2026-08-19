@@ -1,6 +1,8 @@
 import {
   COLONNES_GRILLE,
   COLONNES_MIN,
+  FRISE_ANNEE_MAX,
+  FRISE_ANNEE_MIN,
   HAUTEUR_MAX,
   HAUTEUR_MIN,
   HAUTEUR_PHOTO_VISEE,
@@ -240,6 +242,26 @@ export function decalageEmplacement(
   colonnes: number,
 ): number {
   return borneDecalage(contenu.decalages?.[nom], colonnes)
+}
+
+/**
+ * Année d'un événement de frise, ramenée dans les bornes du schéma.
+ *
+ * L'attribut « min / max » d'une case « nombre » n'empêche **rien** : on peut y
+ * taper 20261, et le clavier à l'écran de la borne écrit toujours à la fin du
+ * champ. Une année hors bornes était refusée par le schéma **à
+ * l'enregistrement** — et plus rien ne s'enregistrait ensuite, jusqu'à ce que
+ * quelqu'un remarque le petit « ⚠ Échec » de la barre. Un chiffre de trop, et
+ * le travail de la journée ne partait plus sur le disque.
+ *
+ * Bornée ici comme les largeurs et les hauteurs, et à partir des **mêmes**
+ * constantes que le schéma : les deux ne peuvent donc plus se contredire.
+ * Une case vidée vaut 0 — une année ne se laisse pas vide.
+ */
+export function anneeBornee(saisie: string): number {
+  const annee = Number.parseInt(saisie, 10)
+  if (!Number.isFinite(annee)) return 0
+  return Math.min(FRISE_ANNEE_MAX, Math.max(FRISE_ANNEE_MIN, annee))
 }
 
 /**

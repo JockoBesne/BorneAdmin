@@ -26,7 +26,7 @@ export function BlocImage({
   media: ResoudreMedia
   profil: ProfilImage
   libelleVide: string
-  surImage?: (mediaId: string) => void
+  surImage?: (mediaId: string, legende?: string) => void
   /**
    * Partie de la photo gardée dans un cadre recadré, en pourcentage (0–100).
    * Absente : le point focal du média, comme avant ce réglage. C'est ce qui
@@ -58,7 +58,7 @@ export function BlocImage({
         <button
           type="button"
           className="b-image__zone b-image__zone--tactile"
-          onClick={() => surImage(resolu.id)}
+          onClick={() => surImage(resolu.id, legende)}
           aria-label={legende ? `Agrandir : ${legende}` : 'Agrandir la photo'}
         >
           {image}
@@ -80,7 +80,7 @@ export function BlocGalerie({
   elements: ElementGalerie[]
   media: ResoudreMedia
   libelleVide: string
-  surImage?: (mediaId: string) => void
+  surImage?: (mediaId: string, legende?: string) => void
 }) {
   if (elements.length === 0) return <BlocVide libelle={libelleVide} />
 
@@ -107,7 +107,7 @@ export function BlocGalerie({
               <button
                 type="button"
                 className="b-galerie__zone"
-                onClick={() => surImage(resolu.id)}
+                onClick={() => surImage(resolu.id, legende)}
                 aria-label={legende ? `Agrandir : ${legende}` : 'Agrandir la photo'}
               >
                 {image}

@@ -42,7 +42,10 @@ donc `minimize` et remonte la fenêtre (`restore`, `focus`, et **le niveau
 **Exception voulue : Ctrl + M** replie vraiment l'application (drapeau
 `repliAutorise`, même mécanique que `sortieAutorisee`) — on revient par
 l'icône de la barre des tâches, et l'événement `restore` repose le niveau
-« screen-saver ».
+« screen-saver » **et fait retomber le drapeau**. Ce second point n'est pas
+décoratif : appelé sur une fenêtre déjà repliée, `minimize()` n'émet aucun
+événement, le drapeau resterait levé, et le prochain geste à quatre doigts
+découvrirait le bureau — une fois.
 
 **Deux façons de fermer la borne**, arrivées par deux chemins et conservées
 toutes les deux : **Ctrl + Maj + A** depuis l'écran d'administration (elle
@@ -80,6 +83,24 @@ borne écoute enfin `surImage`), et les photos d'une **galerie ne sont plus
 rognées** (`object-fit: contain`). Enfin, le **bandeau du haut se règle page par
 page** (voir « Bandeau du haut » dans les concepts).
 
+**Faits le 2026-08-19, en phase d'essais** — six défauts cherchés et corrigés.
+Les deux premiers cassaient l'**enregistrement** entier, voir « Zod avant
+d'écrire » : une **année de frise** hors bornes, une **galerie** de plus de
+douze photos. Les quatre autres :
+
+- le **modèle « Vidéo en avant »** avait une seconde grille écrite à part pour
+  ses blocs ajoutés : elle ignorait l'ordre de la page (les flèches ▲▼ ne
+  faisaient rien) et ne donnait aucune poignée de hauteur. Supprimée — il passe
+  par la même `RenduGrille` que les autres (`seulementSuite`) ;
+- « **Rétablir les couleurs d'origine** » ne touchait pas aux pages qui
+  s'étaient donné les leurs : sur un contenu personnalisé, le bouton ne changeait
+  rien à l'écran. Il passe désormais par le même `sansCouleursPropres` que les
+  disques de couleur ;
+- une photo agrandie affichait la légende de la **bibliothèque**, pas celle
+  écrite sous cette photo-là ; dans une galerie, la légende saisie n'apparaissait
+  nulle part. `surImage` porte maintenant la légende du bloc ;
+- le drapeau `repliAutorise` (Ctrl + M) ne retombait que dans un cas.
+
 **Sans objet** : l'ancienne « étape 3 — dossier partagé ». Il n'y a **qu'un seul
 ordinateur**, voir ci-dessous.
 
@@ -107,6 +128,24 @@ ordinateur**, voir ci-dessous.
   (ou avoir une valeur par défaut) pour ne pas invalider l'existant, **et être
   déclaré dans le schéma** — sinon il est effacé silencieusement à
   l'enregistrement. Piège déjà rencontré plusieurs fois.
+- **Une borne du schéma doit être tenue par la saisie, jamais par le schéma
+  seul.** Un bloc que le schéma refuse ne fait pas échouer *son* enregistrement :
+  il fait échouer **toute** écriture du contenu, la page entière partant d'un
+  bloc. Plus rien ne s'enregistre ensuite, et le seul signe est le petit
+  « ⚠ Échec » de la barre — le travail de la journée reste à l'écran sans jamais
+  atteindre le disque. Deux cas rencontrés le 2026-08-19 :
+  - l'**année d'une frise** n'était bornée que par le `min`/`max` de la case
+    « nombre », qui n'empêche rien : on y tape 20261 pour 2026, et le pavé à
+    l'écran de la borne écrit toujours **à la fin** du champ ;
+  - une **galerie** dépassait ses 12 photos, l'import en acceptant plusieurs
+    d'un coup (c'est fait pour) sans regarder le plafond.
+
+  D'où la règle : la valeur est ramenée dans les bornes **à la saisie**
+  (`anneeBornee` dans `lecture.ts`, `.slice(0, plafond)` dans `choisirMedias`),
+  et à partir des **mêmes constantes** que le schéma — c'est la double écriture
+  de la borne qui a fait le défaut. Modèles déjà en place : `changerVeille`,
+  `changerHauteurBandeau`, `redimensionnerBloc`, `poserTaille`. Couvert par
+  `lecture.test.ts`.
 
 ## Structure du code
 
@@ -138,6 +177,12 @@ ordinateur**, voir ci-dessous.
     temps. Aux deux bouts du parcours, le bouton reste en place mais éteint : la
     position des cibles ne bouge jamais d'une page à l'autre. Étant dans la
     toile, leurs tailles sont en **pixels de toile**, pas en `vw`.
+    La **`Visionneuse`** (photo touchée, affichée en grand) reçoit la légende
+    **du bloc** et non celle du média : `surImage(id, legende)`. Elle affichait
+    celle de la bibliothèque jusqu'au 2026-08-19 — la même photo se légende
+    autrement d'une page à l'autre, et dans une galerie la légende saisie
+    n'apparaissait alors nulle part. Même priorité que le `figcaption` d'un bloc
+    image : celle du bloc, à défaut celle du média.
   - `src/Accueil.tsx` — le sommaire. La vignette d'une carte est montrée
     **entière** (`object-fit: contain`), sur un fond fait de la même image
     floutée et assombrie (`.hub__fond`). Rognée (« cover »), une carte ou une
@@ -174,8 +219,12 @@ ordinateur**, voir ci-dessous.
     `Admin.tsx`) : la **dernière modification en date** gagne, et non la page
     par principe. Sans cela, le réglage général ne changeait rien aux pages
     personnalisées et passait pour cassé. Réversible par Ctrl + Z, comme tout le
-    reste. Chaque fenêtre de réglages porte une ligne (`.voile__note`) qui dit
-    ce qu'elle change et ce qu'elle ne change pas.
+    reste. **Le bouton « Rétablir les couleurs d'origine » suit la même règle** :
+    il ne le faisait pas, et sur un contenu dont les pages ont leurs couleurs — le
+    cas même pour lequel cette règle existe — il ne changeait rien à l'écran
+    (2026-08-19). Un seul passage pour les deux, `sansCouleursPropres`.
+    Chaque fenêtre de réglages porte une ligne (`.voile__note`) qui dit ce
+    qu'elle change et ce qu'elle ne change pas.
   - `src/Admin.tsx` — liste des pages, panneaux « Apparence », « Écran
     d'accueil » et « Réglages », enregistrement auto. « Réglages » tient le
     **code d'accès** (modifiable depuis le 2026-08-19) et la fermeture de
@@ -373,6 +422,11 @@ ordinateur**, voir ci-dessous.
     largeur`) — le calcul tombe juste sur la grille, il dépend de
     `--gouttiere-grille`. Tout autre dépôt le remet à zéro : c'est ainsi qu'on
     supprime un espace. Absent = 0, le comportement d'avant.
+    Le bouton **« ↔ »** de la ligne du bloc (panneau de droite) **centre** le
+    bloc sur sa rangée : il ne fait qu'écrire ce décalage, moitié de la place
+    qui reste. Rappuyer le recolle à gauche. Le calcul est refait à l'appui,
+    donc un bloc élargi ensuite n'est plus centré tant qu'on n'a pas rappuyé —
+    rien n'est ajouté au fichier de contenu pour ça.
   - **Trois bords se tirent** : le **droit** (la largeur), le **haut** et le
     **bas** (la hauteur, images et galeries). **Rien à gauche** — deux versions y
     ont été essayées, déplacer le bord gauche puis déplacer le bloc entier, et
@@ -458,7 +512,13 @@ ordinateur**, voir ci-dessous.
     lue par le rendu via la variable CSS `--hauteur-bloc`. Absente, la galerie
     fait 260 px.
   - **Le modèle 3 fait exception** : sa composition vidéo est indivisible, ses
-    emplacements ne passent pas par la grille. Ses blocs ajoutés, si.
+    emplacements ne passent pas par la grille. Ses blocs ajoutés, si — et par
+    **la même** `RenduGrille` que les autres modèles, qui écarte alors les
+    emplacements (`seulementSuite`). Il a eu sa propre grille jusqu'au
+    2026-08-19 : elle affichait les blocs dans l'ordre où ils avaient été créés,
+    ignorait `ordre` (les flèches ▲▼ ne faisaient rien) et ne donnait aucune
+    poignée de hauteur. Ne pas en refaire une : deux rendus ne restent jamais
+    d'accord.
 - **Toile** (`ToileBorne`) = conteneur de référence **1920 px de large**, mis à
   l'échelle sur la largeur du parent avec **`zoom`** (et non `transform`). Une
   page plus haute qu'un écran **défile**.
