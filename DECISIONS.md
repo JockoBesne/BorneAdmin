@@ -6,6 +6,62 @@ Format : **contexte → décision → pourquoi**.
 
 ---
 
+## 2026-08-18 — Mise en pages : le texte tient sur six colonnes, pas douze
+
+**Contexte.** Les pages du troisième étage paraissaient délavées sans qu'on
+sache dire pourquoi. Mesure faite sur le rendu réel : **un paragraphe est
+plafonné à 823 px de large** par `modeles.css`. Sur une cellule de douze
+colonnes (1 878 px), il reste donc **1 055 px de vide à droite** — la moitié de
+la page. Un encart coloré est pire encore : son fond, lui, s'étale sur toute la
+cellule, ce qui donne un bandeau à moitié rempli.
+
+**Décision.** Trois règles, dérivées de la mesure et non du goût :
+
+- **le texte et les encarts vont sur six colonnes** (cellule de 919 px, texte de
+  823 px, 96 px de respiration), et deux colonnes se font face ;
+- **quiz, frises et galeries seuls prennent la pleine largeur** — ce sont les
+  seuls blocs qui remplissent vraiment leur cellule ;
+- **la hauteur d'une image est calculée** à partir des dimensions du fichier
+  pour qu'elle remplisse exactement sa cellule, et **son nombre de colonnes est
+  déduit de son format** : une photo en portrait en prend quatre, une
+  panoramique sept. Sans cela, une image en hauteur atteint 1 280 px et écrase
+  la rangée.
+
+**Résultat mesuré.** Le vide horizontal maximal passe de 1 055 à 257 px, et la
+rangée la plus haute de 1 279 à 948 px.
+
+**Comment c'est fabriqué.** Les pages ne sont pas écrites à la main dans le
+JSON : un script d'atelier les compose, et un **calage automatique** remplit les
+rangées. C'est nécessaire — les emplacements du modèle occupent le début de la
+première rangée et décalent tout le reste d'un cran si on ne s'en occupe pas.
+Le modèle retenu est **t1** (titre, image, texte) : il déclare exactement les
+trois emplacements utilisés, donc l'écran d'administration n'affiche aucun
+avertissement de bloc retiré.
+
+**La parité, réglée automatiquement.** Une rangée qui n'a qu'un bloc de texte
+laisse la moitié droite vide, puisque le paragraphe s'arrête à 823 px. Le script
+simule donc le calage, repère les rangées restées seules, et **fusionne le bloc
+orphelin avec le texte qui le précède**. Rien n'est perdu, et il n'y a pas de
+bloc de remplissage à inventer. Mesuré après coup : **zéro rangée à moitié
+vide** sur les douze pages.
+
+**La ligne directrice.** Chaque page ouvre de la même façon — bandeau de titre,
+puis diptyque image + chapô — et varie ensuite librement.
+
+**Les couleurs sont celles du musée**, et rien d'autre : le bleu marine et le
+jaune d'or. Le fond de chaque page est une **nuance de ce bleu**, et la nuance
+porte du sens — les pages de guerre s'assombrissent vers la nuit (`#071320`
+pour la guerre secrète), celles d'invention et de paix s'éclaircissent vers le
+bleu ciel (`#17415e` pour l'entre-deux-guerres, `#15496b` pour la télévision).
+Le jaune revient partout, décliné en trois intensités : le **chiffre-clé**
+(opacité 20), l'**anecdote** (11), la **parole rapportée** (7). Au bout de deux
+pages, le visiteur sait que l'or veut dire « arrête-toi ».
+
+**L'accueil reste nu** : un aplat de bleu marine plus sombre que les pages,
+sans image de fond, pour que les vignettes des pages ressortent.
+
+---
+
 ## 2026-08-12 — Transport d'une page par clé USB (export / import)
 
 **Contexte.** La décision du 2026-08-04 (« un seul ordinateur ») tenait pour le
