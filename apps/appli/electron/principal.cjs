@@ -14,7 +14,7 @@ const crypto = require('node:crypto')
 const fs = require('node:fs')
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
-const { app, BrowserWindow, dialog, ipcMain, net, protocol } = require('electron')
+const { app, BrowserWindow, Menu, dialog, ipcMain, net, protocol } = require('electron')
 
 // ── Où vit le contenu ────────────────────────────────────────────────────────
 // Étape 1 : le dossier d'exemple livré avec le dépôt.
@@ -580,6 +580,19 @@ app.whenReady().then(() => {
     sortieAutorisee = true
     app.quit()
   })
+  // macOS pose un menu par défaut à toute application, et ses raccourcis sont
+  // pris **avant** que la frappe atteigne la page : « Fenêtre > Réduire » avale
+  // Cmd + M (la fenêtre se replie alors sans notre drapeau, donc elle remonte
+  // aussitôt), et « Quitter » offre Cmd + Q à un visiteur. On remplace donc ce
+  // menu par le strict nécessaire : le menu « Édition », dont les rôles portent
+  // le copier / coller — sans lui, Cmd + V ne fait plus rien dans les champs de
+  // l'administration. Sans objet sous Windows, qui n'a pas ce menu.
+  if (process.platform === 'darwin') {
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate([{ label: app.name, submenu: [] }, { role: 'editMenu' }]),
+    )
+  }
+
   creerFenetre()
 
   app.on('activate', () => {

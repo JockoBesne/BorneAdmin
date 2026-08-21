@@ -85,18 +85,27 @@ export function AccesAdmin({ surReussite }: { surReussite: () => void }) {
   }, [])
 
   /**
-   * Raccourci clavier de secours : Ctrl + Alt + A (Cmd + Alt + A sur Mac).
+   * Raccourci clavier de secours : Ctrl + Alt + A, et Cmd + Ctrl + A sur Mac.
    *
    * L'écran de la salle n'a pas de clavier — un visiteur ne peut donc pas le
    * déclencher. Sur le PC du bureau, où le personnel prépare le contenu, il
    * évite de garder le bouton de la souris enfoncé cinq secondes à chaque fois.
+   *
+   * Pourquoi « Ctrl » et non « Alt » sur Mac : la touche Alt (Option) y **écrit
+   * un autre caractère** — Alt + A donne « å », donc « key » ne vaut plus « a »
+   * et le raccourci ne répondait jamais. Et « code » (la touche pressée, celle
+   * qui sauve le pavé du code) ne rattrape rien ici : « code » décrit une
+   * **position** sur un clavier américain, or la lettre A d'un clavier AZERTY
+   * est à la place du Q — elle s'annonce « KeyQ ». Un chiffre ne bouge pas de
+   * place, une lettre si. La touche Ctrl du Mac, elle, ne change pas la lettre :
+   * « key » suffit. Et Maj était exclu — Cmd + Maj + A ferme déjà l'application
+   * depuis l'écran d'administration (Admin.tsx).
    */
   useEffect(() => {
     const auClavier = (evenement: KeyboardEvent) => {
-      // « metaKey » : la touche Cmd du Mac. Et « code » plutôt que « key », comme
-      // pour le pavé du code : Alt + A écrit « å » sur Mac, « key » ne vaut donc
-      // plus « a » — « code » vaut « KeyA » partout.
-      if ((evenement.ctrlKey || evenement.metaKey) && evenement.altKey && evenement.code === 'KeyA') {
+      const surMac = evenement.metaKey && evenement.ctrlKey
+      const surPc = evenement.ctrlKey && evenement.altKey
+      if ((surMac || surPc) && evenement.key.toLowerCase() === 'a') {
         evenement.preventDefault()
         setPaveOuvert(true)
       }
