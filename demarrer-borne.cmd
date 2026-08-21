@@ -1,10 +1,9 @@
 @echo off
-rem Lance la borne. A mettre au demarrage de Windows :
-rem   1. touche Windows + R, taper  shell:startup  , Entree
-rem   2. glisser ce fichier dans le dossier qui s'ouvre, avec le bouton DROIT
-rem   3. choisir « Creer les raccourcis ici »
-rem Les chemins sont calcules a partir de ce fichier : le projet peut etre range
-rem n'importe ou sur l'ordinateur.
+rem Lance la borne.
+rem
+rem POUR DEMARRER AVEC WINDOWS : double-cliquer sur « installer-demarrage.cmd »,
+rem pose a cote de ce fichier. Ne JAMAIS copier ce fichier-ci dans le menu
+rem Demarrer : il cherche le projet juste a cote de lui, et ne le trouverait plus.
 
 cd /d "%~dp0apps\appli"
 

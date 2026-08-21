@@ -85,7 +85,7 @@ export function AccesAdmin({ surReussite }: { surReussite: () => void }) {
   }, [])
 
   /**
-   * Raccourci clavier de secours : Ctrl + Alt + A.
+   * Raccourci clavier de secours : Ctrl + Alt + A (Cmd + Alt + A sur Mac).
    *
    * L'écran de la salle n'a pas de clavier — un visiteur ne peut donc pas le
    * déclencher. Sur le PC du bureau, où le personnel prépare le contenu, il
@@ -93,7 +93,10 @@ export function AccesAdmin({ surReussite }: { surReussite: () => void }) {
    */
   useEffect(() => {
     const auClavier = (evenement: KeyboardEvent) => {
-      if (evenement.ctrlKey && evenement.altKey && evenement.key.toLowerCase() === 'a') {
+      // « metaKey » : la touche Cmd du Mac. Et « code » plutôt que « key », comme
+      // pour le pavé du code : Alt + A écrit « å » sur Mac, « key » ne vaut donc
+      // plus « a » — « code » vaut « KeyA » partout.
+      if ((evenement.ctrlKey || evenement.metaKey) && evenement.altKey && evenement.code === 'KeyA') {
         evenement.preventDefault()
         setPaveOuvert(true)
       }

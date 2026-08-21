@@ -487,10 +487,11 @@ function creerFenetre() {
       return
     }
 
-    // Repli volontaire : Ctrl + M plie l'application sans la fermer. On lève le
-    // drapeau juste avant, pour que la garde ci-dessous laisse passer ce
-    // repli-là et lui seul. On revient par l'icône de la barre des tâches.
-    if (entree.control && !entree.alt && !entree.shift && entree.key.toLowerCase() === 'm') {
+    // Repli volontaire : Ctrl + M (Cmd + M sur Mac, d'où « meta »)
+    // plie l'application sans la fermer. On lève le drapeau juste avant,
+    // pour que la garde ci-dessous laisse passer ce repli-là et lui seul.
+    // On revient par l'icône de la barre des tâches (le Dock sur Mac).
+    if ((entree.control || entree.meta) && !entree.alt && !entree.shift && entree.key.toLowerCase() === 'm') {
       repliAutorise = true
       fenetre.minimize()
       evenement.preventDefault()
