@@ -492,8 +492,13 @@ function creerFenetre() {
     // pour que la garde ci-dessous laisse passer ce repli-là et lui seul.
     // On revient par l'icône de la barre des tâches (le Dock sur Mac).
     if ((entree.control || entree.meta) && !entree.alt && !entree.shift && entree.key.toLowerCase() === 'm') {
-      repliAutorise = true
-      fenetre.minimize()
+      // Sur Mac, replier n'existe pas en plein écran : on masque l'application
+      // (le raccourci y passe normalement par le menu, ceci n'est qu'un filet).
+      if (process.platform === 'darwin') app.hide()
+      else {
+        repliAutorise = true
+        fenetre.minimize()
+      }
       evenement.preventDefault()
       return
     }
@@ -581,15 +586,26 @@ app.whenReady().then(() => {
     app.quit()
   })
   // macOS pose un menu par défaut à toute application, et ses raccourcis sont
-  // pris **avant** que la frappe atteigne la page : « Fenêtre > Réduire » avale
-  // Cmd + M (la fenêtre se replie alors sans notre drapeau, donc elle remonte
-  // aussitôt), et « Quitter » offre Cmd + Q à un visiteur. On remplace donc ce
-  // menu par le strict nécessaire : le menu « Édition », dont les rôles portent
-  // le copier / coller — sans lui, Cmd + V ne fait plus rien dans les champs de
-  // l'administration. Sans objet sous Windows, qui n'a pas ce menu.
+  // pris **avant** que la frappe atteigne la page : « Quitter » offrait Cmd + Q
+  // à un visiteur. On remplace donc ce menu par le strict nécessaire — dont le
+  // menu « Édition », sans lequel Cmd + V ne colle plus rien dans les champs de
+  // l'administration.
+  //
+  // C'est aussi lui qui porte le repli (Cmd + M), et non la garde du clavier,
+  // pour deux raisons : sur Mac une fenêtre en **plein écran ne se replie pas**
+  // (le mode borne l'est toujours) — on masque donc l'application, ce que fait
+  // « app.hide() », et on revient par l'icône du Dock ; et un raccourci de menu
+  // arrive à coup sûr, là où la frappe peut être avalée en chemin.
+  // Sans objet sous Windows, qui n'a pas ce menu.
   if (process.platform === 'darwin') {
     Menu.setApplicationMenu(
-      Menu.buildFromTemplate([{ label: app.name, submenu: [] }, { role: 'editMenu' }]),
+      Menu.buildFromTemplate([
+        {
+          label: app.name,
+          submenu: [{ label: "Replier l'application", accelerator: 'Command+M', click: () => app.hide() }],
+        },
+        { role: 'editMenu' },
+      ]),
     )
   }
 
