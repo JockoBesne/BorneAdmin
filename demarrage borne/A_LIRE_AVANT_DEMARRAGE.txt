@@ -1,0 +1,120 @@
+﻿========================================================
+   DÉMARRER LA BORNE — À LIRE AVANT
+   Musée des Transmissions
+========================================================
+
+Ce dossier contient deux raccourcis. Prenez celui qui
+correspond à votre ordinateur :
+
+   • Demarrer la borne (Windows).lnk   -> pour Windows
+   • Demarrer la borne (Mac).command   -> pour Mac
+
+Les autres, vous pouvez les ignorer.
+
+
+--------------------------------------------------------
+1. DÉMARRER LA BORNE
+--------------------------------------------------------
+
+Double-cliquez sur le raccourci de votre ordinateur.
+L'application s'ouvre en plein écran.
+
+La toute première fois, comptez une à deux minutes :
+l'ordinateur prépare l'affichage. Les fois suivantes,
+c'est immédiat. Ne double-cliquez pas plusieurs fois
+d'affilée en croyant qu'il ne se passe rien.
+
+Sur Mac, la première fois, le Mac peut demander une
+confirmation ("impossible de vérifier le développeur").
+Dans ce cas : clic droit sur le raccourci, puis
+"Ouvrir", puis "Ouvrir" à nouveau. C'est à faire une
+seule fois.
+
+
+--------------------------------------------------------
+2. FERMER LA BORNE
+--------------------------------------------------------
+
+Deux façons, au clavier :
+
+   Ctrl + Maj + A ....... depuis l'écran d'administration
+                          (enregistre puis ferme)
+
+   Ctrl + Alt + Maj + Q .. de n'importe où, même devant
+                          un visiteur
+
+Sur Mac, remplacez Ctrl par la touche Contrôle (ctrl).
+
+Il existe aussi un bouton "Enregistrer et fermer
+l'application" dans la fenêtre "Réglages" de
+l'administration, si vous n'avez pas de clavier
+sous la main.
+
+
+--------------------------------------------------------
+3. METTRE LE RACCOURCI SUR LE BUREAU
+--------------------------------------------------------
+
+C'est plus pratique au quotidien : plus besoin de
+retrouver ce dossier.
+
+   SUR WINDOWS
+   -----------
+   1. Clic droit sur "Demarrer la borne (Windows).lnk"
+   2. "Copier"
+   3. Clic droit sur le bureau, puis "Coller"
+
+   Vous pouvez le renommer comme vous voulez, par
+   exemple "BORNE". Cela ne casse rien.
+
+   SUR MAC
+   -------
+   ATTENTION : ne le COPIEZ pas sur le bureau, il ne
+   fonctionnerait plus. Faites un alias :
+
+   1. Clic droit sur "Demarrer la borne (Mac).command"
+   2. "Créer un alias"
+   3. Glissez l'alias qui apparaît sur le bureau
+
+   (Sur Mac, un alias garde le lien vers l'original ;
+   une copie, non.)
+
+
+--------------------------------------------------------
+4. CE QU'IL NE FAUT PAS FAIRE
+--------------------------------------------------------
+
+   • Ne déplacez pas le dossier du projet
+     (celui qui s'appelle "BorneAdmin").
+     Les raccourcis pointent dessus : déplacé, plus
+     rien ne démarre.
+
+   • Ne déplacez pas les vrais fichiers de démarrage
+     rangés juste au-dessus de ce dossier
+     ("demarrer-borne__ordi_Windows.cmd" et
+     "demarrer-borne__MacOS.command"). Ils cherchent
+     le projet juste à côté d'eux.
+     Les raccourcis, eux, se déplacent librement.
+
+   • N'effacez pas le dossier "medias" ni le fichier
+     "contenu.json" : ce sont les pages et les photos
+     de la borne.
+
+
+--------------------------------------------------------
+5. SI ÇA NE DÉMARRE PAS
+--------------------------------------------------------
+
+Une fenêtre noire s'ouvre et affiche un message qui
+commence par "Electron est introuvable".
+
+Cela veut dire que l'installation n'est pas terminée.
+Reprenez le guide "1 - Installer la borne" (dossier
+"documentation", à côté de ce dossier-ci) : il donne
+les deux commandes à taper.
+
+Si l'application s'ouvre mais reste toute blanche,
+fermez-la et relancez-la une fois : elle reconstruit
+l'affichage toute seule.
+
+========================================================
