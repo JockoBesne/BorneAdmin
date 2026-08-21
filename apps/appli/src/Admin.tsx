@@ -3,6 +3,8 @@ import {
   LISTE_MODELES,
   modelePar,
   REGLAGES_DEFAUT,
+  TAILLE_TEXTE_MAX,
+  TAILLE_TEXTE_MIN,
   type ContenuPage,
   type IdModele,
   type Manifeste,
@@ -19,8 +21,9 @@ import {
   importerPage,
   resolveurMedias,
 } from './contenu.js'
-import { couleursHub, stylesCouleurs } from './couleurs.js'
+import { ACCENT_ORIGINE, couleursHub, stylesCouleurs } from './couleurs.js'
 import { EditeurPage } from './EditeurPage.jsx'
+import { BoutonFermer } from './Voile.jsx'
 import { RoueCouleur } from './RoueCouleur.jsx'
 
 /**
@@ -43,6 +46,23 @@ const REGROUPEMENT_MS = 600
 /** Profondeur de l'historique. Au-delà, les plus vieux pas sont oubliés. */
 const PAS_MAX = 50
 
+/**
+ * Historique tenu **hors du composant**, exprès : il survit à un aller-retour
+ * par la borne. Revenir voir sa page côté visiteur puis rouvrir
+ * l'administration ne fait plus perdre le droit d'annuler — c'est justement en
+ * regardant le résultat qu'on se dit qu'on préférait l'état d'avant.
+ *
+ * Sans danger : rien d'autre que cet écran n'écrit le contenu, et tout est
+ * enregistré avant de rendre la main à la borne — les pas gardés décrivent donc
+ * bien le fichier tel qu'il est. Sans poids non plus : 50 pas au plus, et un pas
+ * n'est pas une copie du contenu mais le manifeste tel qu'il était, dont
+ * l'immense majorité des objets est partagée avec ses voisins.
+ *
+ * Il disparaît à la fermeture de l'application, comme n'importe quelle mémoire
+ * vive : on n'annule pas une modification de la semaine dernière.
+ */
+const HISTORIQUE: { passe: Manifeste[]; futur: Manifeste[] } = { passe: [], futur: [] }
+
 const TEXTES_ETAT: Record<EtatEnregistrement, string> = {
   repos: '',
   modifications: 'Modifications…',
@@ -51,13 +71,79 @@ const TEXTES_ETAT: Record<EtatEnregistrement, string> = {
   echec: '⚠ Échec de l’enregistrement — nouvel essai à la prochaine modification',
 }
 
-export function Admin({ surFermeture }: { surFermeture: () => void }) {
+/**
+ * Apparence d'un des textes de l'accueil : sa couleur et sa taille.
+ *
+ * Le disque montre **la couleur qui s'affiche** — celle réglée, ou celle
+ * d'origine tant que rien n'a été choisi : sans cela il partirait du noir, et
+ * le premier geste changerait tout d'un coup.
+ */
+function ReglageTexteHub({
+  libelle,
+  couleur,
+  couleurDefaut,
+  taille,
+  surCouleur,
+  surTaille,
+}: {
+  libelle: string
+  couleur: string | undefined
+  couleurDefaut: string
+  taille: number | undefined
+  surCouleur: (hex: string) => void
+  surTaille: (pourcent: number) => void
+}) {
+  return (
+    <div className="apparence__couleur">
+      <span className="champ__libelle">{libelle}</span>
+      <RoueCouleur valeur={couleur ?? couleurDefaut} surChangement={surCouleur} />
+      <label className="perso__glissiere">
+        <span>Taille : {taille ?? 100} %</span>
+        <input
+          type="range"
+          min={TAILLE_TEXTE_MIN}
+          max={TAILLE_TEXTE_MAX}
+          step={5}
+          value={taille ?? 100}
+          onChange={(evenement) => surTaille(Number(evenement.target.value))}
+        />
+      </label>
+    </div>
+  )
+}
+
+export function Admin({
+  surFermeture,
+  pageInitiale,
+}: {
+  /**
+   * Retour à la borne. La page en cours de modification est passée : on
+   * atterrit dessus côté visiteur, et non sur l'accueil — on va voir ce qu'on
+   * vient de corriger, c'est le chemin inverse de `pageInitiale`.
+   */
+  surFermeture: (pageOuverte: string | null) => void
+  /**
+   * Page à ouvrir d'emblée, quand on entre dans l'administration depuis une
+   * page de la borne. Absente (entrée depuis l'accueil) : la liste des pages,
+   * comme avant.
+   */
+  pageInitiale?: string | null
+}) {
   const [manifeste, setManifeste] = useState<Manifeste | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
-  const [pageOuverte, setPageOuverte] = useState<string | null>(null)
+  const [pageOuverte, setPageOuverte] = useState<string | null>(pageInitiale ?? null)
   const [choixModele, setChoixModele] = useState(false)
   const [apparenceOuverte, setApparenceOuverte] = useState(false)
   const [accueilOuvert, setAccueilOuvert] = useState(false)
+  const [reglagesOuverts, setReglagesOuverts] = useState(false)
+  /**
+   * Ce qu'on est en train de taper comme code d'accès, tant qu'il ne fait pas
+   * quatre chiffres. Il vit à part du contenu : un code incomplet écrit dans le
+   * manifeste serait **refusé par le schéma à l'enregistrement**, et plus rien
+   * ne s'enregistrerait tant qu'il n'aurait pas été corrigé. Même précaution
+   * que la case de la taille du texte dans l'éditeur.
+   */
+  const [pinSaisi, setPinSaisi] = useState<string | null>(null)
   const [suppression, setSuppression] = useState<string | null>(null)
   /** Page en cours de glissement dans la liste, s'il y en a une. */
   const [glissee, setGlissee] = useState<string | null>(null)
@@ -67,10 +153,9 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
   const [transfert, setTransfert] = useState<string | null>(null)
   const sale = useRef(false)
 
-  // Historique : les états d'avant, et ceux qu'on vient d'annuler. Le contenu
-  // d'un musée tient largement en mémoire — pas besoin de ruser.
-  const passe = useRef<Manifeste[]>([])
-  const futur = useRef<Manifeste[]>([])
+  // Historique : les états d'avant, et ceux qu'on vient d'annuler (voir
+  // « HISTORIQUE », gardé hors du composant). Le contenu d'un musée tient
+  // largement en mémoire — pas besoin de ruser.
   const derniereEtape = useRef(0)
   const [generation, setGeneration] = useState(0)
 
@@ -106,14 +191,14 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
       // Sans cela, annuler une phrase demanderait autant d'appuis que de
       // lettres tapées.
       const maintenant = Date.now()
-      const dejaEmpile = passe.current[passe.current.length - 1] === precedent
+      const dejaEmpile = HISTORIQUE.passe[HISTORIQUE.passe.length - 1] === precedent
       if (!dejaEmpile && maintenant - derniereEtape.current >= REGROUPEMENT_MS) {
-        passe.current = [...passe.current, precedent].slice(-PAS_MAX)
+        HISTORIQUE.passe = [...HISTORIQUE.passe, precedent].slice(-PAS_MAX)
       }
       derniereEtape.current = maintenant
       // Repartir d'une modification efface le futur : on ne rétablit que ce
       // qu'on vient d'annuler, jamais une branche abandonnée.
-      futur.current = []
+      HISTORIQUE.futur = []
       return suivant
     })
   }, [])
@@ -124,13 +209,13 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
    * entier, tel qu'il était. Simple, et sûr — rien ne peut se désynchroniser.
    */
   const parcourir = (sens: 'arriere' | 'avant') => {
-    const source = sens === 'arriere' ? passe : futur
-    const destination = sens === 'arriere' ? futur : passe
-    const etape = source.current[source.current.length - 1]
+    const source = sens === 'arriere' ? 'passe' : 'futur'
+    const destination = sens === 'arriere' ? 'futur' : 'passe'
+    const etape = HISTORIQUE[source][HISTORIQUE[source].length - 1]
     if (!etape) return
 
-    source.current = source.current.slice(0, -1)
-    if (manifeste) destination.current = [...destination.current, manifeste]
+    HISTORIQUE[source] = HISTORIQUE[source].slice(0, -1)
+    if (manifeste) HISTORIQUE[destination] = [...HISTORIQUE[destination], manifeste]
     setManifeste(etape)
     // Le pas suivant ne doit pas être avalé par le regroupement de la frappe.
     derniereEtape.current = 0
@@ -209,7 +294,7 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
   }
 
   // Retour à la borne, qui recharge le contenu en revenant.
-  const fermer = () => void ecrireEnAttente().then(surFermeture)
+  const fermer = () => void ecrireEnAttente().then(() => surFermeture(pageOuverte))
 
   // Fermeture de l'application entière (Ctrl + Maj + A).
   const quitter = () => void ecrireEnAttente().then(() => window.borne.quitter())
@@ -358,9 +443,105 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
   })
 
   const changerCouleur = (
-    champ: 'couleurFond' | 'couleurTexte' | 'hubCouleurFond' | 'hubCouleurTexte',
+    champ:
+      | 'couleurFond'
+      | 'couleurTexte'
+      | 'hubCouleurFond'
+      | 'hubCouleurTexte'
+      | 'hubTitreCouleur'
+      | 'hubSousTitreCouleur'
+      | 'hubNomFond'
+      | 'hubNomCouleur',
     hex: string,
-  ) => modifier((m) => ({ ...m, reglages: { ...m.reglages, [champ]: hex } }))
+  ) =>
+    modifier((m) => {
+      const reglages = { ...m.reglages, [champ]: hex }
+
+      // « Apparence généralisée » vaut pour **tout** : les pages et l'accueil.
+      //
+      // Une page ou un accueil qui s'était donné sa propre couleur la reprend
+      // ici — c'est la **dernière modification en date** qui l'emporte, et non
+      // la page par principe. Sans cela, régler la couleur générale ne changeait
+      // rien aux pages déjà personnalisées, et le réglage passait pour cassé.
+      // Le geste est annulable comme tous les autres (Ctrl + Z rend le
+      // manifeste entier tel qu'il était).
+      if (champ !== 'couleurFond' && champ !== 'couleurTexte') {
+        return { ...m, reglages }
+      }
+      return sansCouleursPropres({ ...m, reglages }, [champ])
+    })
+
+  /**
+   * Efface la couleur que les pages et l'accueil s'étaient donnée, pour les
+   * champs indiqués : ils reprennent alors celle de la borne.
+   *
+   * Le même passage sert au disque de couleur **et** au bouton « Rétablir les
+   * couleurs d'origine ». Le bouton ne le faisait pas : sur un contenu dont les
+   * pages ont leurs propres couleurs — le cas même pour lequel cette règle
+   * existe — il remettait le réglage général et rien ne changeait à l'écran.
+   */
+  const sansCouleursPropres = (
+    m: Manifeste,
+    champs: ('couleurFond' | 'couleurTexte')[],
+  ): Manifeste => {
+    const reglages = { ...m.reglages }
+    for (const champ of champs) {
+      if (champ === 'couleurFond') reglages.hubCouleurFond = undefined
+      else reglages.hubCouleurTexte = undefined
+    }
+    return {
+      ...m,
+      reglages,
+      pages: m.pages.map((page) => {
+        const copie = { ...page }
+        for (const champ of champs) delete copie[champ]
+        return copie
+      }),
+    }
+  }
+
+  /**
+   * Code d'accès à l'administration : quatre chiffres, et rien d'autre.
+   *
+   * Il n'est écrit dans le contenu **qu'une fois complet** — voir `pinSaisi`.
+   * Ce code écarte un visiteur curieux ; ce n'est pas une sécurité, il est
+   * lisible en clair dans `contenu.json`, et il ne faut pas le présenter
+   * autrement au musée.
+   */
+  const changerPin = (saisie: string) => {
+    const chiffres = saisie.replace(/[^0-9]/g, '').slice(0, 4)
+    setPinSaisi(chiffres)
+    if (chiffres.length === 4) {
+      modifier((m) => ({ ...m, reglages: { ...m.reglages, pinAdmin: chiffres } }))
+    }
+  }
+
+  /**
+   * Les mots affichés sur l'écran d'accueil : le grand titre et le sous-titre.
+   *
+   * Ils vivaient dans le fichier de contenu sans que personne puisse les
+   * changer — même défaut que le délai de retour automatique avant qu'il ne
+   * remonte ici. (Le nom « veille » est celui d'origine du champ ; il désigne
+   * bien l'écran d'accueil.)
+   */
+  const changerTexteHub = (champ: 'titreVeille' | 'sousTitreVeille', valeur: string) =>
+    modifier((m) => ({ ...m, reglages: { ...m.reglages, [champ]: valeur } }))
+
+  /**
+   * Taille d'un des trois textes de l'accueil, en pourcentage.
+   *
+   * Ramenée à 100, elle **sort du fichier** : un texte remis à sa taille
+   * normale ne laisse pas de trace, et l'accueil retrouve exactement son
+   * apparence d'origine.
+   */
+  const changerTailleHub = (
+    champ: 'hubTitreTaille' | 'hubSousTitreTaille' | 'hubNomTaille',
+    pourcent: number,
+  ) =>
+    modifier((m) => ({
+      ...m,
+      reglages: { ...m.reglages, [champ]: pourcent === 100 ? undefined : pourcent },
+    }))
 
   /**
    * Délai avant le retour automatique à l'accueil, en minutes.
@@ -384,18 +565,37 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
   const retablirCouleursHub = () =>
     modifier((m) => ({
       ...m,
-      reglages: { ...m.reglages, hubCouleurFond: undefined, hubCouleurTexte: undefined },
-    }))
-
-  const retablirCouleurs = () =>
-    modifier((m) => ({
-      ...m,
       reglages: {
         ...m.reglages,
-        couleurFond: REGLAGES_DEFAUT.couleurFond,
-        couleurTexte: REGLAGES_DEFAUT.couleurTexte,
+        hubCouleurFond: undefined,
+        hubCouleurTexte: undefined,
+        hubTitreCouleur: undefined,
+        hubTitreTaille: undefined,
+        hubSousTitreCouleur: undefined,
+        hubSousTitreTaille: undefined,
+        hubNomFond: undefined,
+        hubNomCouleur: undefined,
+        hubNomTaille: undefined,
       },
     }))
+
+  // Retour aux couleurs d'origine de la borne. Comme les disques ci-dessus, il
+  // reprend les pages et l'accueil qui s'en étaient donné d'autres : sans cela,
+  // le bouton ne changeait rien sur un contenu personnalisé.
+  const retablirCouleurs = () =>
+    modifier((m) =>
+      sansCouleursPropres(
+        {
+          ...m,
+          reglages: {
+            ...m.reglages,
+            couleurFond: REGLAGES_DEFAUT.couleurFond,
+            couleurTexte: REGLAGES_DEFAUT.couleurTexte,
+          },
+        },
+        ['couleurFond', 'couleurTexte'],
+      ),
+    )
 
   // ── Images de l'accueil ────────────────────────────────────────────────────
   // Le fichier est copié dans la bibliothèque de médias, puis rangé : en fond
@@ -469,7 +669,7 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
           className="admin__histoire"
           aria-label="Annuler la dernière modification (Ctrl + Z)"
           title="Annuler (Ctrl + Z)"
-          disabled={passe.current.length === 0}
+          disabled={HISTORIQUE.passe.length === 0}
           onClick={annuler}
         >
           ↶ Annuler
@@ -479,7 +679,7 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
           className="admin__histoire"
           aria-label="Rétablir la modification annulée (Ctrl + Y)"
           title="Rétablir (Ctrl + Y)"
-          disabled={futur.current.length === 0}
+          disabled={HISTORIQUE.futur.length === 0}
           onClick={retablir}
         >
           ↷ Rétablir
@@ -541,6 +741,14 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
               </button>
               <button type="button" className="abtn" onClick={() => setApparenceOuverte(true)}>
                 Apparence
+              </button>
+              <button
+                type="button"
+                className="abtn"
+                title="Code d'accès, fermeture de l'application"
+                onClick={() => setReglagesOuverts(true)}
+              >
+                Réglages
               </button>
               <button
                 type="button"
@@ -676,6 +884,7 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
       {choixModele ? (
         <div className="voile" role="dialog" aria-modal="true" aria-label="Choisir un modèle">
           <div className="voile__boite">
+            <BoutonFermer surFermeture={() => setChoixModele(false)} libelle="Fermer" />
             <h2 className="voile__titre">Quel modèle pour la nouvelle page ?</h2>
             <ul className="modeles">
               {LISTE_MODELES.map((modele) => (
@@ -711,7 +920,14 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
       {apparenceOuverte && manifeste ? (
         <div className="voile" role="dialog" aria-modal="true" aria-label="Apparence généralisée">
           <div className="voile__boite voile__boite--large">
+            <BoutonFermer surFermeture={() => setApparenceOuverte(false)} libelle="Fermer" />
             <h2 className="voile__titre">Apparence généralisée</h2>
+            <p className="voile__note">
+              Les couleurs du fond et du texte de <strong>toutes</strong> les pages, écran
+              d’accueil compris. Une page ou un accueil qui avait ses propres couleurs
+              reprend celles-ci : c’est la dernière modification qui l’emporte. Pour n’en
+              changer qu’une, ouvrez la page et servez-vous de « Apparence de la page ».
+            </p>
 
             <div className="apparence">
               <div className="apparence__reglages">
@@ -730,8 +946,8 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                   />
                 </div>
                 <p className="apparence__encart-note">
-                  Ces couleurs valent pour les pages. L'écran d'accueil se règle à part, par
-                  son propre bouton.
+                  L'écran d'accueil peut ensuite recevoir des couleurs à lui, par son propre
+                  bouton — elles resteront jusqu'à la prochaine apparence généralisée.
                 </p>
               </div>
 
@@ -772,7 +988,13 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
       {accueilOuvert && manifeste ? (
         <div className="voile" role="dialog" aria-modal="true" aria-label="Écran d'accueil">
           <div className="voile__boite voile__boite--large">
+            <BoutonFermer surFermeture={() => setAccueilOuvert(false)} libelle="Fermer" />
             <h2 className="voile__titre">Écran d'accueil</h2>
+            <p className="voile__note">
+              Ce que voit le visiteur en arrivant, et ce qu'il retrouve après un moment sans
+              contact : les mots, leur apparence, l'image de fond et l'image de chaque page.
+              Ces réglages ne touchent que l'accueil.
+            </p>
 
             <div className="apparence">
               <div className="apparence__reglages">
@@ -795,8 +1017,72 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                     surChangement={(hex) => changerCouleur('hubCouleurTexte', hex)}
                   />
                 </div>
+                {/* Ce qui est écrit sur l'accueil, avant l'apparence : on
+                    change les mots, puis on les habille. */}
+                <div className="apparence__couleur apparence__champ">
+                  <label className="champ__libelle" htmlFor="hub-titre">
+                    Grand titre — texte
+                  </label>
+                  <input
+                    id="hub-titre"
+                    value={manifeste.reglages.titreVeille}
+                    maxLength={80}
+                    onChange={(evenement) => changerTexteHub('titreVeille', evenement.target.value)}
+                  />
+                </div>
+                <div className="apparence__couleur apparence__champ">
+                  <label className="champ__libelle" htmlFor="hub-sous-titre">
+                    Sous-titre — texte
+                  </label>
+                  <input
+                    id="hub-sous-titre"
+                    value={manifeste.reglages.sousTitreVeille}
+                    maxLength={140}
+                    onChange={(evenement) =>
+                      changerTexteHub('sousTitreVeille', evenement.target.value)
+                    }
+                  />
+                </div>
+
+                {/* Les trois textes de l'accueil. Rien n'est écrit tant qu'on
+                    n'y touche pas : l'accueil garde son apparence d'origine. */}
+                <ReglageTexteHub
+                  libelle="Grand titre"
+                  couleur={manifeste.reglages.hubTitreCouleur}
+                  couleurDefaut={couleursHub(manifeste.reglages).couleurTexte}
+                  taille={manifeste.reglages.hubTitreTaille}
+                  surCouleur={(hex) => changerCouleur('hubTitreCouleur', hex)}
+                  surTaille={(pourcent) => changerTailleHub('hubTitreTaille', pourcent)}
+                />
+                <ReglageTexteHub
+                  libelle="Sous-titre"
+                  couleur={manifeste.reglages.hubSousTitreCouleur}
+                  couleurDefaut={ACCENT_ORIGINE}
+                  taille={manifeste.reglages.hubSousTitreTaille}
+                  surCouleur={(hex) => changerCouleur('hubSousTitreCouleur', hex)}
+                  surTaille={(pourcent) => changerTailleHub('hubSousTitreTaille', pourcent)}
+                />
+
+                {/* La barre de titre au bas de chaque carte : elle a en plus un
+                    fond, celui de la carte tant qu'on ne lui en donne pas. */}
+                <div className="apparence__couleur">
+                  <span className="champ__libelle">Barre de titre des cartes — fond</span>
+                  <RoueCouleur
+                    valeur={manifeste.reglages.hubNomFond ?? couleursHub(manifeste.reglages).couleurFond}
+                    surChangement={(hex) => changerCouleur('hubNomFond', hex)}
+                  />
+                </div>
+                <ReglageTexteHub
+                  libelle="Barre de titre des cartes — texte"
+                  couleur={manifeste.reglages.hubNomCouleur}
+                  couleurDefaut={couleursHub(manifeste.reglages).couleurTexte}
+                  taille={manifeste.reglages.hubNomTaille}
+                  surCouleur={(hex) => changerCouleur('hubNomCouleur', hex)}
+                  surTaille={(pourcent) => changerTailleHub('hubNomTaille', pourcent)}
+                />
+
                 <button type="button" className="abtn abtn--discret" onClick={retablirCouleursHub}>
-                  Remettre les couleurs de la borne
+                  Remettre l’apparence d’origine
                 </button>
 
                 {/* Retour automatique. Le réglage vivait dans le fichier de
@@ -884,7 +1170,9 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                   className="apparence__toile apparence__toile--accueil"
                   style={stylesCouleurs(couleursHub(manifeste.reglages))}
                 >
-                  <ToileBorne>
+                  {/* Même classe que la borne : l'aperçu doit montrer l'accueil
+                      tel qu'il sera, gouttières comprises. */}
+                  <ToileBorne className="toile--accueil">
                     <Accueil manifeste={manifeste} media={apercuMedia} />
                   </ToileBorne>
                 </div>
@@ -896,6 +1184,79 @@ export function Admin({ surFermeture }: { surFermeture: () => void }) {
                 type="button"
                 className="abtn abtn--principal"
                 onClick={() => setAccueilOuvert(false)}
+              >
+                Terminé
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Réglages de la borne : ce qui ne se voit pas à l'écran d'accueil.
+          La fermeture de l'application y est **à part**, dans son propre
+          encart : dans la barre du haut, elle voisinait « Fermer », qui ne fait
+          que revenir à la borne — on fermait l'application en croyant fermer le
+          menu. */}
+      {reglagesOuverts && manifeste ? (
+        <div className="voile" role="dialog" aria-modal="true" aria-label="Réglages">
+          <div className="voile__boite">
+            <BoutonFermer
+              surFermeture={() => {
+                setReglagesOuverts(false)
+                setPinSaisi(null)
+              }}
+              libelle="Fermer"
+            />
+            <h2 className="voile__titre">Réglages</h2>
+            <p className="voile__note">
+              Ce qui ne se voit pas à l'écran : le code qui ouvre l'administration, et la
+              fermeture de la borne.
+            </p>
+
+            <div className="apparence__reglages">
+              <div className="apparence__couleur apparence__champ apparence__champ--court">
+                <label className="champ__libelle" htmlFor="pin-admin">
+                  Code d’accès à l’administration
+                </label>
+                <input
+                  id="pin-admin"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={pinSaisi ?? manifeste.reglages.pinAdmin}
+                  onChange={(evenement) => changerPin(evenement.target.value)}
+                />
+                <p className="apparence__encart-note">
+                  {(pinSaisi ?? manifeste.reglages.pinAdmin).length === 4
+                    ? 'Quatre chiffres, demandés après l’appui de 5 secondes dans le coin de l’écran. Notez-le : sans lui, on n’entre plus dans l’administration.'
+                    : 'Il manque des chiffres : le code n’est pas encore enregistré. Tant qu’il n’en compte pas quatre, l’ancien reste en vigueur.'}
+                </p>
+                <p className="apparence__encart-note">
+                  Ce code écarte un visiteur curieux, ce n’est pas une sécurité :
+                  il est écrit en clair dans le fichier de contenu.
+                </p>
+              </div>
+
+              <div className="reglages__sortie">
+                <span className="champ__libelle">Fermer l’application</span>
+                <p className="apparence__encart-note">
+                  Enregistre les modifications, puis ferme la borne. Il faudra la relancer
+                  depuis le bureau de Windows. Pour seulement revenir à l’affichage visiteur,
+                  utilisez « Fermer » en haut de l’écran.
+                </p>
+                <button type="button" className="abtn abtn--danger" onClick={quitter}>
+                  Enregistrer et fermer l’application
+                </button>
+              </div>
+            </div>
+
+            <div className="pan__actions">
+              <button
+                type="button"
+                className="abtn abtn--principal"
+                onClick={() => {
+                  setReglagesOuverts(false)
+                  setPinSaisi(null)
+                }}
               >
                 Terminé
               </button>

@@ -23,17 +23,36 @@ import { couleursEffectives, couleursHub, stylesCouleurs } from './couleurs.js'
  * sans imposer de fil — on peut toujours remonter à l'accueil et sauter où l'on
  * veut (voir « Voisine » plus bas).
  */
-export function Visiteur() {
+export function Visiteur({
+  pageInitiale,
+  surPageOuverte,
+}: {
+  /**
+   * Page à ouvrir d'emblée — celle qu'on vient de modifier dans
+   * l'administration. Absente : l'accueil, le point d'entrée ordinaire.
+   */
+  pageInitiale?: string | null
+  surPageOuverte?: (id: string | null) => void
+}) {
   const [manifeste, setManifeste] = useState<Manifeste | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
   /** Page ouverte, ou « null » quand on est sur l'accueil. */
-  const [ouverte, setOuverte] = useState<string | null>(null)
-  /** Photo affichée en grand par-dessus la page, ou « null ». */
-  const [visionneuse, setVisionneuse] = useState<string | null>(null)
+  const [ouverte, setOuverte] = useState<string | null>(pageInitiale ?? null)
+  /**
+   * Photo affichée en grand par-dessus la page, ou « null ». La légende est
+   * celle du **bloc** touché, pas celle de la bibliothèque : c'est le texte que
+   * le musée a écrit sous cette photo-là.
+   */
+  const [visionneuse, setVisionneuse] = useState<{ id: string; legende: string } | null>(null)
 
   // Quitter la page referme la photo : sans cela, elle réapparaîtrait par-dessus
   // la page suivante — y compris après le retour automatique à l'accueil.
   useEffect(() => setVisionneuse(null), [ouverte])
+
+  // La page ouverte est dite à l'application : entrer dans l'administration
+  // depuis une page mène droit à sa modification, sans la rechercher dans la
+  // liste. Un seul point de sortie, quel que soit le chemin qui a ouvert la page.
+  useEffect(() => surPageOuverte?.(ouverte), [ouverte, surPageOuverte])
 
   useEffect(() => {
     let annule = false
@@ -153,7 +172,7 @@ export function Visiteur() {
             contenu={page.contenu as ContenuPage}
             media={media}
             lecteurVideo
-            surImage={setVisionneuse}
+            surImage={(id, legende) => setVisionneuse({ id, legende: legende ?? '' })}
           />
 
           {/* Dans la toile, après la page : les deux boutons sont la **fin** du
@@ -183,7 +202,8 @@ export function Visiteur() {
       {contenu}
       {visionneuse ? (
         <Visionneuse
-          mediaId={visionneuse}
+          mediaId={visionneuse.id}
+          legende={visionneuse.legende}
           media={media}
           surFermeture={() => setVisionneuse(null)}
         />
@@ -257,22 +277,26 @@ function Voisine({
  */
 function Visionneuse({
   mediaId,
+  legende,
   media,
   surFermeture,
 }: {
   mediaId: string
+  /** Légende du bloc touché ; à défaut, celle de la bibliothèque. */
+  legende: string
   media: ResoudreMedia
   surFermeture: () => void
 }) {
   const resolu = media(mediaId)
   if (!resolu) return null
+  const texte = legende || resolu.legende
 
   return (
     <div
       className="visionneuse"
       role="dialog"
       aria-modal="true"
-      aria-label={resolu.legende || 'Photo'}
+      aria-label={texte || 'Photo'}
     >
       <button
         type="button"
@@ -280,8 +304,8 @@ function Visionneuse({
         onClick={surFermeture}
         aria-label="Fermer"
       />
-      <img className="visionneuse__image" src={resolu.url('grand')} alt={resolu.legende} />
-      {resolu.legende ? <p className="visionneuse__legende">{resolu.legende}</p> : null}
+      <img className="visionneuse__image" src={resolu.url('grand')} alt={texte} />
+      {texte ? <p className="visionneuse__legende">{texte}</p> : null}
       <button type="button" className="visionneuse__fermer" onClick={surFermeture}>
         Fermer ✕
       </button>

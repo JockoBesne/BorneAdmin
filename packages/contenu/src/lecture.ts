@@ -1,6 +1,8 @@
 import {
   COLONNES_GRILLE,
   COLONNES_MIN,
+  FRISE_ANNEE_MAX,
+  FRISE_ANNEE_MIN,
   HAUTEUR_MAX,
   HAUTEUR_MIN,
   HAUTEUR_PHOTO_VISEE,
@@ -85,13 +87,39 @@ export function estStyleVide(style: StyleBloc): boolean {
     (style.alignement === undefined || style.alignement === 'gauche') &&
     (style.opacite === undefined || style.opacite === 100) &&
     (style.taille === undefined || style.taille === 100) &&
-    !style.recadre
+    !style.recadre &&
+    style.ancre === undefined &&
+    style.focalX === undefined &&
+    style.focalY === undefined &&
+    !style.remplir
   )
+}
+
+/**
+ * Partie de la photo gardée dans un cadre recadré, en pourcentage, ou
+ * « undefined » si ce bloc n'en a pas choisi — le point focal du média sert
+ * alors, comme avant ce réglage.
+ */
+export function focalDe(
+  contenu: ContenuPage,
+  nom: string,
+): { x: number; y: number } | undefined {
+  const style = lireStyle(contenu, nom)
+  if (!style || (style.focalX === undefined && style.focalY === undefined)) return undefined
+  return { x: style.focalX ?? 50, y: style.focalY ?? 50 }
 }
 
 /** Une photo qu'on a demandé à recadrer. Faux partout ailleurs. */
 export function estRecadre(contenu: ContenuPage, nom: string): boolean {
   return lireStyle(contenu, nom)?.recadre === true
+}
+
+/**
+ * Bloc accroché au **bas** de sa rangée : sa hauteur a été réglée par la
+ * poignée du haut, c'est donc son bas qui reste en place.
+ */
+export function estAncreBas(contenu: ContenuPage, nom: string): boolean {
+  return lireStyle(contenu, nom)?.ancre === 'bas'
 }
 
 /**
@@ -217,6 +245,26 @@ export function decalageEmplacement(
 }
 
 /**
+ * Année d'un événement de frise, ramenée dans les bornes du schéma.
+ *
+ * L'attribut « min / max » d'une case « nombre » n'empêche **rien** : on peut y
+ * taper 20261, et le clavier à l'écran de la borne écrit toujours à la fin du
+ * champ. Une année hors bornes était refusée par le schéma **à
+ * l'enregistrement** — et plus rien ne s'enregistrait ensuite, jusqu'à ce que
+ * quelqu'un remarque le petit « ⚠ Échec » de la barre. Un chiffre de trop, et
+ * le travail de la journée ne partait plus sur le disque.
+ *
+ * Bornée ici comme les largeurs et les hauteurs, et à partir des **mêmes**
+ * constantes que le schéma : les deux ne peuvent donc plus se contredire.
+ * Une case vidée vaut 0 — une année ne se laisse pas vide.
+ */
+export function anneeBornee(saisie: string): number {
+  const annee = Number.parseInt(saisie, 10)
+  if (!Number.isFinite(annee)) return 0
+  return Math.min(FRISE_ANNEE_MAX, Math.max(FRISE_ANNEE_MIN, annee))
+}
+
+/**
  * Ordre réel des cellules d'une page, du haut vers le bas.
  *
  * Une cellule est soit un emplacement du modèle (« titre »), soit un bloc
@@ -285,17 +333,21 @@ export function ordreCellules(
 }
 
 /**
- * Un bloc dont la hauteur est réglable : une galerie, toujours ; une photo,
- * seulement si on a demandé à la **recadrer**.
+ * Un bloc dont la hauteur est réglable : **tous**, sauf la photo — elle ne
+ * l'est que si on a demandé à la **recadrer**.
  *
- * Sans cela, une photo n'a pas de hauteur du tout : elle est entière et son bloc
- * suit ses proportions. Les poignées haute et basse n'apparaissent donc sur une
- * photo qu'après avoir coché « Recadrer » — ce qui rend impossible de couper une
- * photo par accident, et explique aussi pourquoi ces poignées apparaissent.
+ * La photo reste l'exception : sans recadrage elle n'a pas de hauteur du tout,
+ * elle est entière et son bloc suit ses proportions. Les poignées haute et
+ * basse n'apparaissent donc sur une photo qu'après avoir coché « Recadrer » —
+ * ce qui rend impossible de couper une photo par accident.
+ *
+ * Partout ailleurs (texte, titre, galerie, vidéo, quiz, frise), la hauteur
+ * réglée est un **plancher** : le bloc ne descend jamais sous son contenu (voir
+ * « min-height » dans modeles.css), il ne peut donc pas couper un texte.
  */
 export function hauteurReglable(type: string, recadre = false): boolean {
-  if (type === 'galerie') return true
-  return type === 'image' && recadre
+  if (type === 'image') return recadre
+  return true
 }
 
 function borneHauteur(valeur: number | undefined): number | undefined {

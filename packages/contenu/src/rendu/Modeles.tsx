@@ -4,8 +4,10 @@ import {
   colonnesEmplacement,
   decalageDe,
   decalageEmplacement,
+  estAncreBas,
   estBlocLibreVide,
   estRecadre,
+  focalDe,
   hauteurDe,
   hauteurEmplacement,
   hauteurReglable,
@@ -56,6 +58,8 @@ function Habillage({ style, children }: { style: StyleBloc | undefined; children
 
   const classes = ['b-hab']
   if (style.fond) classes.push('b-hab--fond')
+  // Remplir la hauteur réglée, au lieu de la laisser en espace autour du bloc.
+  if (style.remplir) classes.push('b-hab--remplir')
   if (style.couleur) classes.push('b-hab--couleur')
   if (style.gras) classes.push('b-hab--gras')
   if (style.italique) classes.push('b-hab--italique')
@@ -203,15 +207,21 @@ function PoigneeLargeur({
 }
 
 /**
- * Poignée de hauteur, sur le bord **bas** ou **haut** — images et galeries
- * seulement : la hauteur d'un texte découle de son contenu, celle d'une vidéo
- * de ses proportions.
+ * Poignée de hauteur, sur le bord **bas** ou **haut** — sur tout bloc, sauf
+ * une photo non recadrée (voir « hauteurReglable »). Sur un bloc qui s'écoule
+ * (texte, quiz, frise), la hauteur réglée est un plancher : elle ajoute de la
+ * place, elle n'en retire jamais.
  *
  * Les deux poignées règlent la **même** hauteur, en sens inverse : tirer le
  * bord bas vers le bas agrandit, tirer le bord haut vers le haut agrandit
- * aussi. Le haut d'un bloc, lui, est décidé par la rangée où il se trouve : on
- * ne peut pas le déplacer, donc c'est le bas qui bouge. C'est la seule
- * traduction honnête du geste dans une page qui s'écoule de haut en bas.
+ * aussi. Chacune retient **son** bord opposé : la poignée du bas laisse le haut
+ * du bloc en place, celle du haut pose l'ancre en bas (`StyleBloc.ancre`) et
+ * fait donc monter le haut sans que le bas ne bouge.
+ *
+ * Ce que l'ancre ne peut pas faire : si le bloc est le plus grand de sa rangée,
+ * il n'y a rien au-dessus de lui à reprendre — la rangée elle-même grandit, et
+ * elle ne peut grandir que vers le bas, une page s'écoulant de haut en bas.
+ * L'ancre joue tant qu'un voisin plus grand laisse de la place.
  */
 function PoigneeHauteur({
   cle,
@@ -223,7 +233,7 @@ function PoigneeHauteur({
   /** Hauteur courante, ou « undefined » tant qu'elle n'a jamais été réglée. */
   hauteur: number | undefined
   cote: 'haut' | 'bas'
-  surHauteur: (cle: string, hauteur: number) => void
+  surHauteur: (cle: string, hauteur: number, ancre?: 'bas') => void
 }) {
   const poignee = useRef<HTMLButtonElement>(null)
   const depart = useRef<{ y: number; hauteur: number; echelle: number } | null>(null)
@@ -251,6 +261,9 @@ function PoigneeHauteur({
 
   // Le bord haut travaille à l'envers du bord bas : monter le doigt agrandit.
   const sens = cote === 'bas' ? 1 : -1
+  // …et il retient le bas du bloc, quand la rangée le permet. Le bord bas, lui,
+  // remet l'ancrage ordinaire : c'est ainsi qu'on revient en arrière.
+  const ancre = cote === 'haut' ? ('bas' as const) : undefined
 
   const borner = (brute: number): number =>
     Math.min(HAUTEUR_MAX, Math.max(HAUTEUR_MIN, Math.round(brute / HAUTEUR_PAS) * HAUTEUR_PAS))
@@ -260,7 +273,7 @@ function PoigneeHauteur({
     if (!debut) return
     const ecart = ((evenement.clientY - debut.y) / debut.echelle) * sens
     const cible = borner(debut.hauteur + ecart)
-    if (cible !== hauteur) surHauteur(cle, cible)
+    if (cible !== hauteur) surHauteur(cle, cible, ancre)
   }
 
   const finir = () => {
@@ -280,11 +293,11 @@ function PoigneeHauteur({
         const base = hauteur ?? 620
         if (evenement.key === 'ArrowUp') {
           evenement.preventDefault()
-          surHauteur(cle, borner(base - HAUTEUR_PAS * sens))
+          surHauteur(cle, borner(base - HAUTEUR_PAS * sens), ancre)
         }
         if (evenement.key === 'ArrowDown') {
           evenement.preventDefault()
-          surHauteur(cle, borner(base + HAUTEUR_PAS * sens))
+          surHauteur(cle, borner(base + HAUTEUR_PAS * sens), ancre)
         }
       }}
       aria-label={`Bord ${cote}. Hauteur : ${hauteur ?? 'automatique'}. Flèches haut et bas pour ajuster.`}
@@ -315,7 +328,19 @@ function RenduGrille({
   surRedimensionner,
   surHauteur,
   lecteurVideo,
-}: PropsModele) {
+  seulementSuite = false,
+}: PropsModele & {
+  /**
+   * Modèle 3 : seuls les blocs **ajoutés** passent par la grille — ses
+   * emplacements à lui sont dessinés dans la composition vidéo, qui est
+   * indivisible. Tout le reste (l'ordre de la page, les largeurs, les hauteurs,
+   * les décalages, les poignées) est celui des autres modèles : il n'y a qu'un
+   * seul chemin, donc rien qui puisse diverger. Une grille séparée l'avait
+   * fait — elle affichait les blocs dans l'ordre où ils avaient été créés, et
+   * les flèches ▲▼ ne changeaient rien.
+   */
+  seulementSuite?: boolean
+}) {
   const edition = emp !== undefined
   const env = habiller(contenu, emp)
   const modele = modelePar(contenu.modele)
@@ -337,7 +362,9 @@ function RenduGrille({
   ) => (
     <div
       key={cle}
-      className={`mdl__cellule${classe ? ` ${classe}` : ''}`}
+      className={`mdl__cellule${classe ? ` ${classe}` : ''}${
+        hauteur === undefined ? '' : ' mdl__cellule--hauteur'
+      }${estAncreBas(contenu, cle) ? ' mdl__cellule--bas' : ''}`}
       style={{
         // La cellule occupe le décalage **et** le bloc : les colonnes vides
         // sont à l'intérieur d'elle, en marge gauche (voir « modeles.css »).
@@ -384,6 +411,7 @@ function RenduGrille({
   // librement. Sans « ordre », on retrouve l'ordre du modèle — voir
   // `ordreCellules`.
   for (const cle of ordreCellules(contenu, modele)) {
+    if (seulementSuite && !cle.startsWith('suite:')) continue
     if (cle.startsWith('suite:')) {
       const bloc = suite.find((candidat) => `suite:${candidat.id}` === cle)
       if (!bloc) continue
@@ -424,6 +452,10 @@ function RenduGrille({
     )
   }
 
+  // Modèle 3 sans bloc ajouté : pas de grille du tout sous la composition
+  // vidéo, sinon ses marges laisseraient une bande vide. Les autres modèles
+  // gardent leur grille même vide — leur mise en page d'avant, au nœud près.
+  if (seulementSuite && cellules.length === 0) return null
   return <div className="mdl__grille">{cellules}</div>
 }
 
@@ -459,6 +491,7 @@ function renduEmplacement(
           profil="grand"
           libelleVide="Image"
           surImage={surImage}
+          focal={focalDe(contenu, nom)}
         />,
       )
     case 'galerie':
@@ -499,7 +532,7 @@ function renduBlocLibre(
   ctx: Pick<PropsModele, 'contenu' | 'media' | 'surImage' | 'lecteurVideo'>,
   env: EnveloppeEmplacement,
 ): ReactNode {
-  const { media, surImage, lecteurVideo } = ctx
+  const { contenu, media, surImage, lecteurVideo } = ctx
   const nom = `suite:${bloc.id}`
   // Éditeur : les vidéos et les ateliers sont affichés mais inertes, sinon
   // toucher une réponse répondrait au quiz au lieu de sélectionner le bloc.
@@ -522,6 +555,7 @@ function renduBlocLibre(
           profil="grand"
           libelleVide="Photo ajoutée (vide)"
           surImage={surImage}
+          focal={focalDe(contenu, nom)}
         />,
       )
     case 'galerie':
@@ -589,79 +623,10 @@ export function Modele2(props: PropsModele) {
   )
 }
 
-/**
- * Blocs ajoutés seuls, sur la grille de 12 colonnes.
- *
- * Sert au modèle 3, dont la composition vidéo est indivisible (sa déclaration
- * le dit expressément) : ses emplacements ne passent donc pas par la grille,
- * mais les blocs ajoutés dessous, si.
- */
-function GrilleBlocsAjoutes({
-  contenu,
-  media,
-  emp,
-  surImage,
-  surRedimensionner,
-  lecteurVideo,
-}: PropsModele) {
-  const edition = emp !== undefined
-  const env = habiller(contenu, emp)
-  const sections = (modelePar(contenu.modele)?.sections ?? []).map((s) => s.nom)
-  const blocs = lireSuite(contenu).filter((bloc) => edition || !estBlocLibreVide(bloc))
-  if (blocs.length === 0) return null
-  void sections
-
-  return (
-    <div className="mdl__grille">
-      {blocs.map((bloc) => {
-        const colonnes = colonnesDe(bloc)
-        const decalage = decalageDe(bloc)
-        return (
-          <div
-            key={bloc.id}
-            className={`mdl__cellule${
-              bloc.valeur.type === 'galerie'
-                ? ' mdl__cellule--galerie'
-                : bloc.valeur.type === 'video'
-                  ? ' mdl__cellule--video'
-                  : ''
-            }`}
-            style={{
-              gridColumn: `span ${decalage + colonnes}`,
-              ...(decalage === 0
-                ? {}
-                : {
-                    ['--decalage' as string]: decalage,
-                    ['--travee' as string]: decalage + colonnes,
-                  }),
-            }}
-          >
-            {renduBlocLibre(bloc, { contenu, media, surImage, lecteurVideo }, env)}
-            {surRedimensionner ? (
-              <PoigneeLargeur
-                cle={`suite:${bloc.id}`}
-                colonnes={colonnes}
-                decalage={decalage}
-                surRedimensionner={surRedimensionner}
-              />
-            ) : null}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 // ── Modèle 3 — Vidéo en avant ────────────────────────────────────────────────
 
-export function Modele3({
-  contenu,
-  media,
-  emp,
-  surImage,
-  surRedimensionner,
-  lecteurVideo = false,
-}: PropsModele) {
+export function Modele3(props: PropsModele) {
+  const { contenu, media, emp, lecteurVideo = false } = props
   const env = habiller(contenu, emp)
   const encartTitre = lireTexte(contenu, 'encartTitre')
   const encartTexte = lireTexte(contenu, 'encartTexte')
@@ -733,14 +698,11 @@ export function Modele3({
         </div>
       </div>
 
-      <GrilleBlocsAjoutes
-        contenu={contenu}
-        media={media}
-        emp={emp}
-        surImage={surImage}
-        surRedimensionner={surRedimensionner}
-        lecteurVideo={lecteurVideo}
-      />
+      {/* Les blocs ajoutés passent par la **même** grille que les autres
+          modèles : l'ordre de la page, les hauteurs et les poignées y sont donc
+          les mêmes partout. Seuls les emplacements du modèle sont écartés — ils
+          sont dessinés ci-dessus, dans la composition vidéo. */}
+      <RenduGrille {...props} lecteurVideo={lecteurVideo} seulementSuite />
     </article>
   )
 }

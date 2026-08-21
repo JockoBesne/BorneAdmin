@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { mediasReferences, type ContenuPage, type Manifeste, type PageManifeste } from '@borne/contenu'
 import type { ResoudreMedia } from '@borne/contenu/rendu'
+import { variablesHub } from './couleurs.js'
 
 /**
  * Écran d'accueil de la borne (le « hub »).
@@ -68,11 +69,14 @@ export function Accueil({
     }, 0)
   }
 
-  // Image de fond de l'accueil, si le musée en a choisi une.
+  // Image de fond de l'accueil, si le musée en a choisi une, et l'apparence des
+  // trois textes (grand titre, sous-titre, barre de titre des cartes). Les
+  // réglages non faits n'écrivent rien : la feuille de style garde ses valeurs.
   const fond = media(manifeste.reglages.hubImage ?? null)
-  const style = fond
-    ? { backgroundImage: `url("${fond.url('grand')}")` }
-    : undefined
+  const style = {
+    ...(fond ? { backgroundImage: `url("${fond.url('grand')}")` } : {}),
+    ...variablesHub(manifeste.reglages),
+  }
 
   // Les cartes se partagent la largeur disponible : une seule page l'occupe
   // entière, deux la coupent en deux, trois en trois. Au-delà de trois, on

@@ -20,12 +20,19 @@ export function BlocImage({
   profil,
   libelleVide,
   surImage,
+  focal,
 }: {
   valeur: ValeurImage
   media: ResoudreMedia
   profil: ProfilImage
   libelleVide: string
-  surImage?: (mediaId: string) => void
+  surImage?: (mediaId: string, legende?: string) => void
+  /**
+   * Partie de la photo gardée dans un cadre recadré, en pourcentage (0–100).
+   * Absente : le point focal du média, comme avant ce réglage. C'est ce qui
+   * permet de cadrer la **même** photo autrement d'un bloc à l'autre.
+   */
+  focal?: { x: number; y: number }
 }) {
   const resolu = media(valeur.mediaId)
   if (!resolu || resolu.type !== 'image') return <BlocVide libelle={libelleVide} />
@@ -37,7 +44,9 @@ export function BlocImage({
       src={resolu.url(profil)}
       alt={legende}
       style={{
-        objectPosition: `${resolu.pointFocal.x * 100}% ${resolu.pointFocal.y * 100}%`,
+        objectPosition: `${focal?.x ?? resolu.pointFocal.x * 100}% ${
+          focal?.y ?? resolu.pointFocal.y * 100
+        }%`,
       }}
       draggable={false}
     />
@@ -49,7 +58,7 @@ export function BlocImage({
         <button
           type="button"
           className="b-image__zone b-image__zone--tactile"
-          onClick={() => surImage(resolu.id)}
+          onClick={() => surImage(resolu.id, legende)}
           aria-label={legende ? `Agrandir : ${legende}` : 'Agrandir la photo'}
         >
           {image}
@@ -71,7 +80,7 @@ export function BlocGalerie({
   elements: ElementGalerie[]
   media: ResoudreMedia
   libelleVide: string
-  surImage?: (mediaId: string) => void
+  surImage?: (mediaId: string, legende?: string) => void
 }) {
   if (elements.length === 0) return <BlocVide libelle={libelleVide} />
 
@@ -98,7 +107,7 @@ export function BlocGalerie({
               <button
                 type="button"
                 className="b-galerie__zone"
-                onClick={() => surImage(resolu.id)}
+                onClick={() => surImage(resolu.id, legende)}
                 aria-label={legende ? `Agrandir : ${legende}` : 'Agrandir la photo'}
               >
                 {image}

@@ -35,8 +35,14 @@ export interface PropsModele {
   contenu: ContenuPage
   media: ResoudreMedia
   emp?: EnveloppeEmplacement
-  /** Borne : ouvre la visionneuse plein écran. Absent en administration. */
-  surImage?: (mediaId: string) => void
+  /**
+   * Borne : ouvre la visionneuse plein écran. Absent en administration.
+   *
+   * La légende est **celle du bloc**, pas celle de la bibliothèque : la même
+   * photo se légende autrement d'une page à l'autre, et c'est ce texte-là que
+   * le musée a écrit sous cette photo-ci.
+   */
+  surImage?: (mediaId: string, legende?: string) => void
   /** Borne : lecteur vidéo réel. Administration : image de couverture seule. */
   lecteurVideo?: boolean
   /**
@@ -50,5 +56,5 @@ export interface PropsModele {
    * de toile. Seuls ces deux types en ont une réglable — la hauteur d'un texte
    * découle de son contenu, celle d'une vidéo de ses proportions.
    */
-  surHauteur?: (cle: string, hauteur: number) => void
+  surHauteur?: (cle: string, hauteur: number, ancre?: 'bas') => void
 }

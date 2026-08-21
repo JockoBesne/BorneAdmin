@@ -418,6 +418,34 @@
   padding-left: calc(
     (100% + var(--gouttiere-grille)) * var(--decalage, 0) / var(--travee, 1)
   );
+  /* Hauteur réglée à la poignée : un **plancher**, pas un plafond. Le bloc
+     s'agrandit, mais ne descend jamais sous son contenu — sans quoi un texte
+     trop long déborderait sur la rangée suivante. Variable absente : rien ne
+     change, comme avant ce réglage. */
+  min-height: var(--hauteur-bloc, 0);
+}
+
+/* Bloc dont la hauteur a été réglée à la poignée : son contenu est **centré**
+   dans la hauteur, au lieu d'être collé en haut avec le vide sous lui. La
+   classe n'est posée que si une hauteur existe : une page qui n'en règle
+   aucune garde exactement la mise en page d'avant, sans passer par flex.
+   L'habillage reprend la règle pour les blocs dont la cellule a une hauteur
+   ferme (galerie, vidéo) : là il remplit, et c'est à lui de centrer. Sélecteur
+   **descendant** et non « > » : dans l'éditeur, l'habillage est enveloppé du
+   bloc cliquable « .emp », qui s'intercale entre la cellule et lui. */
+.mdl__cellule--hauteur,
+.mdl__cellule--hauteur .b-hab {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Bloc dont la hauteur a été réglée par la poignée du **haut** : il est posé au
+   bas de sa rangée, et non en haut comme les autres. C'est ce qui retient son
+   bord bas pendant qu'on tire le haut — à condition qu'un voisin plus grand
+   tienne la rangée, sinon il n'y a rien à reprendre au-dessus. */
+.mdl__cellule--bas {
+  align-self: end;
 }
 
 /* Une galerie n'a pas de hauteur propre : sans plafond, elle prendrait la
@@ -427,14 +455,17 @@
 }
 
 /* Une vidéo ajoutée prend un cadre 16/9 : sa hauteur découle de sa largeur et
-   suit donc la poignée. */
+   suit donc la poignée. Une hauteur réglée à la main l'emporte sur le cadre —
+   il faut alors une vraie hauteur (et non le seul plancher), sinon le lecteur,
+   qui se dit « height: 100 % », n'aurait rien contre quoi se mesurer. */
 .mdl__cellule--video {
   aspect-ratio: 16 / 9;
+  height: var(--hauteur-bloc, auto);
 }
 
-/* Poignées de hauteur : même principe, sur les bords haut et bas, et seulement
-   pour les images et les galeries — la hauteur d'un texte découle de son
-   contenu. Elles passent **au-dessus** des poignées de largeur (z-index) : aux
+/* Poignées de hauteur : même principe, sur les bords haut et bas. Tous les
+   blocs en ont, sauf une photo non recadrée — elle est entière et son bloc suit
+   ses proportions (voir « hauteurReglable »). Elles passent **au-dessus** des poignées de largeur (z-index) : aux
    quatre coins, les deux se recouvrent, et c'est le geste vertical qui gagne. */
 .mdl__poignee-hauteur {
   position: absolute;
@@ -1050,6 +1081,21 @@
   /* Même hauteur que l'enveloppe de l'éditeur : les blocs qui comptent sur la
      hauteur de leur cadre (galerie, vidéo) la retrouvent à l'identique. */
   height: 100%;
+  /* **Pas** de « min-height » ici, exprès : la hauteur réglée à la poignée
+     réserve de la place dans la page, elle ne gonfle pas le bloc. L'habillage
+     garde donc la taille de son contenu, il est centré dans la place réservée,
+     et le vide qui reste au-dessus et au-dessous est l'espace demandé entre les
+     blocs. Un fond qui remplissait toute la hauteur venait au contraire coller
+     le bloc à ses voisins. Galerie et vidéo, elles, ont une hauteur ferme sur
+     leur cellule : « height: 100 % » ci-dessus les fait remplir comme avant. */
+}
+
+/* Le choix laissé à l'utilisateur (case « Le fond remplit toute la hauteur ») :
+   le fond descend jusqu'aux bords de la place réservée par la poignée, au lieu
+   d'épouser le contenu. Non cochée, la hauteur reste de l'espace autour du bloc
+   — c'est le comportement par défaut, et celui des pages écrites avant. */
+.b-hab--remplir {
+  min-height: var(--hauteur-bloc, 0);
 }
 
 /* Un fond a besoin d'air : sans marge intérieure, le texte collerait au bord.

@@ -162,11 +162,53 @@ function PavePin({
     setCode(codeCourant.current)
   }
 
+  /**
+   * Le code se tape aussi **au clavier** : pavé numérique, chiffres du haut,
+   * « Retour arrière » pour corriger. Le pavé à l'écran reste là, c'est lui qui
+   * sert dans la salle ; au bureau, le clavier est sous la main.
+   *
+   * On lit **la touche pressée** (`code`) avant le caractère produit (`key`) :
+   * le caractère ment deux fois plutôt qu'une.
+   * - Pavé numérique **Verr. Num. éteint** : la touche « 1 » envoie « Fin »,
+   *   « 2 » envoie « Flèche bas »… aucun chiffre n'arrive.
+   * - Clavier **AZERTY** : la rangée du haut écrit « & é " ' ( » tant qu'on ne
+   *   presse pas Maj.
+   * Dans les deux cas la touche, elle, reste « Numpad1 » ou « Digit1 ».
+   *
+   * Pas de tableau de dépendances : l'écouteur est reposé à chaque rendu et lit
+   * donc toujours le code à jour — même règle que les raccourcis de
+   * l'administration. « Échap » n'est pas écouté : la borne l'intercepte avant
+   * la page, il n'arrive jamais jusqu'ici.
+   */
+  useEffect(() => {
+    const chiffreDe = (evenement: KeyboardEvent): string | null => {
+      const touche = /^(?:Digit|Numpad)([0-9])$/.exec(evenement.code)
+      if (touche) return touche[1] ?? null
+      // Disposition exotique dont la touche n'est pas nommée : le caractère
+      // produit reste le meilleur indice.
+      return /^[0-9]$/.test(evenement.key) ? evenement.key : null
+    }
+
+    const auClavier = (evenement: KeyboardEvent) => {
+      if (evenement.ctrlKey || evenement.altKey || evenement.metaKey) return
+      const chiffre = chiffreDe(evenement)
+      if (chiffre !== null) {
+        evenement.preventDefault()
+        taper(chiffre)
+      } else if (evenement.key === 'Backspace' || evenement.code === 'Backspace') {
+        evenement.preventDefault()
+        effacer()
+      }
+    }
+    window.addEventListener('keydown', auClavier)
+    return () => window.removeEventListener('keydown', auClavier)
+  })
+
   return (
     <div className="pin" role="dialog" aria-modal="true" aria-label="Accès à l'administration">
       <div className="pin__boite">
         <h2 className="pin__titre">Administration</h2>
-        <p className="pin__aide">Saisissez le code d'accès</p>
+        <p className="pin__aide">Saisissez le code d'accès, au clavier ou sur le pavé</p>
 
         <div className="pin__points" aria-hidden="true">
           {Array.from({ length: pin.length }, (_, index) => (

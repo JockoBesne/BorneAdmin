@@ -32,9 +32,29 @@ blocs — **complet** depuis le 2026-08-05, menu d'ajout compris. Depuis le
 clé USB (voir `DECISIONS.md`), le **retour automatique à l'accueil** et les
 **sauvegardes** de `contenu.json`.
 
+**Rien ne doit ramener au bureau.** Aux touches déjà bloquées (F11, F5, Échap,
+Alt+F4, Ctrl+R/W/N…) s'ajoute le **repli de la fenêtre** : sous Windows, trois
+ou quatre doigts glissés vers le bas replient l'application et découvrent le
+bureau. Le geste ne se désactive pas depuis le code — `principal.cjs` écoute
+donc `minimize` et remonte la fenêtre (`restore`, `focus`, et **le niveau
+« screen-saver » à reposer**, sinon elle revient derrière la barre des tâches).
+`minimize` ne se refuse pas, contrairement à `close` : la fenêtre clignote.
+**Exception voulue : Ctrl + M** replie vraiment l'application (drapeau
+`repliAutorise`, même mécanique que `sortieAutorisee`) — on revient par
+l'icône de la barre des tâches, et l'événement `restore` repose le niveau
+« screen-saver » **et fait retomber le drapeau**. Ce second point n'est pas
+décoratif : appelé sur une fenêtre déjà repliée, `minimize()` n'émet aucun
+événement, le drapeau resterait levé, et le prochain geste à quatre doigts
+découvrirait le bureau — une fois.
+
 **Deux façons de fermer la borne**, arrivées par deux chemins et conservées
 toutes les deux : **Ctrl + Maj + A** depuis l'écran d'administration (elle
-enregistre d'abord, c'est celle à donner au musée) et **Ctrl + Alt + Maj + Q**
+enregistre d'abord, c'est celle à donner au musée — et depuis le 2026-08-19 un
+bouton **« Enregistrer et fermer l'application »** fait exactement la même
+chose, par le même `quitter()` : la salle n'a pas toujours un clavier. Il est
+dans la fenêtre **« Réglages »**, dans un encart à lui : posé dans la barre du
+haut, il voisinait « Fermer », qui ne fait que revenir à la borne — on fermait
+l'application en croyant fermer le menu) et **Ctrl + Alt + Maj + Q**
 n'importe où, y compris devant un visiteur — la sortie de maintenance, à garder
 pour vous. Les deux passent par `sortieAutorisee` dans `principal.cjs`.
 
@@ -63,6 +83,24 @@ borne écoute enfin `surImage`), et les photos d'une **galerie ne sont plus
 rognées** (`object-fit: contain`). Enfin, le **bandeau du haut se règle page par
 page** (voir « Bandeau du haut » dans les concepts).
 
+**Faits le 2026-08-19, en phase d'essais** — six défauts cherchés et corrigés.
+Les deux premiers cassaient l'**enregistrement** entier, voir « Zod avant
+d'écrire » : une **année de frise** hors bornes, une **galerie** de plus de
+douze photos. Les quatre autres :
+
+- le **modèle « Vidéo en avant »** avait une seconde grille écrite à part pour
+  ses blocs ajoutés : elle ignorait l'ordre de la page (les flèches ▲▼ ne
+  faisaient rien) et ne donnait aucune poignée de hauteur. Supprimée — il passe
+  par la même `RenduGrille` que les autres (`seulementSuite`) ;
+- « **Rétablir les couleurs d'origine** » ne touchait pas aux pages qui
+  s'étaient donné les leurs : sur un contenu personnalisé, le bouton ne changeait
+  rien à l'écran. Il passe désormais par le même `sansCouleursPropres` que les
+  disques de couleur ;
+- une photo agrandie affichait la légende de la **bibliothèque**, pas celle
+  écrite sous cette photo-là ; dans une galerie, la légende saisie n'apparaissait
+  nulle part. `surImage` porte maintenant la légende du bloc ;
+- le drapeau `repliAutorise` (Ctrl + M) ne retombait que dans un cas.
+
 **Sans objet** : l'ancienne « étape 3 — dossier partagé ». Il n'y a **qu'un seul
 ordinateur**, voir ci-dessous.
 
@@ -90,6 +128,24 @@ ordinateur**, voir ci-dessous.
   (ou avoir une valeur par défaut) pour ne pas invalider l'existant, **et être
   déclaré dans le schéma** — sinon il est effacé silencieusement à
   l'enregistrement. Piège déjà rencontré plusieurs fois.
+- **Une borne du schéma doit être tenue par la saisie, jamais par le schéma
+  seul.** Un bloc que le schéma refuse ne fait pas échouer *son* enregistrement :
+  il fait échouer **toute** écriture du contenu, la page entière partant d'un
+  bloc. Plus rien ne s'enregistre ensuite, et le seul signe est le petit
+  « ⚠ Échec » de la barre — le travail de la journée reste à l'écran sans jamais
+  atteindre le disque. Deux cas rencontrés le 2026-08-19 :
+  - l'**année d'une frise** n'était bornée que par le `min`/`max` de la case
+    « nombre », qui n'empêche rien : on y tape 20261 pour 2026, et le pavé à
+    l'écran de la borne écrit toujours **à la fin** du champ ;
+  - une **galerie** dépassait ses 12 photos, l'import en acceptant plusieurs
+    d'un coup (c'est fait pour) sans regarder le plafond.
+
+  D'où la règle : la valeur est ramenée dans les bornes **à la saisie**
+  (`anneeBornee` dans `lecture.ts`, `.slice(0, plafond)` dans `choisirMedias`),
+  et à partir des **mêmes constantes** que le schéma — c'est la double écriture
+  de la borne qui a fait le défaut. Modèles déjà en place : `changerVeille`,
+  `changerHauteurBandeau`, `redimensionnerBloc`, `poserTaille`. Couvert par
+  `lecture.test.ts`.
 
 ## Structure du code
 
@@ -121,13 +177,60 @@ ordinateur**, voir ci-dessous.
     temps. Aux deux bouts du parcours, le bouton reste en place mais éteint : la
     position des cibles ne bouge jamais d'une page à l'autre. Étant dans la
     toile, leurs tailles sont en **pixels de toile**, pas en `vw`.
+    La **`Visionneuse`** (photo touchée, affichée en grand) reçoit la légende
+    **du bloc** et non celle du média : `surImage(id, legende)`. Elle affichait
+    celle de la bibliothèque jusqu'au 2026-08-19 — la même photo se légende
+    autrement d'une page à l'autre, et dans une galerie la légende saisie
+    n'apparaissait alors nulle part. Même priorité que le `figcaption` d'un bloc
+    image : celle du bloc, à défaut celle du média.
   - `src/Accueil.tsx` — le sommaire. La vignette d'une carte est montrée
     **entière** (`object-fit: contain`), sur un fond fait de la même image
     floutée et assombrie (`.hub__fond`). Rognée (« cover »), une carte ou une
     planche de signaux devenait une bande illisible ; montrée entière sans ce
-    fond, elle flottait au milieu d'un grand vide.
+    fond, elle flottait au milieu d'un grand vide. (Essayé en « cover » le
+    2026-08-19 sur un malentendu, remis aussitôt.)
+    Le panneau « Écran d'accueil » est aussi le seul endroit d'où l'on **écrit
+    le grand titre et le sous-titre** (`reglages.titreVeille` et
+    `sousTitreVeille` — nom d'origine, il s'agit bien de l'accueil) : ils
+    vivaient dans le fichier sans que personne puisse les changer.
+    Son panneau règle aussi l'**apparence des trois textes de l'accueil**
+    (2026-08-19) : le grand titre, le sous-titre, et la barre de titre au bas
+    des cartes — couleur pour chacun, taille en pourcentage, plus un fond pour
+    la barre. Sept champs facultatifs de `reglages` (`hubTitreCouleur`,
+    `hubTitreTaille`, `hubSousTitreCouleur`, `hubSousTitreTaille`, `hubNomFond`,
+    `hubNomCouleur`, `hubNomTaille`), posés en **variables CSS avec valeur de
+    repli** par `variablesHub` (`couleurs.ts`) sur `.hub` : tant que rien n'est
+    réglé, aucune variable n'est écrite et l'accueil est celui d'avant. Même
+    méthode que le bandeau des pages, et même raison — rien à migrer. La taille
+    est un **facteur** (`calc`), les trois textes gardent donc leurs écarts, et
+    une taille ramenée à 100 sort du fichier. Le bouton « Remettre l'apparence
+    d'origine » efface les neuf réglages d'un coup.
   - `src/AccesAdmin.tsx` — accès caché (coin, appui 5 s, code PIN).
-  - `src/Admin.tsx` — liste des pages, panneau « Apparence », enregistrement auto.
+    Entrer dans l'administration **depuis une page** ouvre droit sa
+    modification : `Visiteur` dit la page ouverte à `App` (`surPageOuverte`),
+    qui la passe à `Admin` (`pageInitiale`). Depuis l'accueil, rien n'est passé
+    et c'est la liste des pages, comme avant. **Le retour suit le même fil** :
+    « Fermer » renvoie la page en cours (`surFermeture(pageOuverte)`) et la
+    borne rouvre cette page (`Visiteur.pageInitiale`) — on va voir ce qu'on
+    vient de corriger. Fermé depuis la liste, on retombe sur l'accueil.
+  - **« Apparence généralisée » l'emporte sur tout ce qui a été réglé avant.**
+    Changer la couleur de fond ou de texte générale **efface** celle des pages
+    et de l'accueil qui s'en étaient donné une (`changerCouleur` dans
+    `Admin.tsx`) : la **dernière modification en date** gagne, et non la page
+    par principe. Sans cela, le réglage général ne changeait rien aux pages
+    personnalisées et passait pour cassé. Réversible par Ctrl + Z, comme tout le
+    reste. **Le bouton « Rétablir les couleurs d'origine » suit la même règle** :
+    il ne le faisait pas, et sur un contenu dont les pages ont leurs couleurs — le
+    cas même pour lequel cette règle existe — il ne changeait rien à l'écran
+    (2026-08-19). Un seul passage pour les deux, `sansCouleursPropres`.
+    Chaque fenêtre de réglages porte une ligne (`.voile__note`) qui dit ce
+    qu'elle change et ce qu'elle ne change pas.
+  - `src/Admin.tsx` — liste des pages, panneaux « Apparence », « Écran
+    d'accueil » et « Réglages », enregistrement auto. « Réglages » tient le
+    **code d'accès** (modifiable depuis le 2026-08-19) et la fermeture de
+    l'application. Le code n'est écrit dans le contenu **qu'une fois les quatre
+    chiffres tapés** (état `pinSaisi` à part) : incomplet, il serait refusé par
+    le schéma à l'enregistrement et plus rien ne s'enregistrerait.
     Le panneau « Écran d'accueil » règle aussi le **délai avant le retour
     automatique** (`minutesAvantVeille`, 1 à 60 minutes) : le réglage vivait dans
     le fichier de contenu sans que personne puisse le voir.
@@ -137,6 +240,10 @@ ordinateur**, voir ci-dessous.
     personnalisation. Rien en bas de la colonne.
   - `src/ChampTexteRiche.tsx` — saisie du texte mis en forme (gras, italique,
     souligné, listes) sans jamais stocker de HTML.
+  - `src/Voile.tsx` — la **croix de fermeture** des fenêtres de réglages, collée
+    en haut (`position: sticky`) : les panneaux défilent, et le bouton
+    « Terminé » du bas était introuvable sans tout parcourir. Elle ne pousse pas
+    le titre — la place qu'elle prend dans la colonne est reprise en marge basse.
   - `src/RoueCouleur.tsx`, `src/couleurs.ts` — disque de couleur et conversions.
   - `src/contenu.ts` — chargement / enregistrement / import de médias.
 - **`packages/contenu/`** — cœur du produit, partagé.
@@ -156,21 +263,48 @@ ordinateur**, voir ci-dessous.
 - **`contenu-exemple/`** — jeu de test lu/écrit par défaut (`BORNE_CONTENU` pour
   en pointer un autre). Depuis le 2026-08-18, c'est aussi la **démonstration de
   présentation** : les 12 pages du 3ᵉ étage, refaites pour montrer tous les
-  outils de mise en page (les quatre modèles, grille et décalages, hauteurs et
-  recadrage, habillages, textes enrichis, quiz et frises, couleurs par page).
-  L'état d'avant est gardé dans `contenu.json.avant-refonte-demo`.
+  outils de mise en page (grille et décalages, hauteurs et recadrage,
+  habillages, textes enrichis, quiz et frises). L'état d'avant est gardé dans
+  `contenu.json.avant-refonte-demo`, et celui d'avant la mise au propre du
+  2026-08-19 dans `contenu.json.avant-presentation`.
+  - **Trois registres, et trois seulement** (2026-08-19) : le **chiffre**, plaque
+    d'or pleine (`#e9b44c`) à texte bleu nuit ; la **citation**, texte d'or en
+    italique centré, sans fond ; l'**encart**, carte `#16324c` — la teinte des
+    cartes du thème. L'or posé en fond *translucide* est à proscrire : à 20 %
+    sur le bleu nuit il vire au gris-vert (mesuré `#3a3f3b`), et c'est ce qui
+    faisait passer les plaques pour des dalles sales. Fond général `#0e2237`,
+    celui pour lequel `--b-surface` a été dessiné ; bandeau identique sur les
+    douze pages (aucune couleur écrite, c'est le repli de la feuille de style).
   - **Piège, rencontré et payé cher : les légendes des médias ne décrivaient pas
     les fichiers.** « chappe-tour » est une *carte* du réseau, pas une tour ;
-    « morse-manipulateur » est l'*alphabet* Morse ; « radio-philips » était le
-    *logo* de la marque ; « pigeon-vitrine-1/2 » montrent l'appareil photo de
-    Neubronner. Une démonstration bâtie sur ces légendes présente chaque pièce
-    pour ce qu'elle n'est pas. **Regarder les fichiers avant de les placer** :
-    on ouvre les images (une planche-contact injectée dans la fenêtre suffit),
-    on relève ce qu'elles montrent, et seulement ensuite on écrit la page.
+    « morse-manipulateur » est l'*alphabet* Morse ; « chiffrement » est un
+    *schéma*, pas les machines du musée ; « radio-philips » était le *logo* de
+    la marque ; « pigeon-vitrine-1/2 » montrent l'appareil photo de Neubronner.
+    Une démonstration bâtie sur ces légendes présente chaque pièce pour ce
+    qu'elle n'est pas. Toutes corrigées le 2026-08-19. **Regarder les fichiers
+    avant de les placer** : on ouvre les images (une planche-contact injectée
+    dans la fenêtre suffit), on relève ce qu'elles montrent, et seulement
+    ensuite on écrit la page.
+  - **Une pièce qui n'est pas une photographie ne se recadre pas.** Affiches,
+    gravures, planches, schémas, dessins, objets détourés : coupés, il n'en
+    reste qu'une bande — l'alphabet Morse recadré à 420 px ne montrait plus une
+    seule lettre. Dix images sont passées en « entières » le 2026-08-19. Restent
+    recadrées les pièces **en hauteur** (pile de Volta, planche de croquis 1916,
+    Enigma) : montrées entières, elles feraient 1 200 px de haut.
+  - **Le vide se mesure, il ne s'estime pas.** Les hauteurs ont été reprises en
+    pilotant la borne par CDP : pour chaque rangée, hauteur réservée contre
+    hauteur réellement occupée par le contenu. Une hauteur n'est gardée que si
+    elle aligne un texte sur une image plus grande ; ailleurs elle est retirée.
+    Plus aucune rangée ne réserve plus de 40 px au-delà de son contenu.
   - L'illustration générée par IA (`tours-signaux-chaine.png`) et le logo
-    Philips ont été retirés de la bibliothèque ; les fichiers restent sur le
-    disque. Deux pages n'ont donc **aucune photo** (l'entre-deux-guerres, la
-    télévision) : il manque des clichés pris au musée.
+    Philips sont retirés de la bibliothèque ; les fichiers restent sur le
+    disque. « Avant l'électricité » ouvre désormais sur le tableau de Merson.
+    `radiogoniometre.jpg` ne fait que 315 × 640 : il est agrandi 2,7 fois et ça
+    se voit — à rephotographier au musée.
+  - **`lotr-feux-alarme.mp4` est un extrait de film de fiction.** Il illustre
+    bien les feux relayés de sommet en sommet, mais ce n'est pas une pièce du
+    musée et les droits n'ont pas été vérifiés : à remplacer avant toute
+    présentation publique.
 - **`packages/ui/`** — composants génériques, peu utilisés.
 - `apps/api`, `apps/admin`, `apps/borne` — **réservoir** de code de l'ancienne
   architecture. Ne tournent plus, ne sont plus installés, mais restent une
@@ -288,6 +422,11 @@ ordinateur**, voir ci-dessous.
     largeur`) — le calcul tombe juste sur la grille, il dépend de
     `--gouttiere-grille`. Tout autre dépôt le remet à zéro : c'est ainsi qu'on
     supprime un espace. Absent = 0, le comportement d'avant.
+    Le bouton **« ↔ »** de la ligne du bloc (panneau de droite) **centre** le
+    bloc sur sa rangée : il ne fait qu'écrire ce décalage, moitié de la place
+    qui reste. Rappuyer le recolle à gauche. Le calcul est refait à l'appui,
+    donc un bloc élargi ensuite n'est plus centré tant qu'on n'a pas rappuyé —
+    rien n'est ajouté au fichier de contenu pour ça.
   - **Trois bords se tirent** : le **droit** (la largeur), le **haut** et le
     **bas** (la hauteur, images et galeries). **Rien à gauche** — deux versions y
     ont été essayées, déplacer le bord gauche puis déplacer le bloc entier, et
@@ -301,6 +440,16 @@ ordinateur**, voir ci-dessous.
     - **Exception explicite** : la case « Recadrer la photo » du panneau du bloc
       (`StyleBloc.recadre`). Cochée, le bloc reçoit une hauteur (poignées haute et
       basse) et la photo la remplit en se recadrant autour de son point focal.
+      **On déplace alors la photo dans son cadre** (2026-08-19) : on sélectionne
+      le bloc, puis on fait glisser la photo — le cadrage est rangé par bloc
+      (`StyleBloc.focalX / focalY`, en %), la **même** photo peut donc être
+      cadrée autrement ailleurs. Trois points : le geste n'existe que sur le
+      bloc **sélectionné** (sinon il volerait le glisser-déposer, qui déplace le
+      bloc), la photo suit le doigt par `image.style.objectPosition` sans passer
+      par React (un rendu par mouvement traînerait), et le contenu n'est écrit
+      **qu'au relâchement** — un seul pas d'annulation. La course du geste est
+      ce qui dépasse du cadre (`cover`), cadre et débordement étant tous deux en
+      pixels d'écran, le zoom de la toile ne s'en mêle pas.
       Cocher la case **mesure d'abord la hauteur qu'occupe déjà la photo** : rien
       ne bouge, rien n'est coupé tant qu'on n'a pas tiré une poignée.
     - `hauteurCellule` est le seul passage : une photo non recadrée n'a jamais de
@@ -324,14 +473,52 @@ ordinateur**, voir ci-dessous.
     par la clé (`suite:<id>` ou le nom).
   - L'ancien champ `largeur: 'pleine' | 'moitie'` n'est plus écrit mais **reste
     lu** : ne pas le supprimer.
-  - **Hauteur** : les galeries en ont une réglable, les photos **seulement si on
-    a coché « Recadrer »** (`hauteurReglable(type, recadre)`) — la hauteur d'un
-    texte découle de son contenu, celle d'une vidéo de son cadre 16/9. Rangée dans
+  - **Hauteur** : **tout bloc** en a une réglable aux poignées haute et basse,
+    sauf une photo — elle n'en a une que si on a coché « Recadrer »
+    (`hauteurReglable(type, recadre)`). Depuis le 2026-08-19, sur un bloc qui
+    s'écoule (texte, titre, quiz, frise) la hauteur est un **plancher**
+    (`min-height` sur `.mdl__cellule` **et** sur `.b-hab`, qui sinon laisserait
+    le fond s'arrêter au bas du texte) : elle ajoute de la place, elle n'en
+    retire jamais — un texte ne peut donc pas être rogné ni déborder sur la
+    rangée suivante. Galerie et photo recadrée gardent leur vraie hauteur, et
+    une vidéo troque son cadre 16/9 contre la hauteur réglée. Dans un bloc dont
+    la hauteur a été réglée, le contenu est **centré en hauteur** plutôt que
+    collé en haut (`.mdl__cellule--hauteur`, posée seulement si une hauteur
+    existe — sans quoi toutes les cellules passeraient en flex pour rien ; et
+    reprise sur `.b-hab`, qui remplit la cellule et doit donc centrer lui-même
+    son texte). **Piège** : le sélecteur de l'habillage doit être *descendant*,
+    pas `>` — dans l'éditeur, `.emp` (le bloc cliquable) s'intercale entre la
+    cellule et l'habillage, et le centrage ne marchait que côté borne.
+    **Chaque poignée retient son bord opposé** : celle du bas laisse le haut en
+    place (le bloc descend), celle du haut pose `StyleBloc.ancre = 'bas'`, d'où
+    `align-self: end` sur la cellule — le bas ne bouge plus, c'est le haut qui
+    monte. Limite assumée : un bloc qui est déjà le plus grand de sa rangée n'a
+    rien à reprendre au-dessus de lui, la rangée grandit alors vers le bas.
+    L'ancre s'écrit dans le **même** pas d'historique que la hauteur.
+    **La hauteur réserve de la place, elle ne gonfle pas le bloc** : l'habillage
+    n'a exprès *pas* de `min-height` (il l'a eu une demi-journée, le 2026-08-19 :
+    le fond remplissait toute la hauteur et collait le bloc à ses voisins). Le
+    bloc garde la taille de son contenu, il est centré dans la place réservée,
+    et le vide au-dessus et au-dessous **est** l'espace entre les blocs — le
+    seul moyen d'en régler un. Galerie et vidéo font exception : leur cellule a
+    une hauteur ferme, elles remplissent. **Le choix est laissé** par la case
+    « Le fond remplit toute la hauteur » (`StyleBloc.remplir`, `.b-hab--remplir`,
+    dans le disque du fond) : cochée, l'aplat de couleur descend jusqu'aux bords
+    de la place réservée ; décochée (le défaut, et l'état des pages existantes),
+    le fond épouse le texte et la hauteur reste de l'espace. Elle n'apparaît
+    qu'une fois un fond choisi — sans fond, elle ne changerait rien à l'œil.
+    Rangée dans
     `hauteur` (bloc) ou `contenu.hauteurs[nom]` (emplacement), en pixels de toile,
     lue par le rendu via la variable CSS `--hauteur-bloc`. Absente, la galerie
     fait 260 px.
   - **Le modèle 3 fait exception** : sa composition vidéo est indivisible, ses
-    emplacements ne passent pas par la grille. Ses blocs ajoutés, si.
+    emplacements ne passent pas par la grille. Ses blocs ajoutés, si — et par
+    **la même** `RenduGrille` que les autres modèles, qui écarte alors les
+    emplacements (`seulementSuite`). Il a eu sa propre grille jusqu'au
+    2026-08-19 : elle affichait les blocs dans l'ordre où ils avaient été créés,
+    ignorait `ordre` (les flèches ▲▼ ne faisaient rien) et ne donnait aucune
+    poignée de hauteur. Ne pas en refaire une : deux rendus ne restent jamais
+    d'accord.
 - **Toile** (`ToileBorne`) = conteneur de référence **1920 px de large**, mis à
   l'échelle sur la largeur du parent avec **`zoom`** (et non `transform`). Une
   page plus haute qu'un écran **défile**.
@@ -364,6 +551,12 @@ ordinateur**, voir ci-dessous.
   tient en mémoire, rien ne peut se désynchroniser. Trois points à connaître :
   - tout passe par `modifier()`, seul endroit qui écrit le contenu — c'est ce
     qui rend l'historique complet sans le câbler action par action ;
+  - l'historique est rangé **hors du composant** (`HISTORIQUE`, module
+    `Admin.tsx`) : il survit à un aller-retour par la borne, puisque c'est en
+    regardant le résultat qu'on se dit qu'on préférait l'état d'avant. Sans
+    danger (rien d'autre n'écrit le contenu, et tout est enregistré avant de
+    rendre la main) et sans poids (50 pas au plus, dont les objets sont
+    partagés). Il part avec l'application ;
   - les modifications espacées de moins de 600 ms ne font **qu'un** pas :
     sinon annuler une phrase demanderait autant d'appuis que de lettres ;
   - dans un champ de saisie, le raccourci est laissé au navigateur (on annule
@@ -372,7 +565,13 @@ ordinateur**, voir ci-dessous.
     texte enrichi : sans lui, un texte annulé resterait affiché à l'écran.
 - **Accès admin** : coin haut-droit invisible, appui **5 s**, puis code PIN
   (`reglages.pinAdmin`, défaut **1975**). Raccourci équivalent au clavier :
-  **Ctrl + Alt + A**. Le code est **en clair** dans `contenu.json` : il écarte un
+  **Ctrl + Alt + A**. Le code se tape au pavé à l'écran **ou au clavier**
+  (« Retour arrière » pour corriger ; pas « Échap », que la borne intercepte
+  avant la page). **On lit la touche pressée (`code`), pas le caractère produit
+  (`key`)** : pavé numérique avec Verr. Num. éteint, la touche « 1 » envoie
+  « Fin » ; sur AZERTY, la rangée du haut écrit « & é " » sans Maj. Dans les
+  deux cas, `code` vaut toujours « Numpad1 » ou « Digit1 ». Défaut constaté et
+  corrigé le 2026-08-19. Le code est **en clair** dans `contenu.json` : il écarte un
   visiteur curieux, **ce n'est pas une sécurité** — ne jamais le présenter comme
   telle au musée.
 
@@ -443,6 +642,14 @@ Ce qu'il faut savoir avant d'y toucher :
 
 ## Pièges d'affichage déjà rencontrés
 
+- **La gouttière de barre de défilement se voit.** `.toile` réserve la place de
+  la barre **des deux côtés** (`scrollbar-gutter: stable both-edges`) pour que
+  l'échelle d'une page n'oscille pas selon qu'elle défile ou non. Sur l'accueil,
+  qui ne défile jamais, elle laissait deux bandes de 14 px du fond de
+  l'application le long des bords de l'écran — invisibles tant que l'accueil
+  avait la couleur de la borne, criantes dès qu'il en a une à lui. D'où
+  `scrollbar-gutter: auto` sur `.toile--accueil`, classe que l'aperçu de
+  l'administration porte aussi.
 - **`box-sizing: border-box` est posé sur tout** dans `appli.css`, comme dans
   `modeles.css`. Sans lui, un champ en `width: 100 %` dépasse son conteneur de
   26 px — c'est ce qui faisait sortir les champs du quiz et de la frise du
@@ -450,6 +657,14 @@ Ce qu'il faut savoir avant d'y toucher :
 - **Barre de défilement des champs texte** : habillée par `::-webkit-scrollbar`,
   ce qui **retire les boutons par défaut** — les flèches sont redessinées en
   SVG, et `:single-button` évite qu'une paire apparaisse à chaque bout.
+- **Un fond en `position: absolute` s'échappe de son cadre** si le cadre n'est
+  pas `position: relative` — et `overflow: hidden` ne le retient pas : il ne
+  rogne que ce qui se cale sur lui. Rencontré le 2026-08-19 : les miniatures de
+  « Image de chaque page » (panneau « Écran d'accueil ») affichent `ApercuPage`,
+  donc `.hub__fond`, qui s'est calé sur `.voile` (fixe, plein écran) — douze
+  images floutées et assombries recouvraient tout le panneau, il ne restait
+  visible que l'aperçu, dessiné après elles. Le repère manquait sur
+  `.apparence__miniature`.
 - **`.roue__hex` est nommé à part** dans la règle des champs : le disque de
   couleur sert aussi hors du panneau, où le champ garderait sinon le fond blanc
   du navigateur.

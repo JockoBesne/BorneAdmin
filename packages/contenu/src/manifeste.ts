@@ -9,6 +9,8 @@ import {
   HAUTEUR_BANDEAU_MIN,
   HAUTEUR_MAX,
   HAUTEUR_MIN,
+  FRISE_ANNEE_MAX,
+  FRISE_ANNEE_MIN,
   FRISE_CONSIGNE_MAX_SIGNES,
   FRISE_DETAIL_MAX_SIGNES,
   FRISE_EVENEMENTS_MAX,
@@ -133,7 +135,7 @@ export const schemaBlocLibre = z.object({
             libelle: z.string().max(FRISE_LIBELLE_MAX_SIGNES),
             // Bornée : une année hors de cette plage est une faute de frappe,
             // et elle casserait l'échelle de la frise affichée au visiteur.
-            annee: z.number().int().min(-3000).max(3000),
+            annee: z.number().int().min(FRISE_ANNEE_MIN).max(FRISE_ANNEE_MAX),
             detail: z.string().max(FRISE_DETAIL_MAX_SIGNES),
           }),
         )
@@ -159,6 +161,16 @@ export const schemaStyleBloc = z.object({
   // Photos : recadrer dans un cadre de hauteur choisie plutôt que montrer la
   // photo entière. Absent = entière, jamais coupée.
   recadre: z.boolean().optional(),
+  // Bord qui reste en place quand on règle la hauteur : « bas » quand la
+  // poignée du haut a servi. Absent = le bloc est accroché en haut, comme avant.
+  ancre: z.enum(['bas']).optional(),
+  // Photo recadrée : la partie gardée dans le cadre, en pourcentage. Absents =
+  // le point focal du média.
+  focalX: z.number().int().min(0).max(100).optional(),
+  focalY: z.number().int().min(0).max(100).optional(),
+  // Le fond remplit la hauteur réglée au lieu d'épouser le contenu. Absent =
+  // le bloc garde sa taille et la hauteur devient de l'espace autour.
+  remplir: z.boolean().optional(),
   // Taille du texte, en pourcentage de la taille normale. Absente = 100.
   taille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
 })
@@ -232,6 +244,22 @@ export const schemaReglages = z.object({
    */
   hubCouleurFond: z.string().regex(COULEUR).optional(),
   hubCouleurTexte: z.string().regex(COULEUR).optional(),
+  /**
+   * Apparence des trois textes de l'accueil : le grand titre, le sous-titre
+   * juste dessous, et la barre de titre au bas de chaque carte.
+   *
+   * Toutes facultatives, comme le bandeau d'une page : absentes, l'accueil
+   * garde exactement l'aspect d'avant ce réglage, et rien n'est à migrer. La
+   * taille est un **pourcentage** de la taille d'origine, pas une taille en
+   * points : les écarts entre les trois textes sont donc conservés.
+   */
+  hubTitreCouleur: z.string().regex(COULEUR).optional(),
+  hubTitreTaille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
+  hubSousTitreCouleur: z.string().regex(COULEUR).optional(),
+  hubSousTitreTaille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
+  hubNomFond: z.string().regex(COULEUR).optional(),
+  hubNomCouleur: z.string().regex(COULEUR).optional(),
+  hubNomTaille: z.number().int().min(TAILLE_TEXTE_MIN).max(TAILLE_TEXTE_MAX).optional(),
   /**
    * Image de fond de l'accueil (identifiant d'un média). Facultative : absente,
    * l'accueil garde son aplat de couleur.

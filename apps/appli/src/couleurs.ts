@@ -119,6 +119,55 @@ export function couleursHub(
 }
 
 /**
+ * L'or du thème (`--b-accent` dans la feuille de style), seule couleur qui ne
+ * se règle pas : c'est celle du sous-titre de l'accueil tant que personne ne
+ * lui en a choisi une. Le disque de couleur doit partir de là — sinon il
+ * partirait du noir et le premier geste changerait tout d'un coup.
+ */
+export const ACCENT_ORIGINE = '#e9b44c'
+
+/** Ce que l'accueil laisse régler, en plus de ses deux couleurs. */
+export type ApparenceHub = {
+  hubTitreCouleur?: string
+  hubTitreTaille?: number
+  hubSousTitreCouleur?: string
+  hubSousTitreTaille?: number
+  hubNomFond?: string
+  hubNomCouleur?: string
+  hubNomTaille?: number
+}
+
+/**
+ * Variables CSS de l'apparence de l'accueil : le grand titre, le sous-titre, la
+ * barre de titre des cartes.
+ *
+ * Un réglage absent **n'écrit aucune variable** : la feuille de style garde
+ * alors sa valeur de repli, et l'accueil reste au pixel près celui d'avant ce
+ * réglage. C'est ce qui évite d'avoir à retoucher les contenus existants —
+ * même principe que le bandeau d'une page.
+ *
+ * La taille est un facteur (`calc` dans la feuille de style), pas une taille en
+ * points : les trois textes gardent leurs écarts.
+ */
+export function variablesHub(reglages: ApparenceHub): Record<string, string> {
+  const variables: Record<string, string> = {}
+  const poser = (nom: string, valeur: string | undefined) => {
+    if (valeur !== undefined) variables[nom] = valeur
+  }
+  const facteur = (nom: string, pourcent: number | undefined) => {
+    if (pourcent !== undefined) variables[nom] = String(pourcent / 100)
+  }
+  poser('--hub-titre', reglages.hubTitreCouleur)
+  facteur('--hub-titre-facteur', reglages.hubTitreTaille)
+  poser('--hub-sous-titre', reglages.hubSousTitreCouleur)
+  facteur('--hub-sous-titre-facteur', reglages.hubSousTitreTaille)
+  poser('--hub-nom-fond', reglages.hubNomFond)
+  poser('--hub-nom-texte', reglages.hubNomCouleur)
+  facteur('--hub-nom-facteur', reglages.hubNomTaille)
+  return variables
+}
+
+/**
  * Variables CSS à poser sur le conteneur du rendu de la borne. On dérive le
  * texte « doux » (légendes, textes secondaires) de la couleur de texte choisie,
  * pour qu'il reste lisible quel que soit le réglage — sinon un texte sombre sur
