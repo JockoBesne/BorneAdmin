@@ -554,6 +554,17 @@ function creerFenetre() {
     if (!sortieAutorisee) evenement.preventDefault()
   })
 
+  // Fond bleu nuit et rien d'autre : c'est le seul symptôme quand la page ne
+  // se charge pas ou que l'interface s'arrête sur une erreur. On le dit donc
+  // dans le terminal, sinon il n'y a rien à regarder — et personne ne dépannera
+  // l'installation.
+  fenetre.webContents.on('did-fail-load', (_e, code, message, url) => {
+    console.error(`La page ne s'est pas chargée (${code}) : ${message} — ${url}`)
+  })
+  fenetre.webContents.on('console-message', (_e, niveau, message) => {
+    if (niveau >= 2) console.error(`Interface : ${message}`)
+  })
+
   void fenetre.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
 }
 
