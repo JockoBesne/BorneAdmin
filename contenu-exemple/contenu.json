@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "genereLe": "2026-08-19T08:04:48.649Z",
+  "genereLe": "2026-08-19T09:34:28.390Z",
   "reglages": {
     "titreVeille": "Musée des Transmissions",
     "sousTitreVeille": "Troisième étage — de l'Antiquité aux années 1970",
@@ -236,16 +236,67 @@
           },
           {
             "id": "b6",
-            "colonnes": 6,
+            "colonnes": 5,
             "valeur": {
               "type": "texte",
-              "valeur": "**Les messagers à pied**\n\nLe plus connu des moyens antiques reste le messager, et singulièrement celui de Marathon.\n\nLa légende raconte qu'Athènes, victorieuse des Perses, envoie un homme annoncer la nouvelle. Après une quarantaine de kilomètres, Philippidès meurt d'épuisement en arrivant — mais l'information est passée."
+              "valeur": "\n\n\n\n\n\n\nLes messagers à pied\n\nLe plus connu des moyens antiques reste le messager, et singulièrement celui de Marathon.\n\nLa légende raconte qu'Athènes, victorieuse des Perses, envoie un homme annoncer la nouvelle. Après une quarantaine de kilomètres, Philippidès meurt d'épuisement en arrivant — mais l'information est passée.",
+              "lignes": [
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Les messagers à pied",
+                      "gras": true
+                    }
+                  ]
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Le plus connu des moyens antiques reste le messager, et singulièrement celui de Marathon."
+                    }
+                  ]
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "La légende raconte qu'Athènes, victorieuse des Perses, envoie un homme annoncer la nouvelle. Après une quarantaine de kilomètres, Philippidès meurt d'épuisement en arrivant — mais l'information est passée."
+                    }
+                  ]
+                }
+              ]
             }
           },
           {
             "id": "b7",
-            "colonnes": 6,
-            "hauteur": 420,
+            "colonnes": 7,
+            "hauteur": 680,
             "valeur": {
               "type": "image",
               "mediaId": "media-marathon-merson",
@@ -254,10 +305,40 @@
           },
           {
             "id": "b8",
-            "colonnes": 6,
+            "colonnes": 12,
             "valeur": {
               "type": "texte",
-              "valeur": "**Il fallait autre chose**\n\nSur de courtes distances, comme entre cités grecques, le messager à pied suffit. Sur des routes bien plus longues, il faut inventer un système — et ce système sera le cheval, relayé.\n\nDès le VIe siècle avant notre ère, l'empire perse organise les premiers relais de poste, bientôt suivi par la Chine et Rome."
+              "valeur": "Il fallait autre chose\n\nSur de courtes distances, comme entre cités grecques, le messager à pied suffit. Sur des routes bien plus longues, il faut inventer un système  et ce système sera le cheval, relayé.\n\nDès le VIe siècle avant notre ère, l'empire perse organise les premiers relais de poste, bientôt suivi par la Chine et Rome.",
+              "lignes": [
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Il fallait autre chose",
+                      "gras": true
+                    }
+                  ]
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Sur de courtes distances, comme entre cités grecques, le messager à pied suffit. Sur des routes bien plus longues, il faut inventer un système  et ce système sera le cheval, relayé."
+                    }
+                  ]
+                },
+                {
+                  "morceaux": []
+                },
+                {
+                  "morceaux": [
+                    {
+                      "texte": "Dès le VIe siècle avant notre ère, l'empire perse organise les premiers relais de poste, bientôt suivi par la Chine et Rome."
+                    }
+                  ]
+                }
+              ]
             }
           },
           {
@@ -270,7 +351,7 @@
           },
           {
             "id": "b10",
-            "colonnes": 6,
+            "colonnes": 12,
             "valeur": {
               "type": "texte",
               "valeur": "**Aussi rapide qu'aujourd'hui**\n\nSur la carte des postes de 1691, les relais sont espacés de 7 lieues — environ 34 kilomètres, la distance idéale pour un cheval sur les routes de l'époque. La quasi-totalité du territoire est couverte.\n\nIl faut alors deux jours à la malle-poste pour relier Bordeaux à Paris. C'est le délai que nous connaissons encore."
@@ -278,7 +359,8 @@
           },
           {
             "id": "b11",
-            "colonnes": 6,
+            "colonnes": 5,
+            "decalage": 1,
             "valeur": {
               "type": "texte",
               "valeur": "**Pourquoi sept lieues**\n\nLe relais n'est pas posé au hasard : c'est la distance qu'un cheval couvre à vive allure sans devoir s'arrêter. Au-delà, il faudrait le ménager, et tout le réseau ralentirait.\n\n**34 km**\n\nentre deux relais : la distance calculée pour un cheval"
@@ -287,6 +369,7 @@
           {
             "id": "b12",
             "colonnes": 12,
+            "hauteur": 320,
             "valeur": {
               "type": "galerie",
               "elements": [
@@ -335,8 +418,8 @@
           "suite:b7",
           "suite:b8",
           "suite:b9",
-          "suite:b10",
           "suite:b11",
+          "suite:b10",
           "suite:b12",
           "suite:b13",
           "suite:b14"
